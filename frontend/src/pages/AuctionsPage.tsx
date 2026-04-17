@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { getAuctions } from '../api/auctions';
 import { AuctionCard } from '../components/auction/AuctionCard';
 import { Layout } from '../components/layout/Layout';
+import { useT } from '../i18n/useLanguage';
 
 const BRANDS = ['Rolex', 'Patek Philippe', 'Audemars Piguet', 'A. Lange & Söhne', 'F.P. Journe', 'Vacheron Constantin', 'Jaeger-LeCoultre'];
-const STATUSES = [{ value: '', label: 'All' }, { value: 'live', label: 'Live' }, { value: 'upcoming', label: 'Upcoming' }, { value: 'ended', label: 'Ended' }];
 
 const h = (n: number) => n * 60 * 60 * 1000;
 const d = (n: number) => n * 24 * h(1);
@@ -112,6 +112,7 @@ const DEMO_AUCTIONS = [
 const DEFAULT_FILTERS = { status: 'live', brand: '', min_price: '', max_price: '' };
 
 export const AuctionsPage: React.FC = () => {
+  const { tr } = useT();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
 
@@ -136,12 +137,12 @@ export const AuctionsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <p className="section-subtitle">Discover</p>
-            <h1 className="section-title">Auctions</h1>
+            <p className="section-subtitle">{tr.auctions.eyebrow}</p>
+            <h1 className="section-title">{tr.auctions.title}</h1>
           </div>
           {showDemo && (
             <span className="text-obsidian-500 text-xs uppercase tracking-widest border border-obsidian-700 px-3 py-1.5">
-              Preview Mode
+              {tr.auctions.previewMode}
             </span>
           )}
         </div>
@@ -150,25 +151,27 @@ export const AuctionsPage: React.FC = () => {
         <div className="bg-obsidian-900 border border-obsidian-800 p-6 mb-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Status</label>
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{tr.auctions.filters.status}</label>
               <select className="input-field text-sm" value={filters.status} onChange={e => handleFilter('status', e.target.value)}>
-                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                {Object.entries(tr.auctions.filters.statuses).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Brand</label>
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{tr.auctions.filters.brand}</label>
               <select className="input-field text-sm" value={filters.brand} onChange={e => handleFilter('brand', e.target.value)}>
-                <option value="">All Brands</option>
+                <option value="">{tr.auctions.filters.allBrands}</option>
                 {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Min Price</label>
-              <input type="number" placeholder="£0" className="input-field text-sm" value={filters.min_price} onChange={e => handleFilter('min_price', e.target.value)} />
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{tr.auctions.filters.minPrice}</label>
+              <input type="number" placeholder={tr.auctions.filters.minPlaceholder} className="input-field text-sm" value={filters.min_price} onChange={e => handleFilter('min_price', e.target.value)} />
             </div>
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Max Price</label>
-              <input type="number" placeholder="Any" className="input-field text-sm" value={filters.max_price} onChange={e => handleFilter('max_price', e.target.value)} />
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{tr.auctions.filters.maxPrice}</label>
+              <input type="number" placeholder={tr.auctions.filters.maxPlaceholder} className="input-field text-sm" value={filters.max_price} onChange={e => handleFilter('max_price', e.target.value)} />
             </div>
           </div>
         </div>
@@ -189,7 +192,7 @@ export const AuctionsPage: React.FC = () => {
           </div>
         ) : items.length > 0 ? (
           <>
-            <p className="text-obsidian-400 text-sm mb-6">{total} auction{total !== 1 ? 's' : ''} found</p>
+            <p className="text-obsidian-400 text-sm mb-6">{tr.auctions.found(total)}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {items.map((auction: any) => (
                 <AuctionCard key={auction.id} auction={auction} />
@@ -208,8 +211,8 @@ export const AuctionsPage: React.FC = () => {
           </>
         ) : (
           <div className="text-center py-20 text-obsidian-400">
-            <p className="text-lg mb-2">No auctions found</p>
-            <button onClick={() => { setFilters(DEFAULT_FILTERS); setPage(1); }} className="text-gold-500 text-sm hover:text-gold-400">Clear filters</button>
+            <p className="text-lg mb-2">{tr.auctions.empty}</p>
+            <button onClick={() => { setFilters(DEFAULT_FILTERS); setPage(1); }} className="text-gold-500 text-sm hover:text-gold-400">{tr.auctions.clearFilters}</button>
           </div>
         )}
       </div>

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -49,5 +51,25 @@
   .section-subtitle {
     @apply text-obsidian-400 text-sm uppercase tracking-widest mb-8;
   }
+}
+
+/* ── Arabic / RTL ── */
+[dir="rtl"] {
+  font-family: 'Tajawal', system-ui, sans-serif;
+}
+
+[dir="rtl"] * {
+  letter-spacing: 0 !important;
+  word-spacing: 0.03em;
+}
+
+/* Flip explicit text-alignment utilities */
+[dir="rtl"] .text-left  { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+
+/* Keep numbers and currency inputs visually LTR */
+[dir="rtl"] input[type="number"] {
+  direction: ltr;
+  text-align: right;
 }
 
