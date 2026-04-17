@@ -38,10 +38,14 @@ export const Navbar: React.FC = () => {
           {/* Auth area */}
           <div className="hidden md:flex items-center gap-4">
             {/* Language toggle */}
-            <button onClick={toggle} className="flex items-center gap-0.5 text-xs uppercase tracking-wider">
-              <span className={lang === 'en' ? 'text-gold-500' : 'text-obsidian-500'}>EN</span>
-              <span className="text-obsidian-700 mx-1">|</span>
-              <span className={lang === 'ar' ? 'text-gold-500' : 'text-obsidian-500'}>AR</span>
+            <button
+              onClick={toggle}
+              className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
+              aria-label="Switch language"
+            >
+              <span className={`px-2.5 py-1 text-xs uppercase tracking-widest transition-colors ${lang === 'en' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500 hover:text-obsidian-300'}`}>EN</span>
+              <span className="w-px h-4 bg-obsidian-700" />
+              <span className={`px-2.5 py-1 text-xs uppercase tracking-widest transition-colors ${lang === 'ar' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500 hover:text-obsidian-300'}`}>AR</span>
             </button>
 
             {isAuthenticated ? (
@@ -86,17 +90,25 @@ export const Navbar: React.FC = () => {
                 <button onClick={handleLogout} className="block text-obsidian-400 text-sm py-2">{tr.nav.signOut}</button>
               </>
             )}
+            {/* Language toggle — above auth links */}
+            <div className="pt-2 border-t border-obsidian-800">
+              <button
+                onClick={toggle}
+                className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
+                aria-label="Switch language"
+              >
+                <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'en' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>EN</span>
+                <span className="w-px h-4 bg-obsidian-700" />
+                <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'ar' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>AR</span>
+              </button>
+            </div>
+
             {!isAuthenticated && (
               <>
                 <Link to="/login" className="block text-obsidian-300 text-sm py-2" onClick={() => setMenuOpen(false)}>{tr.nav.signIn}</Link>
                 <Link to="/register" className="block btn-gold text-center" onClick={() => setMenuOpen(false)}>{tr.nav.joinNow}</Link>
               </>
             )}
-            <button onClick={toggle} className="flex items-center gap-0.5 text-xs uppercase tracking-wider pt-2 border-t border-obsidian-800 w-full">
-              <span className={lang === 'en' ? 'text-gold-500' : 'text-obsidian-500'}>EN</span>
-              <span className="text-obsidian-700 mx-1">|</span>
-              <span className={lang === 'ar' ? 'text-gold-500' : 'text-obsidian-500'}>AR</span>
-            </button>
           </div>
         )}
       </div>
