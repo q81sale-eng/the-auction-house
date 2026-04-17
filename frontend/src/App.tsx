@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useLanguage } from './i18n/useLanguage';
+import { LanguageProvider } from './i18n/LanguageContext';
 
 import { HomePage } from './pages/HomePage';
 import { AuctionsPage } from './pages/AuctionsPage';
@@ -29,14 +29,8 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 function App() {
-  const lang = useLanguage(s => s.lang);
-
-  useEffect(() => {
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
-  }, [lang]);
-
   return (
+    <LanguageProvider>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
@@ -64,6 +58,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
+    </LanguageProvider>
   );
 }
 
