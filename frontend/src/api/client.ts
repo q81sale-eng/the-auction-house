@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../lib/supabase';
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
@@ -8,11 +9,11 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+api.interceptors.request.use(async (config) => {
+  // Prefer a live Supabase session token; fall back to legacy stored token
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token || localStorage.getItem('auth_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 

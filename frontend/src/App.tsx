@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LanguageProvider } from './i18n/LanguageContext';
+import { supabase } from './lib/supabase';
 
 import { HomePage } from './pages/HomePage';
 import { AuctionsPage } from './pages/AuctionsPage';
@@ -29,6 +30,53 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 function App() {
+  const { setAuth, logout } = useAuthStore();
+
+  // Keep authStore in sync with the live Supabase session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const m = session.user.user_metadata ?? {};
+        setAuth(
+          {
+            id: session.user.id,
+            name: m.name || session.user.email || '',
+            email: session.user.email || '',
+            is_admin: m.is_admin === true,
+            is_verified: !!session.user.email_confirmed_at,
+            deposit_balance: 0,
+            phone: m.phone,
+            country: m.country,
+          },
+          session.access_token
+        );
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const m = session.user.user_metadata ?? {};
+        setAuth(
+          {
+            id: session.user.id,
+            name: m.name || session.user.email || '',
+            email: session.user.email || '',
+            is_admin: m.is_admin === true,
+            is_verified: !!session.user.email_confirmed_at,
+            deposit_balance: 0,
+            phone: m.phone,
+            country: m.country,
+          },
+          session.access_token
+        );
+      } else {
+        logout();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setAuth, logout]);
+
   return (
     <LanguageProvider>
     <QueryClientProvider client={queryClient}>
