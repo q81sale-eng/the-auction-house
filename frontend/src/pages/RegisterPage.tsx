@@ -5,7 +5,14 @@ import { register } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import { useT } from '../i18n/useLanguage';
 
-const COUNTRIES = [
+type CountryCode =
+  | 'kw' | 'sa' | 'ae' | 'qa' | 'bh' | 'om'
+  | 'gb' | 'us' | 'ch' | 'de' | 'fr' | 'jp' | 'sg' | 'hk' | 'other';
+
+type Country = { code: CountryCode; dial: string; flag: string; pattern: RegExp; maxLen: number; hint: string };
+
+// GCC countries first, then international
+const COUNTRIES: Country[] = [
   { code: 'kw',    dial: '+965', flag: '🇰🇼', pattern: /^[569]\d{7}$/,  maxLen: 8,  hint: '51234567'    },
   { code: 'sa',    dial: '+966', flag: '🇸🇦', pattern: /^5\d{8}$/,      maxLen: 9,  hint: '512345678'   },
   { code: 'ae',    dial: '+971', flag: '🇦🇪', pattern: /^5\d{8}$/,      maxLen: 9,  hint: '501234567'   },
@@ -21,9 +28,7 @@ const COUNTRIES = [
   { code: 'sg',    dial: '+65',  flag: '🇸🇬', pattern: /^[89]\d{7}$/,   maxLen: 8,  hint: '81234567'    },
   { code: 'hk',    dial: '+852', flag: '🇭🇰', pattern: /^\d{8}$/,       maxLen: 8,  hint: '91234567'    },
   { code: 'other', dial: '',     flag: '🌐', pattern: /^\d{6,15}$/,     maxLen: 15, hint: '1234567890'  },
-] as const;
-
-type CountryCode = typeof COUNTRIES[number]['code'];
+];
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
