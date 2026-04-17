@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
 import { formatCurrency } from '../../utils/format';
+import { useT } from '../../i18n/useLanguage';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { tr, lang, toggle } = useT();
 
   const handleLogout = async () => {
     try { await logout(); } catch {}
@@ -26,32 +28,43 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">Auctions</Link>
-            <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">Marketplace</Link>
+            <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.auctions}</Link>
+            <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.marketplace}</Link>
             {isAuthenticated && (
-              <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">Watch Vault</Link>
+              <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
             )}
           </div>
 
           {/* Auth area */}
           <div className="hidden md:flex items-center gap-4">
+            {/* Language toggle */}
+            <button
+              onClick={toggle}
+              className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
+              aria-label="Switch language"
+            >
+              <span className={`px-2.5 py-1 text-xs uppercase tracking-widest transition-colors ${lang === 'en' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500 hover:text-obsidian-300'}`}>EN</span>
+              <span className="w-px h-4 bg-obsidian-700" />
+              <span className={`px-2.5 py-1 text-xs uppercase tracking-widest transition-colors ${lang === 'ar' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500 hover:text-obsidian-300'}`}>AR</span>
+            </button>
+
             {isAuthenticated ? (
               <>
                 <div className="text-right">
                   <p className="text-white text-sm font-medium">{user?.name}</p>
-                  <p className="text-gold-500 text-xs">{formatCurrency(user?.deposit_balance || 0)} balance</p>
+                  <p className="text-gold-500 text-xs">{formatCurrency(user?.deposit_balance || 0)} {tr.nav.balance}</p>
                 </div>
                 {user?.is_admin && (
-                  <Link to="/admin" className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">Admin</Link>
+                  <Link to="/admin" className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.admin}</Link>
                 )}
                 <button onClick={handleLogout} className="text-obsidian-400 hover:text-white text-sm transition-colors">
-                  Sign Out
+                  {tr.nav.signOut}
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-obsidian-300 hover:text-white text-sm uppercase tracking-wider transition-colors">Sign In</Link>
-                <Link to="/register" className="btn-gold text-xs py-2 px-4">Join Now</Link>
+                <Link to="/login" className="text-obsidian-300 hover:text-white text-sm uppercase tracking-wider transition-colors">{tr.nav.signIn}</Link>
+                <Link to="/register" className="btn-gold text-xs py-2 px-4">{tr.nav.joinNow}</Link>
               </>
             )}
           </div>
@@ -68,19 +81,32 @@ export const Navbar: React.FC = () => {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden border-t border-obsidian-800 py-4 space-y-3">
-            <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>Auctions</Link>
-            <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>Marketplace</Link>
+            <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
+            <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
             {isAuthenticated && (
               <>
-                <Link to="/vault" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>Watch Vault</Link>
+                <Link to="/vault" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.vault}</Link>
                 <Link to="/profile" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>Profile</Link>
-                <button onClick={handleLogout} className="block text-obsidian-400 text-sm py-2">Sign Out</button>
+                <button onClick={handleLogout} className="block text-obsidian-400 text-sm py-2">{tr.nav.signOut}</button>
               </>
             )}
+            {/* Language toggle — above auth links */}
+            <div className="pt-2 border-t border-obsidian-800">
+              <button
+                onClick={toggle}
+                className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
+                aria-label="Switch language"
+              >
+                <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'en' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>EN</span>
+                <span className="w-px h-4 bg-obsidian-700" />
+                <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'ar' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>AR</span>
+              </button>
+            </div>
+
             {!isAuthenticated && (
               <>
-                <Link to="/login" className="block text-obsidian-300 text-sm py-2" onClick={() => setMenuOpen(false)}>Sign In</Link>
-                <Link to="/register" className="block btn-gold text-center" onClick={() => setMenuOpen(false)}>Join Now</Link>
+                <Link to="/login" className="block text-obsidian-300 text-sm py-2" onClick={() => setMenuOpen(false)}>{tr.nav.signIn}</Link>
+                <Link to="/register" className="block btn-gold text-center" onClick={() => setMenuOpen(false)}>{tr.nav.joinNow}</Link>
               </>
             )}
           </div>
