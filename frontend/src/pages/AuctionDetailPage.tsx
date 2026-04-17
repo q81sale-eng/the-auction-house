@@ -9,7 +9,7 @@ import { formatCurrency, formatDateTime } from '../utils/format';
 
 export const AuctionDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const [bidAmount, setBidAmount] = useState('');
   const [activeImage, setActiveImage] = useState(0);

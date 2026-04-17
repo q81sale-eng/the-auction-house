@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
-import { getAdminWatches, createWatch, updateWatch, deleteWatch } from '../../api/admin';
+import { getAdminWatches, createWatch, deleteWatch } from '../../api/admin';
 
 const CONDITIONS = ['new', 'excellent', 'good', 'fair'];
 const blankForm = { brand: '', model: '', reference_number: '', year: '', movement: '', case_material: '', bracelet_material: '', case_diameter: '', dial_color: '', condition: 'excellent', description: '', serial_number: '', has_box: false, has_papers: false, water_resistance: '', power_reserve: '', complications: '' };

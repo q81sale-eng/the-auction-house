@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getListing } from '../api/marketplace';
 import { Layout } from '../components/layout/Layout';
-import { formatCurrency, formatDate } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 
 export const MarketplaceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();

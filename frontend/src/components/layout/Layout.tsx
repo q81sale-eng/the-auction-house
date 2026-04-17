@@ -31,9 +31,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div>
               <h4 className="text-white text-xs uppercase tracking-widest mb-4">Support</h4>
               <ul className="space-y-2 text-obsidian-400 text-sm">
-                <li><a href="#" className="hover:text-gold-500 transition-colors">How It Works</a></li>
-                <li><a href="#" className="hover:text-gold-500 transition-colors">Authentication</a></li>
-                <li><a href="#" className="hover:text-gold-500 transition-colors">Contact Us</a></li>
+                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">How It Works</span></li>
+                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">Authentication</span></li>
+                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">Contact Us</span></li>
               </ul>
             </div>
           </div>
