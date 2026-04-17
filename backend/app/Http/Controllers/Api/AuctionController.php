@@ -30,7 +30,7 @@ class AuctionController extends Controller
                 ->orWhere('starting_price', '<=', $request->max_price));
         }
 
-        $auctions = $query->orderByRaw("FIELD(status, 'live', 'upcoming', 'ended', 'sold', 'cancelled')")
+        $auctions = $query->orderByRaw("CASE status WHEN 'live' THEN 1 WHEN 'upcoming' THEN 2 WHEN 'ended' THEN 3 WHEN 'sold' THEN 4 ELSE 5 END")
             ->orderBy('ends_at')
             ->paginate(12);
 
