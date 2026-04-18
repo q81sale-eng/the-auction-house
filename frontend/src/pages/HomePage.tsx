@@ -67,9 +67,9 @@ export const HomePage: React.FC = () => {
             {tr.home.liveAuctions.viewAll}
           </Link>
         </div>
-        {auctionsData?.data?.length > 0 ? (
+        {(auctionsData?.data?.length ?? 0) > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {auctionsData.data.map((auction: any) => (
+            {auctionsData!.data.map((auction: any) => (
               <AuctionCard key={auction.id} auction={auction} />
             ))}
           </div>
