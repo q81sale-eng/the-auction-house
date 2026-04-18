@@ -1,43 +1,154 @@
-import api from './client';
+import { supabase } from '../lib/supabase';
 
-export const getAdminDashboard = () =>
-  api.get('/admin/dashboard').then(r => r.data);
+const PER_PAGE = 20;
 
-export const getAdminWatches = (params?: Record<string, any>) =>
-  api.get('/admin/watches', { params }).then(r => r.data);
+function paginate<T>(data: T[] | null, count: number | null, page: number) {
+  return {
+    data: data ?? [],
+    total: count ?? 0,
+    last_page: Math.ceil((count ?? 0) / PER_PAGE),
+    current_page: page,
+  };
+}
 
-export const createWatch = (data: Record<string, any>) =>
-  api.post('/admin/watches', data).then(r => r.data);
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 
-export const updateWatch = (id: number, data: Record<string, any>) =>
-  api.put(`/admin/watches/${id}`, data).then(r => r.data);
+export const getAdminDashboard = async () => {
+  const [auctionsRes, usersRes, bidsRes, recentAuctionsRes, recentUsersRes] = await Promise.all([
+    supabase.from('auctions').select('status'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('bids').select('id', { count: 'exact', head: true }),
+    supabase.from('auctions').select('*').order('created_at', { ascending: false }).limit(5),
+    supabase.from('profiles').select('id,name,email,is_admin,created_at').order('created_at', { ascending: false }).limit(5),
+  ]);
 
-export const deleteWatch = (id: number) =>
-  api.delete(`/admin/watches/${id}`).then(r => r.data);
+  const statuses = auctionsRes.data ?? [];
+  return {
+    stats: {
+      live_auctions:     statuses.filter(a => a.status === 'live').length,
+      upcoming_auctions: statuses.filter(a => a.status === 'upcoming').length,
+      total_auctions:    statuses.length,
+      total_users:       usersRes.count ?? 0,
+      total_bids:        bidsRes.count ?? 0,
+    },
+    recent_auctions: recentAuctionsRes.data ?? [],
+    recent_users:    recentUsersRes.data ?? [],
+  };
+};
 
-export const getAdminAuctions = (params?: Record<string, any>) =>
-  api.get('/admin/auctions', { params }).then(r => r.data);
+// ─── Auctions ─────────────────────────────────────────────────────────────────
 
-export const createAuction = (data: Record<string, any>) =>
-  api.post('/admin/auctions', data).then(r => r.data);
+export const getAdminAuctions = async (params?: { page?: number; status?: string }) => {
+  const page = params?.page ?? 1;
+  const from = (page - 1) * PER_PAGE;
+  const to   = from + PER_PAGE - 1;
 
-export const updateAuction = (id: number, data: Record<string, any>) =>
-  api.put(`/admin/auctions/${id}`, data).then(r => r.data);
+  let q = supabase.from('auctions').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(from, to);
+  if (params?.status) q = q.eq('status', params.status);
 
-export const deleteAuction = (id: number) =>
-  api.delete(`/admin/auctions/${id}`).then(r => r.data);
+  const { data, count } = await q;
+  return paginate(data, count, page);
+};
 
-export const getAdminUsers = (params?: Record<string, any>) =>
-  api.get('/admin/users', { params }).then(r => r.data);
+export const getAuction = async (id: string) => {
+  const { data, error } = await supabase.from('auctions').select('*').eq('id', id).single();
+  if (error) throw error;
+  return data;
+};
 
-export const updateUser = (id: number, data: Record<string, any>) =>
-  api.put(`/admin/users/${id}`, data).then(r => r.data);
+export const createAuction = async (payload: Record<string, any>) => {
+  const slug = `${payload.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+  const { data, error } = await supabase
+    .from('auctions')
+    .insert({ ...payload, slug, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw { response: { data: { message: error.message } } };
+  return data;
+};
 
-export const deleteUser = (id: number) =>
-  api.delete(`/admin/users/${id}`).then(r => r.data);
+export const updateAuction = async (id: string, payload: Record<string, any>) => {
+  const { data, error } = await supabase
+    .from('auctions')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw { response: { data: { message: error.message } } };
+  return data;
+};
 
-export const getAdminValuations = (params?: Record<string, any>) =>
-  api.get('/admin/valuations', { params }).then(r => r.data);
+export const deleteAuction = async (id: string) => {
+  const { error } = await supabase.from('auctions').delete().eq('id', id);
+  if (error) throw { response: { data: { message: error.message } } };
+};
 
-export const createValuation = (data: Record<string, any>) =>
-  api.post('/admin/valuations', data).then(r => r.data);
+export const uploadAuctionImage = async (file: File): Promise<string> => {
+  const ext      = file.name.split('.').pop();
+  const path     = `${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('auction-images').upload(path, file, { cacheControl: '3600', upsert: false });
+  if (error) throw new Error(`Image upload failed: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from('auction-images').getPublicUrl(path);
+  return publicUrl;
+};
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+export const getAdminUsers = async (params?: { page?: number }) => {
+  const page = params?.page ?? 1;
+  const from = (page - 1) * PER_PAGE;
+  const to   = from + PER_PAGE - 1;
+
+  const { data, count } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  return paginate(data, count, page);
+};
+
+export const updateUser = async (id: string, payload: Record<string, any>) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw { response: { data: { message: error.message } } };
+  return data;
+};
+
+export const deleteUser = async (id: string) => {
+  const { error } = await supabase.from('profiles').delete().eq('id', id);
+  if (error) throw { response: { data: { message: error.message } } };
+};
+
+// ─── Bids ─────────────────────────────────────────────────────────────────────
+
+export const getAdminBids = async (params?: { page?: number; auction_id?: string }) => {
+  const page = params?.page ?? 1;
+  const from = (page - 1) * PER_PAGE;
+  const to   = from + PER_PAGE - 1;
+
+  let q = supabase
+    .from('bids')
+    .select('id,amount,created_at,auction_id,user_id,auctions(title,brand),profiles(name,email)', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (params?.auction_id) q = q.eq('auction_id', params.auction_id);
+
+  const { data, count } = await q;
+  return paginate(data, count, page);
+};
+
+// ─── Legacy exports (keep watch functions for AdminWatches compatibility) ─────
+
+const emptyPage = { data: [] as any[], total: 0, last_page: 1, current_page: 1 };
+export const getAdminWatches    = (_p?: any) => Promise.resolve(emptyPage);
+export const createWatch        = (_d: any) => Promise.resolve({});
+export const updateWatch        = (_id: any, _d: any) => Promise.resolve({});
+export const deleteWatch        = (_id: any) => Promise.resolve({});
+export const getAdminValuations = (_p?: any) => Promise.resolve(emptyPage);
+export const createValuation    = (_d: any) => Promise.resolve({});

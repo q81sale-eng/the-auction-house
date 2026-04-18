@@ -32,6 +32,10 @@
     @apply bg-obsidian-900 border border-obsidian-700 text-white px-4 py-3 w-full focus:outline-none focus:border-gold-500 transition-colors;
   }
 
+  .label-field {
+    @apply text-obsidian-400 text-xs uppercase tracking-wider block mb-2;
+  }
+
   .badge-live {
     @apply inline-flex items-center gap-1.5 bg-red-500/20 text-red-400 text-xs font-semibold px-2.5 py-1 uppercase tracking-wider;
   }

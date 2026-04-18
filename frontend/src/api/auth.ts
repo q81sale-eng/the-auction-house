@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase';
 
-// Shape returned to authStore — matches the existing User interface
 export interface AuthUser {
   id: string;
   name: string;
@@ -12,18 +11,19 @@ export interface AuthUser {
   country?: string;
 }
 
-function mapUser(u: NonNullable<Awaited<ReturnType<typeof supabase.auth.getUser>>['data']['user']>): AuthUser {
-  const m = u.user_metadata ?? {};
-  return {
-    id: u.id,
-    name: m.name || u.email || '',
-    email: u.email || '',
-    is_admin: m.is_admin === true,
-    is_verified: !!u.email_confirmed_at,
-    deposit_balance: 0,
-    phone: m.phone,
-    country: m.country,
-  };
+// Fetch is_admin and deposit_balance from the profiles table.
+// Gracefully returns defaults if the table doesn't exist yet.
+export async function fetchProfile(userId: string): Promise<{ is_admin: boolean; deposit_balance: number }> {
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('is_admin,deposit_balance')
+      .eq('id', userId)
+      .single();
+    return { is_admin: data?.is_admin ?? false, deposit_balance: data?.deposit_balance ?? 0 };
+  } catch {
+    return { is_admin: false, deposit_balance: 0 };
+  }
 }
 
 function supabaseError(msg: string): never {
@@ -44,22 +44,27 @@ export const register = async (data: {
     email: data.email,
     password: data.password,
     options: {
-      data: {
-        name: data.name,
-        phone: data.phone ?? '',
-        country: data.country ?? '',
-      },
+      data: { name: data.name, phone: data.phone ?? '', country: data.country ?? '' },
     },
   });
 
   if (error) supabaseError(error.message);
   if (!auth.user) supabaseError('Registration failed. Please try again.');
 
-  // If email confirmation is required, session will be null.
-  // Return the user anyway — the RegisterPage will redirect to home;
-  // protected routes will block access until confirmed.
+  const m = auth.user.user_metadata ?? {};
+  const profile = await fetchProfile(auth.user.id);
+
   return {
-    user: mapUser(auth.user),
+    user: {
+      id: auth.user.id,
+      name: m.name || auth.user.email || '',
+      email: auth.user.email || '',
+      is_admin: profile.is_admin,
+      is_verified: !!auth.user.email_confirmed_at,
+      deposit_balance: profile.deposit_balance,
+      phone: m.phone,
+      country: m.country,
+    } as AuthUser,
     token: auth.session?.access_token ?? '',
   };
 };
@@ -72,8 +77,20 @@ export const login = async (email: string, password: string) => {
   if (error) supabaseError(error.message);
   if (!auth.user) supabaseError('Login failed. Please try again.');
 
+  const m = auth.user.user_metadata ?? {};
+  const profile = await fetchProfile(auth.user.id);
+
   return {
-    user: mapUser(auth.user),
+    user: {
+      id: auth.user.id,
+      name: m.name || auth.user.email || '',
+      email: auth.user.email || '',
+      is_admin: profile.is_admin,
+      is_verified: !!auth.user.email_confirmed_at,
+      deposit_balance: profile.deposit_balance,
+      phone: m.phone,
+      country: m.country,
+    } as AuthUser,
     token: auth.session.access_token,
   };
 };
@@ -90,5 +107,16 @@ export const logout = async () => {
 export const getMe = async (): Promise<AuthUser> => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) supabaseError('Not authenticated');
-  return mapUser(user!);
+  const m = user!.user_metadata ?? {};
+  const profile = await fetchProfile(user!.id);
+  return {
+    id: user!.id,
+    name: m.name || user!.email || '',
+    email: user!.email || '',
+    is_admin: profile.is_admin,
+    is_verified: !!user!.email_confirmed_at,
+    deposit_balance: profile.deposit_balance,
+    phone: m.phone,
+    country: m.country,
+  };
 };
