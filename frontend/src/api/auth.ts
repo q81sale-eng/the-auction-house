@@ -27,7 +27,9 @@ export async function fetchProfile(userId: string): Promise<{ is_admin: boolean;
 }
 
 function supabaseError(msg: string): never {
-  throw { response: { data: { message: msg } } };
+  const err = new Error(msg);
+  (err as any).response = { data: { message: msg } };
+  throw err;
 }
 
 // ─── Register ────────────────────────────────────────────────────────────────

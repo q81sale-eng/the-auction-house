@@ -63,7 +63,7 @@ export const createAuction = async (payload: Record<string, any>) => {
     .insert({ ...payload, slug, updated_at: new Date().toISOString() })
     .select()
     .single();
-  if (error) throw { response: { data: { message: error.message } } };
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
   return data;
 };
 
@@ -74,13 +74,13 @@ export const updateAuction = async (id: string, payload: Record<string, any>) =>
     .eq('id', id)
     .select()
     .single();
-  if (error) throw { response: { data: { message: error.message } } };
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
   return data;
 };
 
 export const deleteAuction = async (id: string) => {
   const { error } = await supabase.from('auctions').delete().eq('id', id);
-  if (error) throw { response: { data: { message: error.message } } };
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
 };
 
 export const uploadAuctionImage = async (file: File): Promise<string> => {
@@ -115,13 +115,13 @@ export const updateUser = async (id: string, payload: Record<string, any>) => {
     .eq('id', id)
     .select()
     .single();
-  if (error) throw { response: { data: { message: error.message } } };
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
   return data;
 };
 
 export const deleteUser = async (id: string) => {
   const { error } = await supabase.from('profiles').delete().eq('id', id);
-  if (error) throw { response: { data: { message: error.message } } };
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
 };
 
 // ─── Bids ─────────────────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { AdminLayout } from './AdminLayout';
 import { getAdminDashboard } from '../../api/admin';
 import { useT } from '../../i18n/useLanguage';
-import { formatCurrency, formatDateTime } from '../../utils/format';
+import { formatDateTime } from '../../utils/format';
 
 const STATUS_COLORS: Record<string, string> = {
   live:      'bg-red-500/20 text-red-400',
