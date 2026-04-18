@@ -79,7 +79,7 @@ function App() {
       try {
         const u = session.user;
         const m = u?.user_metadata ?? {};
-        const profile = await fetchProfile(u.id);
+        const profile = await fetchProfile(u.id, u.email ?? undefined);
         setAuth(
           {
             id: u.id,

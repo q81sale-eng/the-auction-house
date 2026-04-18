@@ -11,19 +11,38 @@ export interface AuthUser {
   country?: string;
 }
 
-// Fetch is_admin and deposit_balance from the profiles table.
-// Gracefully returns defaults if the table doesn't exist yet.
-export async function fetchProfile(userId: string): Promise<{ is_admin: boolean; deposit_balance: number }> {
+async function checkAdminByEmail(email: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('admins')
+      .select('role')
+      .eq('email', email)
+      .eq('role', 'admin')
+      .maybeSingle();
+    return !!data;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchProfile(userId: string, email?: string): Promise<{ is_admin: boolean; deposit_balance: number }> {
+  let profileAdmin = false;
+  let depositBalance = 0;
   try {
     const { data } = await supabase
       .from('profiles')
       .select('is_admin,deposit_balance')
       .eq('id', userId)
       .single();
-    return { is_admin: data?.is_admin ?? false, deposit_balance: data?.deposit_balance ?? 0 };
+    profileAdmin = data?.is_admin ?? false;
+    depositBalance = data?.deposit_balance ?? 0;
   } catch {
-    return { is_admin: false, deposit_balance: 0 };
+    // profiles table may not exist yet; continue
   }
+
+  const adminTableResult = email ? await checkAdminByEmail(email) : false;
+
+  return { is_admin: profileAdmin || adminTableResult, deposit_balance: depositBalance };
 }
 
 function supabaseError(msg: string): never {
@@ -54,7 +73,7 @@ export const register = async (data: {
   if (!auth.user) supabaseError('Registration failed. Please try again.');
 
   const m = auth.user.user_metadata ?? {};
-  const profile = await fetchProfile(auth.user.id);
+  const profile = await fetchProfile(auth.user.id, auth.user.email ?? undefined);
 
   return {
     user: {
@@ -80,7 +99,7 @@ export const login = async (email: string, password: string) => {
   if (!auth.user) supabaseError('Login failed. Please try again.');
 
   const m = auth.user.user_metadata ?? {};
-  const profile = await fetchProfile(auth.user.id);
+  const profile = await fetchProfile(auth.user.id, auth.user.email ?? undefined);
 
   return {
     user: {
@@ -110,7 +129,7 @@ export const getMe = async (): Promise<AuthUser> => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) supabaseError('Not authenticated');
   const m = user!.user_metadata ?? {};
-  const profile = await fetchProfile(user!.id);
+  const profile = await fetchProfile(user!.id, user!.email ?? undefined);
   return {
     id: user!.id,
     name: m.name || user!.email || '',
