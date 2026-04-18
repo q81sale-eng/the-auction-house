@@ -25,22 +25,32 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
-class ErrorBoundary extends Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
-  state = { error: null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
+// ── Error boundary ───────────────────────────────────────────────────────────
+interface EBState { hasError: boolean; message: string }
+class ErrorBoundary extends Component<{ children: React.ReactNode }, EBState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+  static getDerivedStateFromError(err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { hasError: true, message };
+  }
   render() {
-    if (this.state.error) {
+    if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-obsidian-950 flex items-center justify-center p-8 text-center">
+        <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
           <div>
-            <p className="text-gold-500 font-serif text-2xl mb-4">Something went wrong</p>
-            <p className="text-obsidian-400 text-sm mb-6">
-              {(this.state.error as Error).message}
+            <p style={{ color: '#d4af37', fontFamily: 'Georgia, serif', fontSize: '1.5rem', marginBottom: '1rem' }}>
+              Something went wrong
             </p>
-            <button onClick={() => window.location.reload()} className="btn-gold text-sm">
+            <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.5rem', maxWidth: '400px' }}>
+              {this.state.message || 'An unexpected error occurred.'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ background: '#d4af37', color: '#0a0a0a', border: 'none', padding: '0.75rem 1.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+            >
               Reload Page
             </button>
           </div>
@@ -51,84 +61,104 @@ class ErrorBoundary extends Component<
   }
 }
 
+// ── Private route ────────────────────────────────────────────────────────────
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
+// ── App ──────────────────────────────────────────────────────────────────────
 function App() {
-  const { setAuth, logout } = useAuthStore();
+  const setAuth = useAuthStore(s => s.setAuth);
+  const logout  = useAuthStore(s => s.logout);
 
   useEffect(() => {
-    const hydrateUser = async (session: { user: any; access_token: string }) => {
-      const u = session.user;
-      const m = u.user_metadata ?? {};
-      const profile = await fetchProfile(u.id);
-      setAuth(
-        {
-          id: u.id,
-          name: m.name || u.email || '',
-          email: u.email || '',
-          is_admin: profile.is_admin,
-          is_verified: !!u.email_confirmed_at,
-          deposit_balance: profile.deposit_balance,
-          phone: m.phone,
-          country: m.country,
-        },
-        session.access_token,
-      );
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    const hydrateUser = async (session: any) => {
+      try {
+        const u = session.user;
+        const m = u?.user_metadata ?? {};
+        const profile = await fetchProfile(u.id);
+        setAuth(
+          {
+            id: u.id,
+            name: m.name || u.email || '',
+            email: u.email || '',
+            is_admin: profile.is_admin,
+            is_verified: !!u.email_confirmed_at,
+            deposit_balance: profile.deposit_balance,
+            phone: m.phone,
+            country: m.country,
+          },
+          session.access_token,
+        );
+      } catch (e) {
+        console.warn('[Auth] hydrateUser failed:', e);
+      }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) hydrateUser(session as any);
-    });
+    // Restore any existing session on mount
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => { if (session?.user) hydrateUser(session); })
+      .catch((e) => console.warn('[Auth] getSession failed:', e));
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        hydrateUser(session as any);
-      } else {
-        logout();
-      }
-    });
+    // Subscribe to future auth changes
+    try {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          hydrateUser(session);
+        } else {
+          logout();
+        }
+      });
+      subscription = data.subscription;
+    } catch (e) {
+      console.warn('[Auth] onAuthStateChange failed:', e);
+    }
 
-    return () => subscription.unsubscribe();
-  }, [setAuth, logout]);
+    return () => { subscription?.unsubscribe(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <ErrorBoundary>
-      <LanguageProvider>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <Routes>
-              {/* Public */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/auctions" element={<AuctionsPage />} />
-              <Route path="/auctions/:slug" element={<AuctionDetailPage />} />
-              <Route path="/marketplace" element={<MarketplacePage />} />
-              <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+    <LanguageProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/auctions" element={<AuctionsPage />} />
+            <Route path="/auctions/:slug" element={<AuctionDetailPage />} />
+            <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-              {/* Authenticated */}
-              <Route path="/vault" element={<PrivateRoute><VaultPage /></PrivateRoute>} />
-              <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+            {/* Authenticated */}
+            <Route path="/vault" element={<PrivateRoute><VaultPage /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
 
-              {/* Admin */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/auctions" element={<AdminAuctions />} />
-              <Route path="/admin/auctions/new" element={<AdminAuctionForm />} />
-              <Route path="/admin/auctions/:id/edit" element={<AdminAuctionForm />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/bids" element={<AdminBids />} />
+            {/* Admin */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/auctions" element={<AdminAuctions />} />
+            <Route path="/admin/auctions/new" element={<AdminAuctionForm />} />
+            <Route path="/admin/auctions/:id/edit" element={<AdminAuctionForm />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/bids" element={<AdminBids />} />
 
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </QueryClientProvider>
-      </LanguageProvider>
-    </ErrorBoundary>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </LanguageProvider>
   );
 }
 
-export default App;
+export default function Root() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}

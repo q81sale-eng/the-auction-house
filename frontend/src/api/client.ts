@@ -10,10 +10,15 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  // Prefer a live Supabase session token; fall back to legacy stored token
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token || localStorage.getItem('auth_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const result = await supabase.auth.getSession();
+    const token = result?.data?.session?.access_token
+      || localStorage.getItem('auth_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  } catch {
+    const token = localStorage.getItem('auth_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
