@@ -86,9 +86,9 @@ export const deleteAuction = async (id: string) => {
 export const uploadAuctionImage = async (file: File): Promise<string> => {
   const ext      = file.name.split('.').pop();
   const path     = `${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from('auction-images').upload(path, file, { cacheControl: '3600', upsert: false });
+  const { error } = await supabase.storage.from('auctions').upload(path, file, { cacheControl: '3600', upsert: false });
   if (error) throw new Error(`Image upload failed: ${error.message}`);
-  const { data: { publicUrl } } = supabase.storage.from('auction-images').getPublicUrl(path);
+  const { data: { publicUrl } } = supabase.storage.from('auctions').getPublicUrl(path);
   return publicUrl;
 };
 
