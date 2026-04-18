@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Component } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { supabase } from './lib/supabase';
-
 import { HomePage } from './pages/HomePage';
 import { AuctionsPage } from './pages/AuctionsPage';
 import { AuctionDetailPage } from './pages/AuctionDetailPage';
@@ -25,6 +24,32 @@ import { fetchProfile } from './api/auth';
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
+
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen bg-obsidian-950 flex items-center justify-center p-8 text-center">
+          <div>
+            <p className="text-gold-500 font-serif text-2xl mb-4">Something went wrong</p>
+            <p className="text-obsidian-400 text-sm mb-6">
+              {(this.state.error as Error).message}
+            </p>
+            <button onClick={() => window.location.reload()} className="btn-gold text-sm">
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -70,37 +95,39 @@ function App() {
   }, [setAuth, logout]);
 
   return (
-    <LanguageProvider>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
-            {/* Public */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/auctions" element={<AuctionsPage />} />
-            <Route path="/auctions/:slug" element={<AuctionDetailPage />} />
-            <Route path="/marketplace" element={<MarketplacePage />} />
-            <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+    <ErrorBoundary>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <Routes>
+              {/* Public */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/auctions" element={<AuctionsPage />} />
+              <Route path="/auctions/:slug" element={<AuctionDetailPage />} />
+              <Route path="/marketplace" element={<MarketplacePage />} />
+              <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
 
-            {/* Authenticated */}
-            <Route path="/vault" element={<PrivateRoute><VaultPage /></PrivateRoute>} />
-            <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              {/* Authenticated */}
+              <Route path="/vault" element={<PrivateRoute><VaultPage /></PrivateRoute>} />
+              <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
 
-            {/* Admin */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/auctions" element={<AdminAuctions />} />
-            <Route path="/admin/auctions/new" element={<AdminAuctionForm />} />
-            <Route path="/admin/auctions/:id/edit" element={<AdminAuctionForm />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/bids" element={<AdminBids />} />
+              {/* Admin */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/auctions" element={<AdminAuctions />} />
+              <Route path="/admin/auctions/new" element={<AdminAuctionForm />} />
+              <Route path="/admin/auctions/:id/edit" element={<AdminAuctionForm />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/bids" element={<AdminBids />} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </LanguageProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 
