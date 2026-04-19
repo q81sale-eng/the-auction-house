@@ -55,7 +55,9 @@ export const Navbar: React.FC = () => {
                   <p className="text-gold-500 text-xs">{formatCurrency(user?.deposit_balance || 0)} {tr.nav.balance}</p>
                 </div>
                 {user?.is_admin && (
-                  <Link to="/admin" className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.admin}</Link>
+                  <Link to="/admin" className="border border-gold-500/60 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 transition-colors">
+                    {tr.nav.admin}
+                  </Link>
                 )}
                 <button onClick={handleLogout} className="text-obsidian-400 hover:text-white text-sm transition-colors">
                   {tr.nav.signOut}
@@ -87,6 +89,9 @@ export const Navbar: React.FC = () => {
               <>
                 <Link to="/vault" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.vault}</Link>
                 <Link to="/profile" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>Profile</Link>
+                {user?.is_admin && (
+                  <Link to="/admin" className="block text-gold-500 text-sm uppercase tracking-wider py-2 font-medium" onClick={() => setMenuOpen(false)}>{tr.nav.admin}</Link>
+                )}
                 <button onClick={handleLogout} className="block text-obsidian-400 text-sm py-2">{tr.nav.signOut}</button>
               </>
             )}
