@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../../utils/format';
+import { useCurrencyStore, convertFromGBP } from '../../store/currencyStore';
 
 interface ListingCardProps {
   listing: {
@@ -23,6 +24,8 @@ interface ListingCardProps {
 
 export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   const imgSrc = listing.watch.primary_image?.path || '/placeholder-watch.jpg';
+  const { currency } = useCurrencyStore();
+  const fmt = (v: string | number) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
   const conditionColors: Record<string, string> = {
     new: 'text-green-400', excellent: 'text-blue-400', good: 'text-yellow-400', fair: 'text-orange-400',
   };
@@ -57,7 +60,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">Price</p>
-            <p className="text-white text-xl font-semibold">{formatCurrency(parseFloat(listing.price))}</p>
+            <p className="text-white text-xl font-semibold">{fmt(listing.price)}</p>
           </div>
           <p className="text-obsidian-500 text-xs">{listing.seller.name}</p>
         </div>

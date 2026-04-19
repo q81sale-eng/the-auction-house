@@ -13,7 +13,7 @@ const SOURCES = ['auction', 'marketplace', 'external', 'gift', 'other'] as const
 
 const blankForm = {
   brand: '', model: '', reference_number: '', serial_number: '', year: '', condition: 'excellent',
-  purchase_price: '', purchased_at: '', purchase_source: 'external', notes: '',
+  purchase_price: '', current_value: '', purchased_at: '', purchase_source: 'external', notes: '',
 };
 
 type Preview = { file: File; previewUrl: string };
@@ -25,7 +25,7 @@ export const VaultPage: React.FC = () => {
   const t = tr.vault;
   const { user } = useAuthStore();
   const { currency } = useCurrencyStore();
-  const fmtCurrency = (amount: number | null | undefined) =>
+  const fmt = (amount: number | null | undefined) =>
     formatCurrency(amount != null ? convertFromGBP(amount, currency) : amount, currency);
 
   const [showAdd, setShowAdd] = useState(false);
@@ -45,25 +45,20 @@ export const VaultPage: React.FC = () => {
   const addMutation = useMutation({
     mutationFn: addToVault,
     onSuccess: (row) => {
-      // 1. Immediately refresh the list so the watch appears NOW
       queryClient.invalidateQueries({ queryKey: ['vault'] });
-      // 2. Close the form right away — don't wait for images
       setShowAdd(false);
       setForm(blankForm);
       setAddError('');
-      // 3. Upload images in the background (fire and forget)
       const files = previews.map(p => p.file);
       previews.forEach(p => URL.revokeObjectURL(p.previewUrl));
       setPreviews([]);
       if (files.length > 0 && user?.id) {
         uploadImagesForWatch(row.id, user.id as string, files)
           .then(() => queryClient.invalidateQueries({ queryKey: ['vault'] }))
-          .catch(err => console.warn('[Vault] image upload failed (watch saved ok):', err.message));
+          .catch(err => console.warn('[Vault] image upload error:', err.message));
       }
     },
-    onError: (err: Error) => {
-      setAddError(err.message);
-    },
+    onError: (err: Error) => setAddError(err.message),
   });
 
   const updateMutation = useMutation({
@@ -78,34 +73,23 @@ export const VaultPage: React.FC = () => {
 
   const handleFilesPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    const newPreviews = files.map(file => ({ file, previewUrl: URL.createObjectURL(file) }));
-    setPreviews(p => [...p, ...newPreviews]);
+    setPreviews(p => [...p, ...files.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removePreview = (idx: number) => {
-    setPreviews(p => {
-      URL.revokeObjectURL(p[idx].previewUrl);
-      return p.filter((_, i) => i !== idx);
-    });
+    setPreviews(p => { URL.revokeObjectURL(p[idx].previewUrl); return p.filter((_, i) => i !== idx); });
   };
 
   const closeAdd = () => {
     previews.forEach(p => URL.revokeObjectURL(p.previewUrl));
-    setShowAdd(false);
-    setForm(blankForm);
-    setPreviews([]);
-    setAddError('');
-  };
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    addMutation.mutate(form);
+    setShowAdd(false); setForm(blankForm); setPreviews([]); setAddError('');
   };
 
   const summary = data?.summary;
   const watches = data?.watches || [];
-  const plColor = (val: number) => val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-obsidian-400';
+  const plColor = (val: number | null) =>
+    val == null ? 'text-obsidian-400' : val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-obsidian-400';
 
   return (
     <Layout>
@@ -122,15 +106,15 @@ export const VaultPage: React.FC = () => {
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
             {([
-              { label: t.summary.totalWatches, value: summary.total_watches, fmt: false },
-              { label: t.summary.totalCost, value: summary.total_cost, fmt: true },
-              { label: t.summary.portfolioValue, value: summary.total_value, fmt: true },
-              { label: t.summary.totalPL, value: summary.total_profit_loss, fmt: true, highlight: true },
-            ] as { label: string; value: number; fmt: boolean; highlight?: boolean }[]).map(({ label, value, fmt, highlight }) => (
+              { label: t.summary.totalWatches, value: summary.total_watches, isCurrency: false },
+              { label: t.summary.totalCost,    value: summary.total_cost,    isCurrency: true },
+              { label: t.summary.portfolioValue, value: summary.total_value, isCurrency: true },
+              { label: t.summary.totalPL, value: summary.total_profit_loss,  isCurrency: true, highlight: true },
+            ] as { label: string; value: number; isCurrency: boolean; highlight?: boolean }[]).map(({ label, value, isCurrency, highlight }) => (
               <div key={label} className="bg-obsidian-900 border border-obsidian-800 p-5">
                 <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">{label}</p>
                 <p className={`text-2xl font-semibold ${highlight ? plColor(value) : 'text-white'}`}>
-                  {fmt ? fmtCurrency(value) : value}
+                  {isCurrency ? fmt(value) : value}
                 </p>
                 {highlight && summary.total_cost > 0 && (
                   <p className={`text-xs mt-1 ${plColor(value)}`}>
@@ -142,14 +126,14 @@ export const VaultPage: React.FC = () => {
           </div>
         )}
 
-        {/* Add Form */}
+        {/* Add Watch Form */}
         {showAdd && (
           <div className="bg-obsidian-900 border border-gold-500/30 p-6 mb-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif text-xl text-white">{t.addTitle}</h2>
               <button onClick={closeAdd} className="text-obsidian-400 hover:text-white">✕</button>
             </div>
-            <form onSubmit={handleAdd}>
+            <form onSubmit={e => { e.preventDefault(); addMutation.mutate(form); }}>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.brand} *</label>
@@ -178,8 +162,12 @@ export const VaultPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchasePrice} *</label>
-                  <input type="number" className="input-field" value={form.purchase_price} onChange={e => setForm(p => ({ ...p, purchase_price: e.target.value }))} required />
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchasePrice} (£) *</label>
+                  <input type="number" className="input-field" value={form.purchase_price} onChange={e => setForm(p => ({ ...p, purchase_price: e.target.value }))} required min={0} />
+                </div>
+                <div>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.currentValue} (£)</label>
+                  <input type="number" className="input-field" value={form.current_value} onChange={e => setForm(p => ({ ...p, current_value: e.target.value }))} min={0} placeholder="Optional" />
                 </div>
                 <div>
                   <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchaseDate} *</label>
@@ -206,7 +194,7 @@ export const VaultPage: React.FC = () => {
                       <img src={p.previewUrl} alt="" className="w-20 h-20 object-cover border border-obsidian-700" />
                       {idx === 0 && (
                         <span className="absolute bottom-0 left-0 right-0 bg-gold-500/90 text-obsidian-950 text-[9px] uppercase tracking-wider text-center py-0.5">
-                          {t.detail.cover}
+                          Cover
                         </span>
                       )}
                       <button type="button" onClick={() => removePreview(idx)}
@@ -222,26 +210,22 @@ export const VaultPage: React.FC = () => {
                     </svg>
                     <span className="text-obsidian-500 text-[10px]">Add</span>
                   </button>
-                  <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp"
-                    className="hidden" onChange={handleFilesPick} />
+                  <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFilesPick} />
                 </div>
                 <p className="text-obsidian-600 text-xs mt-2">JPEG, PNG or WebP · max 5 MB each · first image becomes cover</p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-center">
                 <button type="submit" disabled={addMutation.isPending} className="btn-gold">
                   {addMutation.isPending ? t.actions.adding : t.actions.add}
                 </button>
                 <button type="button" onClick={closeAdd} className="btn-outline">{t.actions.cancel}</button>
               </div>
-              {addError && (
-                <p className="text-red-400 text-sm mt-3">{addError}</p>
-              )}
+              {addError && <p className="text-red-400 text-sm mt-3">{addError}</p>}
             </form>
           </div>
         )}
 
-        {/* Vault query error */}
         {vaultError && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-4 mb-6">
             Failed to load vault: {(vaultError as Error).message}
@@ -251,9 +235,7 @@ export const VaultPage: React.FC = () => {
         {/* Watch List */}
         {isLoading ? (
           <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="card p-6 animate-pulse h-24" />
-            ))}
+            {[1, 2, 3].map(i => <div key={i} className="card p-6 animate-pulse h-24" />)}
           </div>
         ) : watches.length > 0 ? (
           <div className="space-y-4">
@@ -267,7 +249,7 @@ export const VaultPage: React.FC = () => {
                         onChange={e => setEditForm(p => ({ ...p, purchase_price: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.summary.portfolioValue}</label>
+                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.currentValue}</label>
                       <input type="number" className="input-field text-sm" defaultValue={vw.current_value || ''}
                         onChange={e => setEditForm(p => ({ ...p, current_value: e.target.value }))} />
                     </div>
@@ -277,54 +259,50 @@ export const VaultPage: React.FC = () => {
                         onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
                     </div>
                     <div className="flex items-end gap-2">
-                      <button onClick={() => updateMutation.mutate({ id: vw.id, data: editForm })}
-                        className="btn-gold py-2 px-4 text-xs">{t.actions.save}</button>
+                      <button onClick={() => updateMutation.mutate({ id: vw.id, data: editForm })} className="btn-gold py-2 px-4 text-xs">{t.actions.save}</button>
                       <button onClick={() => setEditId(null)} className="btn-outline py-2 px-4 text-xs">{t.actions.cancel}</button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between flex-wrap gap-4">
-                    {/* Clickable info area → detail page */}
                     <Link to={`/vault/${vw.id}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                      {vw.watch?.image_url ? (
-                        <img src={vw.watch.image_url} alt={vw.watch.model}
-                          className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
+                      {vw.image_url ? (
+                        <img src={vw.image_url} alt={vw.model} className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
                       ) : (
                         <div className="w-14 h-14 bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-500 text-xs font-bold shrink-0">
-                          {vw.watch?.brand?.slice(0, 2).toUpperCase()}
+                          {vw.brand?.slice(0, 2).toUpperCase()}
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-gold-500 text-xs uppercase tracking-wider">{vw.watch?.brand}</p>
-                        <p className="text-white font-serif text-lg truncate">{vw.watch?.model}</p>
+                        <p className="text-gold-500 text-xs uppercase tracking-wider">{vw.brand}</p>
+                        <p className="text-white font-serif text-lg truncate">{vw.model}</p>
                         <p className="text-obsidian-400 text-xs">
-                          {vw.watch?.reference_number && `Ref. ${vw.watch.reference_number} · `}
-                          {vw.watch?.year && `${vw.watch.year} · `}
+                          {vw.reference_number && `Ref. ${vw.reference_number} · `}
+                          {vw.year && `${vw.year} · `}
                           {t.table.purchased} {formatDate(vw.purchased_at)}
                         </p>
                       </div>
                     </Link>
 
-                    {/* Stats + actions */}
                     <div className="flex items-center gap-6 flex-wrap shrink-0">
                       <div className="text-right">
                         <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.cost}</p>
-                        <p className="text-white font-semibold">{fmtCurrency(vw.purchase_price)}</p>
+                        <p className="text-white font-semibold">{fmt(vw.purchase_price)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.value}</p>
-                        <p className="text-white font-semibold">{vw.current_value ? fmtCurrency(vw.current_value) : '—'}</p>
+                        <p className="text-white font-semibold">{vw.current_value ? fmt(vw.current_value) : '—'}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.pl}</p>
-                        <p className={`font-semibold ${plColor(vw.profit_loss || 0)}`}>
-                          {vw.profit_loss ? `${vw.profit_loss > 0 ? '+' : ''}${fmtCurrency(vw.profit_loss)}` : '—'}
+                        <p className={`font-semibold ${plColor(vw.profit_loss)}`}>
+                          {vw.profit_loss != null ? `${vw.profit_loss > 0 ? '+' : ''}${fmt(vw.profit_loss)}` : '—'}
                         </p>
-                        {vw.profit_loss_percent ? (
+                        {vw.profit_loss_percent != null && (
                           <p className={`text-xs ${plColor(vw.profit_loss_percent)}`}>
                             {vw.profit_loss_percent > 0 ? '+' : ''}{Number(vw.profit_loss_percent).toFixed(1)}%
                           </p>
-                        ) : null}
+                        )}
                       </div>
                       <div className="flex gap-3">
                         <button onClick={() => navigate(`/vault/${vw.id}`)}
@@ -332,7 +310,9 @@ export const VaultPage: React.FC = () => {
                           {t.detail.editWatch}
                         </button>
                         <button onClick={() => { if (window.confirm(t.removeConfirm)) removeMutation.mutate(vw.id); }}
-                          className="text-obsidian-400 hover:text-red-400 text-xs uppercase tracking-wider transition-colors">{t.actions.remove}</button>
+                          className="text-obsidian-400 hover:text-red-400 text-xs uppercase tracking-wider transition-colors">
+                          {t.actions.remove}
+                        </button>
                       </div>
                     </div>
                   </div>

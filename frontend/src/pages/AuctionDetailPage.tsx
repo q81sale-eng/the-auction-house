@@ -6,11 +6,14 @@ import { CountdownTimer } from '../components/ui/CountdownTimer';
 import { Layout } from '../components/layout/Layout';
 import { useAuthStore } from '../store/authStore';
 import { formatCurrency, formatDateTime } from '../utils/format';
+import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
 
 export const AuctionDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
+  const { currency } = useCurrencyStore();
+  const fmt = (v: number | string) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
   const [bidAmount, setBidAmount] = useState('');
   const [activeImage, setActiveImage] = useState(0);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -138,12 +141,12 @@ export const AuctionDetailPage: React.FC = () => {
                   <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">
                     {auction.current_bid ? 'Current Bid' : 'Starting Price'}
                   </p>
-                  <p className="text-white text-3xl font-semibold">{formatCurrency(parseFloat(currentPrice))}</p>
+                  <p className="text-white text-3xl font-semibold">{fmt(currentPrice)}</p>
                 </div>
                 {auction.buy_now_price && (
                   <div>
                     <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">Buy Now</p>
-                    <p className="text-gold-500 text-3xl font-semibold">{formatCurrency(parseFloat(auction.buy_now_price))}</p>
+                    <p className="text-gold-500 text-3xl font-semibold">{fmt(auction.buy_now_price)}</p>
                   </div>
                 )}
               </div>
@@ -172,7 +175,7 @@ export const AuctionDetailPage: React.FC = () => {
                         type="number" step="1" min={minBid}
                         value={bidAmount}
                         onChange={e => setBidAmount(e.target.value)}
-                        placeholder={`Min ${formatCurrency(minBid)}`}
+                        placeholder={`Min ${fmt(minBid)}`}
                         className="input-field pl-8"
                       />
                     </div>
@@ -183,7 +186,7 @@ export const AuctionDetailPage: React.FC = () => {
                   {auction.buy_now_price && (
                     <button onClick={() => buyNowMutation.mutate()} disabled={buyNowMutation.isPending}
                       className="btn-outline w-full">
-                      {buyNowMutation.isPending ? 'Processing...' : `Buy Now — ${formatCurrency(parseFloat(auction.buy_now_price))}`}
+                      {buyNowMutation.isPending ? 'Processing...' : `Buy Now — ${fmt(auction.buy_now_price)}`}
                     </button>
                   )}
                 </>
@@ -194,7 +197,7 @@ export const AuctionDetailPage: React.FC = () => {
               )}
 
               {auction.deposit_required > 0 && (
-                <p className="text-obsidian-500 text-xs mt-3">* Deposit of {formatCurrency(auction.deposit_required)} required to bid</p>
+                <p className="text-obsidian-500 text-xs mt-3">* Deposit of {fmt(auction.deposit_required)} required to bid</p>
               )}
             </div>
 
@@ -234,7 +237,7 @@ export const AuctionDetailPage: React.FC = () => {
                       <span className="text-sm">{bid.user?.name || 'Anonymous'}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold">{formatCurrency(parseFloat(bid.amount))}</p>
+                      <p className="text-sm font-semibold">{fmt(bid.amount)}</p>
                       <p className="text-obsidian-500 text-xs">{formatDateTime(bid.created_at)}</p>
                     </div>
                   </div>

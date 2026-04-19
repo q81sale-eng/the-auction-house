@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { CountdownTimer } from '../ui/CountdownTimer';
 import { formatCurrency } from '../../utils/format';
+import { useCurrencyStore, convertFromGBP } from '../../store/currencyStore';
 
 interface AuctionCardProps {
   auction: {
@@ -27,6 +28,8 @@ interface AuctionCardProps {
 export const AuctionCard: React.FC<AuctionCardProps> = ({ auction }) => {
   const currentPrice = auction.current_bid || auction.starting_price;
   const imgSrc = auction.watch.primary_image?.path || '/placeholder-watch.jpg';
+  const { currency } = useCurrencyStore();
+  const fmt = (v: string | number) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
 
   return (
     <Link to={`/auctions/${auction.slug}`} className="card group block hover:border-gold-500/50 transition-colors">
@@ -63,7 +66,7 @@ export const AuctionCard: React.FC<AuctionCardProps> = ({ auction }) => {
             <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">
               {auction.current_bid ? 'Current Bid' : 'Starting Price'}
             </p>
-            <p className="text-white text-xl font-semibold">{formatCurrency(parseFloat(currentPrice))}</p>
+            <p className="text-white text-xl font-semibold">{fmt(currentPrice)}</p>
           </div>
           {auction.bids_count !== undefined && (
             <p className="text-obsidian-400 text-xs">{auction.bids_count} bid{auction.bids_count !== 1 ? 's' : ''}</p>

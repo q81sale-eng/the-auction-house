@@ -145,6 +145,7 @@ const en = {
       year: 'Year',
       condition: 'Condition',
       purchasePrice: 'Purchase Price (£)',
+      currentValue: 'Current Market Value (£)',
       purchaseDate: 'Purchase Date',
       source: 'Source',
       notes: 'Notes',

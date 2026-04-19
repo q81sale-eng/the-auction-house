@@ -26,8 +26,9 @@ function shapeWatch(row: any) {
       condition: row.condition,
       image_url: row.image_url ?? null,
     },
+    // Normalize images: support both 'url' and 'image_url' column names
     images: (row.vault_watch_images ?? [])
-      .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .sort((a: any, b: any) => (a.sort_order ?? a.id ?? 0) - (b.sort_order ?? b.id ?? 0))
       .map((img: any) => ({ ...img, url: img.url ?? img.image_url })),
     cover_image_url: row.image_url ?? null,
     profit_loss: row.current_value != null
@@ -39,7 +40,7 @@ function shapeWatch(row: any) {
   };
 }
 
-// ─── Vault list — no join, just vault_watches ─────────────────────────────────
+// ─── Vault list ───────────────────────────────────────────────────────────────
 
 export const getVault = async () => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
@@ -76,15 +77,16 @@ export const getVaultWatch = async (id: number) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error('Not authenticated');
 
-  const withImages = await supabase
+  const { data, error } = await supabase
     .from('vault_watches')
     .select('*, vault_watch_images(*)')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
 
-  if (!withImages.error) return shapeWatch(withImages.data);
+  if (!error && data) return shapeWatch(data);
 
+  // Fallback without join
   const plain = await supabase
     .from('vault_watches')
     .select('*')
@@ -95,7 +97,7 @@ export const getVaultWatch = async (id: number) => {
   return shapeWatch(plain.data);
 };
 
-// ─── Mutations ────────────────────────────────────────────────────────────────
+// ─── Add watch ────────────────────────────────────────────────────────────────
 
 export const addToVault = async (data: Record<string, any>) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
@@ -108,7 +110,7 @@ export const addToVault = async (data: Record<string, any>) => {
     serial_number:    data.serial_number || null,
     year:             data.year !== '' && data.year != null ? Number(data.year) : null,
     condition:        data.condition || 'excellent',
-    purchase_price:   data.purchase_price !== '' ? Number(data.purchase_price) : null,
+    purchase_price:   data.purchase_price !== '' && data.purchase_price != null ? Number(data.purchase_price) : null,
     current_value:    data.current_value !== '' && data.current_value != null ? Number(data.current_value) : null,
     purchased_at:     data.purchased_at || null,
     purchase_source:  data.purchase_source || 'external',
@@ -126,56 +128,60 @@ export const addToVault = async (data: Record<string, any>) => {
   return row;
 };
 
-// Uploads images in the background — does not block form close
+// ─── Image upload — fires in background, does not block form ──────────────────
+
 export const uploadImagesForWatch = async (watchId: number, userId: string, files: File[]): Promise<void> => {
   if (!files.length) return;
 
-  const { data: existing } = await supabase
-    .from('vault_watch_images').select('id').eq('watch_id', watchId);
-  const offset = existing?.length ?? 0;
-
   for (let i = 0; i < files.length; i++) {
-    const imageUrl = await uploadVaultImage(files[i], userId);
+    let imageUrl: string;
+    try {
+      imageUrl = await uploadVaultImage(files[i], userId);
+    } catch (e: any) {
+      console.error(`[Vault] storage upload failed for file ${i}:`, e.message);
+      continue;
+    }
 
-    // First image always saved as cover on vault_watches for guaranteed display
-    if (i === 0 && offset === 0) {
+    // Always save first image URL to vault_watches for list display
+    if (i === 0) {
       await supabase.from('vault_watches').update({ image_url: imageUrl }).eq('id', watchId);
     }
 
-    // Insert into vault_watch_images using image_url column
+    // Insert into vault_watch_images — try with just the required columns
     const { error } = await supabase.from('vault_watch_images').insert({
       watch_id: watchId,
       image_url: imageUrl,
-      sort_order: offset + i,
     });
 
     if (error) {
-      console.error('[Vault] vault_watch_images insert error:', error.message);
-      // Still save first image to vault_watches so it shows in list
-      if (i === 0) {
-        await supabase.from('vault_watches').update({ image_url: imageUrl }).eq('id', watchId);
-      }
+      console.error(`[Vault] vault_watch_images insert failed for file ${i}:`, error.code, error.message);
     }
   }
 };
 
 export const addImagesToWatch = uploadImagesForWatch;
 
+// ─── Image management ─────────────────────────────────────────────────────────
+
 export const setCoverImage = async (watchId: number, imageId: number, imageUrl: string) => {
+  // Update cover flags (silently ignore if column doesn't exist)
   await supabase.from('vault_watch_images').update({ is_cover: false }).eq('watch_id', watchId);
-  const { error } = await supabase.from('vault_watch_images').update({ is_cover: true }).eq('id', imageId);
+  await supabase.from('vault_watch_images').update({ is_cover: true }).eq('id', imageId);
+  const { error } = await supabase.from('vault_watches').update({ image_url: imageUrl }).eq('id', watchId);
   if (error) throw new Error(error.message);
-  await supabase.from('vault_watches').update({ image_url: imageUrl }).eq('id', watchId);
 };
 
 export const removeWatchImage = async (imageId: number, watchId: number) => {
   const { data: img } = await supabase.from('vault_watch_images').select('*').eq('id', imageId).maybeSingle();
   const { error } = await supabase.from('vault_watch_images').delete().eq('id', imageId);
   if (error) throw new Error(error.message);
-  if (img?.is_cover || img?.sort_order === 0) {
+
+  // If deleted image was the cover, promote the next one
+  const wasFirst = img?.is_cover || img?.sort_order === 0;
+  if (wasFirst) {
     const { data: next } = await supabase
       .from('vault_watch_images').select('*').eq('watch_id', watchId)
-      .order('sort_order').limit(1).maybeSingle();
+      .order('id').limit(1).maybeSingle();
     if (next) {
       await supabase.from('vault_watch_images').update({ is_cover: true }).eq('id', next.id);
       await supabase.from('vault_watches').update({ image_url: next.url ?? next.image_url }).eq('id', watchId);
@@ -184,6 +190,8 @@ export const removeWatchImage = async (imageId: number, watchId: number) => {
     }
   }
 };
+
+// ─── Update / Delete ──────────────────────────────────────────────────────────
 
 export const updateVaultWatch = async (id: number, data: Record<string, any>) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();

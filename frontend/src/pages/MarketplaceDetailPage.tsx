@@ -4,10 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { getListing } from '../api/marketplace';
 import { Layout } from '../components/layout/Layout';
 import { formatCurrency } from '../utils/format';
+import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
 
 export const MarketplaceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [activeImage, setActiveImage] = useState(0);
+  const { currency } = useCurrencyStore();
+  const fmt = (v: string | number) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ['listing', slug],
@@ -117,7 +120,7 @@ export const MarketplaceDetailPage: React.FC = () => {
               <div className="flex items-end justify-between mb-6">
                 <div>
                   <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">Asking Price</p>
-                  <p className="text-white text-4xl font-semibold">{formatCurrency(parseFloat(listing.price))}</p>
+                  <p className="text-white text-4xl font-semibold">{fmt(listing.price)}</p>
                   {listing.negotiable && (
                     <p className="text-gold-500 text-xs mt-1 uppercase tracking-wider">Price Negotiable</p>
                   )}

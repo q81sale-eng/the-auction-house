@@ -147,6 +147,7 @@ const ar: Strings = {
       year: 'السنة',
       condition: 'الحالة',
       purchasePrice: 'سعر الشراء (£)',
+      currentValue: 'القيمة السوقية الحالية (£)',
       purchaseDate: 'تاريخ الشراء',
       source: 'المصدر',
       notes: 'ملاحظات',
