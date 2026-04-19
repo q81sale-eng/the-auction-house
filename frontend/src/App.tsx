@@ -9,6 +9,7 @@ import { AuctionDetailPage } from './pages/AuctionDetailPage';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { MarketplaceDetailPage } from './pages/MarketplaceDetailPage';
 import { VaultPage } from './pages/VaultPage';
+import { VaultDetailPage } from './pages/VaultDetailPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -136,6 +137,7 @@ function App() {
 
             {/* Authenticated */}
             <Route path="/vault" element={<PrivateRoute><VaultPage /></PrivateRoute>} />
+            <Route path="/vault/:id" element={<PrivateRoute><VaultDetailPage /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
 
             {/* Admin */}
