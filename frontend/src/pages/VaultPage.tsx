@@ -146,7 +146,7 @@ export const VaultPage: React.FC = () => {
                 <button type="button" onClick={() => setShowAdd(false)} className="btn-outline">Cancel</button>
               </div>
               {addMutation.isError && (
-                <p className="text-red-400 text-sm mt-3">{(addMutation.error as any)?.response?.data?.message || 'Failed to add watch'}</p>
+                <p className="text-red-400 text-sm mt-3">{(addMutation.error as Error)?.message || 'Failed to add watch'}</p>
               )}
             </form>
           </div>

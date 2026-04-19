@@ -89,17 +89,17 @@ export const MarketplacePage: React.FC = () => {
               </div>
             ))}
           </div>
-        ) : data?.data?.length > 0 ? (
+        ) : (data?.data?.length ?? 0) > 0 ? (
           <>
-            <p className="text-obsidian-400 text-sm mb-6">{data.total} listing{data.total !== 1 ? 's' : ''}</p>
+            <p className="text-obsidian-400 text-sm mb-6">{data!.total} listing{data!.total !== 1 ? 's' : ''}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {data.data.map((listing: any) => (
+              {data!.data.map((listing: any) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
-            {data.last_page > 1 && (
+            {(data!.last_page ?? 0) > 1 && (
               <div className="flex justify-center gap-2 mt-10">
-                {Array.from({ length: data.last_page }, (_, i) => i + 1).map(p => (
+                {Array.from({ length: data!.last_page }, (_, i) => i + 1).map(p => (
                   <button key={p} onClick={() => setPage(p)}
                     className={`w-10 h-10 text-sm transition-colors ${p === page ? 'bg-gold-500 text-obsidian-950' : 'border border-obsidian-700 text-obsidian-400 hover:border-gold-500'}`}>
                     {p}

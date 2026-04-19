@@ -12,17 +12,14 @@ export interface AuthUser {
 }
 
 async function checkAdminByEmail(email: string): Promise<boolean> {
-  try {
-    const { data } = await supabase
-      .from('admins')
-      .select('role')
-      .eq('email', email)
-      .eq('role', 'admin')
-      .maybeSingle();
-    return !!data;
-  } catch {
-    return false;
-  }
+  const { data, error } = await supabase
+    .from('admins')
+    .select('role')
+    .eq('email', email)
+    .eq('role', 'admin')
+    .maybeSingle();
+  if (error) console.warn('[Auth] admins table check failed:', error.message, '— email:', email);
+  return !!data;
 }
 
 export async function fetchProfile(userId: string, email?: string): Promise<{ is_admin: boolean; deposit_balance: number }> {
