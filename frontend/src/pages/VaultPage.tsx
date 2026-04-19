@@ -33,11 +33,12 @@ export const VaultPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data, isLoading } = useQuery({ queryKey: ['vault'], queryFn: getVault });
+  const { data, isLoading, error: vaultError } = useQuery({ queryKey: ['vault'], queryFn: getVault });
 
   const addMutation = useMutation({
     mutationFn: addToVault,
     onSuccess: async (row) => {
+      // Upload images after the watch row is confirmed saved
       if (previews.length > 0 && user?.id) {
         setUploading(true);
         try {
@@ -47,7 +48,8 @@ export const VaultPage: React.FC = () => {
         }
         setUploading(false);
       }
-      queryClient.invalidateQueries({ queryKey: ['vault'] });
+      // Invalidate and close only after everything is done
+      await queryClient.invalidateQueries({ queryKey: ['vault'] });
       setShowAdd(false);
       setForm(blankForm);
       setPreviews([]);
@@ -89,7 +91,7 @@ export const VaultPage: React.FC = () => {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    addMutation.mutate({ ...form, year: form.year ? parseInt(form.year) : undefined });
+    addMutation.mutate(form); // vault.ts addToVault now handles all numeric coercions
   };
 
   const summary = data?.summary;
@@ -231,6 +233,13 @@ export const VaultPage: React.FC = () => {
                 <p className="text-red-400 text-sm mt-3">{(addMutation.error as Error)?.message || 'Failed to add watch'}</p>
               )}
             </form>
+          </div>
+        )}
+
+        {/* Vault query error */}
+        {vaultError && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-4 mb-6">
+            Failed to load vault: {(vaultError as Error).message}
           </div>
         )}
 

@@ -17,7 +17,7 @@ export const uploadVaultImage = async (file: File, userId: string): Promise<stri
 
 function resolveImages(row: any) {
   const images: any[] = (row.vault_watch_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
-  const cover = images.find(i => i.is_cover) ?? images[0] ?? null;
+  const cover = images.find((i: any) => i.is_cover) ?? images[0] ?? null;
   const coverUrl: string | null = cover?.url ?? row.image_url ?? null;
   return { images, coverUrl };
 }
@@ -51,14 +51,30 @@ export const getVault = async () => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  // Try with joined images first; fall back to plain select if vault_watch_images doesn't exist yet
+  let rows: any[] | null = null;
+
+  const withImages = await supabase
     .from('vault_watches')
     .select('*, vault_watch_images(*)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
 
-  const watches = (data ?? []).map(shapeWatch);
+  if (!withImages.error) {
+    rows = withImages.data;
+  } else {
+    // vault_watch_images table not yet created — query without it
+    console.warn('[Vault] vault_watch_images join failed, falling back:', withImages.error.message);
+    const plain = await supabase
+      .from('vault_watches')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (plain.error) throw new Error(plain.error.message);
+    rows = plain.data;
+  }
+
+  const watches = (rows ?? []).map(shapeWatch);
   const totalCost = watches.reduce((s, w) => s + Number(w.purchase_price ?? 0), 0);
   const totalValue = watches.reduce((s, w) => s + Number(w.current_value ?? w.purchase_price ?? 0), 0);
   const totalPL = totalValue - totalCost;
@@ -79,14 +95,24 @@ export const getVaultWatch = async (id: number) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  // Try with images; fall back to plain if table not present
+  const withImages = await supabase
     .from('vault_watches')
     .select('*, vault_watch_images(*)')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
-  if (error) throw new Error(error.message);
-  return shapeWatch(data);
+
+  if (!withImages.error) return shapeWatch(withImages.data);
+
+  const plain = await supabase
+    .from('vault_watches')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+  if (plain.error) throw new Error(plain.error.message);
+  return shapeWatch(plain.data);
 };
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
@@ -95,16 +121,37 @@ export const addToVault = async (data: Record<string, any>) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error('Not authenticated');
 
+  // Coerce numeric fields so Supabase doesn't reject string values
+  const payload: Record<string, any> = {
+    ...data,
+    user_id: user.id,
+    purchase_price: data.purchase_price !== '' ? Number(data.purchase_price) : null,
+    current_value: data.current_value !== '' && data.current_value != null ? Number(data.current_value) : null,
+    year: data.year !== '' && data.year != null ? Number(data.year) : null,
+  };
+
   const { data: row, error } = await supabase
     .from('vault_watches')
-    .insert({ ...data, user_id: user.id })
+    .insert(payload)
     .select()
     .single();
   if (error) throw new Error(error.message);
   return row;
 };
 
-export const addImagesToWatch = async (watchId: number, userId: string, files: File[]) => {
+export const addImagesToWatch = async (watchId: number, userId: string, files: File[]): Promise<void> => {
+  // Check if vault_watch_images table exists by doing a zero-row probe
+  const probe = await supabase.from('vault_watch_images').select('id').eq('watch_id', -1).limit(1);
+  if (probe.error) {
+    // Table doesn't exist yet — upload first image directly to image_url on vault_watches
+    console.warn('[Vault] vault_watch_images table not found, saving to image_url directly');
+    if (files.length > 0) {
+      const url = await uploadVaultImage(files[0], userId);
+      await supabase.from('vault_watches').update({ image_url: url }).eq('id', watchId);
+    }
+    return;
+  }
+
   const { data: existing } = await supabase
     .from('vault_watch_images')
     .select('id')
@@ -125,7 +172,6 @@ export const addImagesToWatch = async (watchId: number, userId: string, files: F
   if (coverRecord) {
     await supabase.from('vault_watches').update({ image_url: coverRecord.url }).eq('id', watchId);
   }
-  return records;
 };
 
 export const setCoverImage = async (watchId: number, imageId: number, imageUrl: string) => {
@@ -157,9 +203,17 @@ export const updateVaultWatch = async (id: number, data: Record<string, any>) =>
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error('Not authenticated');
 
+  const payload: Record<string, any> = {
+    ...data,
+    updated_at: new Date().toISOString(),
+    purchase_price: data.purchase_price !== '' && data.purchase_price != null ? Number(data.purchase_price) : undefined,
+    current_value: data.current_value !== '' && data.current_value != null ? Number(data.current_value) : null,
+    year: data.year !== '' && data.year != null ? Number(data.year) : null,
+  };
+
   const { data: row, error } = await supabase
     .from('vault_watches')
-    .update({ ...data, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('id', id)
     .eq('user_id', user.id)
     .select()
