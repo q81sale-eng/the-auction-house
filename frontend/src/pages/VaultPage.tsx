@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVault, addToVault, addImagesToWatch, updateVaultWatch, removeFromVault } from '../api/vault';
+import { getVault, addToVault, uploadImagesForWatch, updateVaultWatch, removeFromVault } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
@@ -29,31 +29,36 @@ export const VaultPage: React.FC = () => {
   const [form, setForm] = useState(blankForm);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [previews, setPreviews] = useState<Preview[]>([]);
-  const [uploadError, setUploadError] = useState('');
-  const [uploading, setUploading] = useState(false);
+  const [addError, setAddError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data, isLoading, error: vaultError } = useQuery({ queryKey: ['vault'], queryFn: getVault });
+  const { data, isLoading, error: vaultError } = useQuery({
+    queryKey: ['vault'],
+    queryFn: getVault,
+    retry: 1,
+  });
 
   const addMutation = useMutation({
     mutationFn: addToVault,
-    onSuccess: async (row) => {
-      // Upload images after the watch row is confirmed saved
-      if (previews.length > 0 && user?.id) {
-        setUploading(true);
-        try {
-          await addImagesToWatch(row.id, user.id as string, previews.map(p => p.file));
-        } catch (e: any) {
-          setUploadError(e.message);
-        }
-        setUploading(false);
-      }
-      // Invalidate and close only after everything is done
-      await queryClient.invalidateQueries({ queryKey: ['vault'] });
+    onSuccess: (row) => {
+      // 1. Immediately refresh the list so the watch appears NOW
+      queryClient.invalidateQueries({ queryKey: ['vault'] });
+      // 2. Close the form right away — don't wait for images
       setShowAdd(false);
       setForm(blankForm);
+      setAddError('');
+      // 3. Upload images in the background (fire and forget)
+      const files = previews.map(p => p.file);
+      previews.forEach(p => URL.revokeObjectURL(p.previewUrl));
       setPreviews([]);
-      setUploadError('');
+      if (files.length > 0 && user?.id) {
+        uploadImagesForWatch(row.id, user.id as string, files)
+          .then(() => queryClient.invalidateQueries({ queryKey: ['vault'] }))
+          .catch(err => console.warn('[Vault] image upload failed (watch saved ok):', err.message));
+      }
+    },
+    onError: (err: Error) => {
+      setAddError(err.message);
     },
   });
 
@@ -86,7 +91,7 @@ export const VaultPage: React.FC = () => {
     setShowAdd(false);
     setForm(blankForm);
     setPreviews([]);
-    setUploadError('');
+    setAddError('');
   };
 
   const handleAdd = (e: React.FormEvent) => {
@@ -220,17 +225,16 @@ export const VaultPage: React.FC = () => {
                     className="hidden" onChange={handleFilesPick} />
                 </div>
                 <p className="text-obsidian-600 text-xs mt-2">JPEG, PNG or WebP · max 5 MB each · first image becomes cover</p>
-                {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
               </div>
 
               <div className="flex gap-3">
-                <button type="submit" disabled={addMutation.isPending || uploading} className="btn-gold">
-                  {uploading ? t.detail.uploading : addMutation.isPending ? t.actions.adding : t.actions.add}
+                <button type="submit" disabled={addMutation.isPending} className="btn-gold">
+                  {addMutation.isPending ? t.actions.adding : t.actions.add}
                 </button>
                 <button type="button" onClick={closeAdd} className="btn-outline">{t.actions.cancel}</button>
               </div>
-              {addMutation.isError && (
-                <p className="text-red-400 text-sm mt-3">{(addMutation.error as Error)?.message || 'Failed to add watch'}</p>
+              {addError && (
+                <p className="text-red-400 text-sm mt-3">{addError}</p>
               )}
             </form>
           </div>
