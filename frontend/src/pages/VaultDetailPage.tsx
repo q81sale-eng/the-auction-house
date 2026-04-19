@@ -25,7 +25,6 @@ export const VaultDetailPage: React.FC = () => {
   const [activeImg, setActiveImg] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
-  const [addingImages, setAddingImages] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +55,6 @@ export const VaultDetailPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault-watch', watchId] });
       queryClient.invalidateQueries({ queryKey: ['vault'] });
-      setAddingImages(false);
       setUploadError('');
     },
     onError: (e: Error) => setUploadError(e.message),
