@@ -150,9 +150,7 @@ const ar: Strings = {
       purchaseDate: 'تاريخ الشراء',
       source: 'المصدر',
       notes: 'ملاحظات',
-      visibility: 'الخصوصية',
-      private: 'خاص',
-      public: 'عام',
+      serialNumber: 'الرقم التسلسلي',
     },
     conditions: { new: 'جديد', excellent: 'ممتاز', good: 'جيد', fair: 'مقبول' },
     sources: {

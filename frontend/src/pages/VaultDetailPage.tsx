@@ -9,6 +9,7 @@ import { Layout } from '../components/layout/Layout';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
 import { useAuthStore } from '../store/authStore';
+import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
 
 const CONDITIONS = ['new', 'excellent', 'good', 'fair'] as const;
 const SOURCES = ['auction', 'marketplace', 'external', 'gift', 'other'] as const;
@@ -21,6 +22,9 @@ export const VaultDetailPage: React.FC = () => {
   const t = tr.vault;
   const td = t.detail;
   const { user } = useAuthStore();
+  const { currency } = useCurrencyStore();
+  const fmtCurrency = (amount: number | null | undefined) =>
+    formatCurrency(amount != null ? convertFromGBP(amount, currency) : amount, currency);
 
   const [activeImg, setActiveImg] = useState(0);
   const [editing, setEditing] = useState(false);
@@ -86,6 +90,7 @@ export const VaultDetailPage: React.FC = () => {
       brand: watch.brand,
       model: watch.model,
       reference_number: watch.reference_number ?? '',
+      serial_number: watch.serial_number ?? '',
       year: watch.year ?? '',
       condition: watch.condition,
       purchase_price: watch.purchase_price,
@@ -93,7 +98,6 @@ export const VaultDetailPage: React.FC = () => {
       purchased_at: watch.purchased_at,
       purchase_source: watch.purchase_source,
       notes: watch.notes ?? '',
-      is_private: watch.is_private,
     });
     setEditing(true);
   };
@@ -180,6 +184,7 @@ export const VaultDetailPage: React.FC = () => {
                   { key: 'brand', label: t.fields.brand, required: true },
                   { key: 'model', label: t.fields.model, required: true },
                   { key: 'reference_number', label: t.fields.reference },
+                  { key: 'serial_number', label: t.fields.serialNumber },
                   { key: 'year', label: t.fields.year, type: 'number' },
                 ].map(({ key, label, required, type }) => (
                   <div key={key}>
@@ -216,14 +221,6 @@ export const VaultDetailPage: React.FC = () => {
                   <select className="input-field" value={editForm.purchase_source ?? 'external'}
                     onChange={e => setEditForm(p => ({ ...p, purchase_source: e.target.value }))}>
                     {SOURCES.map(s => <option key={s} value={s}>{t.sources[s]}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.visibility}</label>
-                  <select className="input-field" value={editForm.is_private ? 'true' : 'false'}
-                    onChange={e => setEditForm(p => ({ ...p, is_private: e.target.value === 'true' }))}>
-                    <option value="true">{t.fields.private}</option>
-                    <option value="false">{t.fields.public}</option>
                   </select>
                 </div>
               </div>
@@ -337,16 +334,16 @@ export const VaultDetailPage: React.FC = () => {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-obsidian-900 border border-obsidian-800 p-4">
                 <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.cost}</p>
-                <p className="text-white font-semibold">{formatCurrency(watch.purchase_price)}</p>
+                <p className="text-white font-semibold">{fmtCurrency(watch.purchase_price)}</p>
               </div>
               <div className="bg-obsidian-900 border border-obsidian-800 p-4">
                 <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.value}</p>
-                <p className="text-white font-semibold">{watch.current_value ? formatCurrency(watch.current_value) : '—'}</p>
+                <p className="text-white font-semibold">{watch.current_value ? fmtCurrency(watch.current_value) : '—'}</p>
               </div>
               <div className="bg-obsidian-900 border border-obsidian-800 p-4">
                 <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.pl}</p>
                 <p className={`font-semibold ${plColor(watch.profit_loss)}`}>
-                  {watch.profit_loss != null ? `${watch.profit_loss > 0 ? '+' : ''}${formatCurrency(watch.profit_loss)}` : '—'}
+                  {watch.profit_loss != null ? `${watch.profit_loss > 0 ? '+' : ''}${fmtCurrency(watch.profit_loss)}` : '—'}
                 </p>
                 {watch.profit_loss_percent != null && (
                   <p className={`text-xs ${plColor(watch.profit_loss_percent)}`}>
@@ -361,11 +358,11 @@ export const VaultDetailPage: React.FC = () => {
               {field(t.fields.brand, watch.brand)}
               {field(t.fields.model, watch.model)}
               {field(t.fields.reference, watch.reference_number)}
+              {watch.serial_number && field(t.fields.serialNumber, watch.serial_number)}
               {field(t.fields.year, watch.year)}
               {field(t.fields.condition, watch.condition ? t.conditions[watch.condition as keyof typeof t.conditions] : null)}
               {field(t.fields.purchaseDate, watch.purchased_at ? formatDate(watch.purchased_at) : null)}
               {field(t.fields.source, watch.purchase_source ? t.sources[watch.purchase_source as keyof typeof t.sources] : null)}
-              {field(t.fields.visibility, watch.is_private ? t.fields.private : t.fields.public)}
               {watch.notes && field(t.fields.notes, watch.notes)}
             </div>
 

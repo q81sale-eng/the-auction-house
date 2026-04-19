@@ -148,9 +148,7 @@ const en = {
       purchaseDate: 'Purchase Date',
       source: 'Source',
       notes: 'Notes',
-      visibility: 'Visibility',
-      private: 'Private',
-      public: 'Public',
+      serialNumber: 'Serial Number',
     },
     conditions: { new: 'New', excellent: 'Excellent', good: 'Good', fair: 'Fair' },
     sources: {

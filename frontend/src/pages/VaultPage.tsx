@@ -6,13 +6,14 @@ import { Layout } from '../components/layout/Layout';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
 import { useAuthStore } from '../store/authStore';
+import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
 
 const CONDITIONS = ['new', 'excellent', 'good', 'fair'] as const;
 const SOURCES = ['auction', 'marketplace', 'external', 'gift', 'other'] as const;
 
 const blankForm = {
-  brand: '', model: '', reference_number: '', year: '', condition: 'excellent',
-  purchase_price: '', purchased_at: '', purchase_source: 'external', notes: '', is_private: true,
+  brand: '', model: '', reference_number: '', serial_number: '', year: '', condition: 'excellent',
+  purchase_price: '', purchased_at: '', purchase_source: 'external', notes: '',
 };
 
 type Preview = { file: File; previewUrl: string };
@@ -23,6 +24,9 @@ export const VaultPage: React.FC = () => {
   const { tr } = useT();
   const t = tr.vault;
   const { user } = useAuthStore();
+  const { currency } = useCurrencyStore();
+  const fmtCurrency = (amount: number | null | undefined) =>
+    formatCurrency(amount != null ? convertFromGBP(amount, currency) : amount, currency);
 
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
@@ -96,7 +100,7 @@ export const VaultPage: React.FC = () => {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    addMutation.mutate(form); // vault.ts addToVault now handles all numeric coercions
+    addMutation.mutate(form);
   };
 
   const summary = data?.summary;
@@ -126,7 +130,7 @@ export const VaultPage: React.FC = () => {
               <div key={label} className="bg-obsidian-900 border border-obsidian-800 p-5">
                 <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">{label}</p>
                 <p className={`text-2xl font-semibold ${highlight ? plColor(value) : 'text-white'}`}>
-                  {fmt ? formatCurrency(value) : value}
+                  {fmt ? fmtCurrency(value) : value}
                 </p>
                 {highlight && summary.total_cost > 0 && (
                   <p className={`text-xs mt-1 ${plColor(value)}`}>
@@ -160,6 +164,10 @@ export const VaultPage: React.FC = () => {
                   <input className="input-field" value={form.reference_number} onChange={e => setForm(p => ({ ...p, reference_number: e.target.value }))} />
                 </div>
                 <div>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.serialNumber}</label>
+                  <input className="input-field" value={form.serial_number} onChange={e => setForm(p => ({ ...p, serial_number: e.target.value }))} />
+                </div>
+                <div>
                   <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.year}</label>
                   <input type="number" className="input-field" value={form.year} onChange={e => setForm(p => ({ ...p, year: e.target.value }))} min={1900} max={new Date().getFullYear()} />
                 </div>
@@ -181,13 +189,6 @@ export const VaultPage: React.FC = () => {
                   <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.source}</label>
                   <select className="input-field" value={form.purchase_source} onChange={e => setForm(p => ({ ...p, purchase_source: e.target.value }))}>
                     {SOURCES.map(s => <option key={s} value={s}>{t.sources[s]}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.visibility}</label>
-                  <select className="input-field" value={form.is_private ? 'true' : 'false'} onChange={e => setForm(p => ({ ...p, is_private: e.target.value === 'true' }))}>
-                    <option value="true">{t.fields.private}</option>
-                    <option value="false">{t.fields.public}</option>
                   </select>
                 </div>
               </div>
@@ -308,16 +309,16 @@ export const VaultPage: React.FC = () => {
                     <div className="flex items-center gap-6 flex-wrap shrink-0">
                       <div className="text-right">
                         <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.cost}</p>
-                        <p className="text-white font-semibold">{formatCurrency(vw.purchase_price)}</p>
+                        <p className="text-white font-semibold">{fmtCurrency(vw.purchase_price)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.value}</p>
-                        <p className="text-white font-semibold">{vw.current_value ? formatCurrency(vw.current_value) : '—'}</p>
+                        <p className="text-white font-semibold">{vw.current_value ? fmtCurrency(vw.current_value) : '—'}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.pl}</p>
                         <p className={`font-semibold ${plColor(vw.profit_loss || 0)}`}>
-                          {vw.profit_loss ? `${vw.profit_loss > 0 ? '+' : ''}${formatCurrency(vw.profit_loss)}` : '—'}
+                          {vw.profit_loss ? `${vw.profit_loss > 0 ? '+' : ''}${fmtCurrency(vw.profit_loss)}` : '—'}
                         </p>
                         {vw.profit_loss_percent ? (
                           <p className={`text-xs ${plColor(vw.profit_loss_percent)}`}>

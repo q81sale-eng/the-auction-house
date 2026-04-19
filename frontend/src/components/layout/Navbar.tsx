@@ -4,12 +4,14 @@ import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
 import { formatCurrency } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
+import { useCurrencyStore, CURRENCIES, convertFromGBP, type Currency } from '../../store/currencyStore';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const { tr, lang, toggle } = useT();
+  const { currency, setCurrency } = useCurrencyStore();
 
   const handleLogout = async () => {
     try { await logout(); } catch {}
@@ -37,6 +39,16 @@ export const Navbar: React.FC = () => {
 
           {/* Auth area */}
           <div className="hidden md:flex items-center gap-4">
+            {/* Currency selector */}
+            <select
+              value={currency}
+              onChange={e => setCurrency(e.target.value as Currency)}
+              className="bg-obsidian-950 border border-obsidian-700 hover:border-gold-500/50 text-obsidian-300 text-xs uppercase tracking-wider px-2 py-1 cursor-pointer transition-colors focus:outline-none focus:border-gold-500/50"
+              aria-label="Select currency"
+            >
+              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+
             {/* Language toggle */}
             <button
               onClick={toggle}
@@ -52,7 +64,7 @@ export const Navbar: React.FC = () => {
               <>
                 <div className="text-right">
                   <p className="text-white text-sm font-medium">{user?.name}</p>
-                  <p className="text-gold-500 text-xs">{formatCurrency(user?.deposit_balance || 0)} {tr.nav.balance}</p>
+                  <p className="text-gold-500 text-xs">{formatCurrency(convertFromGBP(user?.deposit_balance || 0, currency), currency)} {tr.nav.balance}</p>
                 </div>
                 <Link to="/profile" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.profile}</Link>
                 {user?.is_admin && (
@@ -96,8 +108,8 @@ export const Navbar: React.FC = () => {
                 <button onClick={handleLogout} className="block text-obsidian-400 text-sm py-2">{tr.nav.signOut}</button>
               </>
             )}
-            {/* Language toggle — above auth links */}
-            <div className="pt-2 border-t border-obsidian-800">
+            {/* Language + Currency — mobile */}
+            <div className="pt-2 border-t border-obsidian-800 flex items-center gap-3">
               <button
                 onClick={toggle}
                 className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
@@ -107,6 +119,14 @@ export const Navbar: React.FC = () => {
                 <span className="w-px h-4 bg-obsidian-700" />
                 <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'ar' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>AR</span>
               </button>
+              <select
+                value={currency}
+                onChange={e => setCurrency(e.target.value as Currency)}
+                className="bg-obsidian-950 border border-obsidian-700 text-obsidian-300 text-xs uppercase tracking-wider px-2 py-1.5 cursor-pointer focus:outline-none"
+                aria-label="Select currency"
+              >
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
 
             {!isAuthenticated && (
