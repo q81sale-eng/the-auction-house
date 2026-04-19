@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVault, addToVault, uploadImagesForWatch, updateVaultWatch, removeFromVault } from '../api/vault';
+import { getVault, addToVault, uploadImagesForWatch, updateVaultWatch } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
-import { formatCurrency, formatDate } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
 import { useAuthStore } from '../store/authStore';
 import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
@@ -19,7 +19,6 @@ const blankForm = {
 type Preview = { file: File; previewUrl: string };
 
 export const VaultPage: React.FC = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { tr } = useT();
   const t = tr.vault;
@@ -64,11 +63,6 @@ export const VaultPage: React.FC = () => {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateVaultWatch(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vault'] }); setEditId(null); },
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: removeFromVault,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vault'] }),
   });
 
   const handleFilesPick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,10 +258,10 @@ export const VaultPage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <Link to={`/vault/${vw.id}`} className="flex flex-col sm:flex-row sm:items-center gap-4 hover:opacity-90 transition-opacity">
 
-                    {/* ── Image + identity ─────────────────────────── */}
-                    <Link to={`/vault/${vw.id}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                    {/* Image + identity */}
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       {vw.image_url ? (
                         <img src={vw.image_url} alt={vw.model} className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
                       ) : (
@@ -278,26 +272,19 @@ export const VaultPage: React.FC = () => {
                       <div className="min-w-0">
                         <p className="text-gold-500 text-xs uppercase tracking-wider mb-0.5">{vw.brand}</p>
                         <p className="text-white font-serif text-lg leading-snug truncate">{vw.model}</p>
-                        <div className="mt-1.5 space-y-0.5">
+                        <div className="flex items-center gap-3 mt-1">
                           {vw.reference_number && (
                             <p className="text-obsidian-400 text-xs">Ref. {vw.reference_number}</p>
                           )}
                           {vw.year && (
-                            <p className="text-obsidian-400 text-xs">
-                              <span className="text-obsidian-600 uppercase tracking-wider mr-1.5">Year</span>{vw.year}
-                            </p>
-                          )}
-                          {vw.purchased_at && (
-                            <p className="text-obsidian-400 text-xs">
-                              <span className="text-obsidian-600 uppercase tracking-wider mr-1.5">{t.table.purchased}</span>{formatDate(vw.purchased_at)}
-                            </p>
+                            <p className="text-obsidian-400 text-xs">{vw.year}</p>
                           )}
                         </div>
                       </div>
-                    </Link>
+                    </div>
 
-                    {/* ── Financials ───────────────────────────────── */}
-                    <div className="flex items-center gap-5 shrink-0 pl-1 sm:pl-0 border-t border-obsidian-800 sm:border-0 pt-3 sm:pt-0">
+                    {/* Financials */}
+                    <div className="flex items-center gap-5 shrink-0 border-t border-obsidian-800 sm:border-0 pt-3 sm:pt-0">
                       <div className="text-right min-w-[64px]">
                         <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.cost}</p>
                         <p className="text-white text-sm font-semibold">{fmt(vw.purchase_price)}</p>
@@ -317,21 +304,12 @@ export const VaultPage: React.FC = () => {
                           </p>
                         )}
                       </div>
-
-                      {/* ── Actions ──────────────────────────────── */}
-                      <div className="flex flex-col gap-2 pl-4 border-l border-obsidian-800">
-                        <button onClick={() => navigate(`/vault/${vw.id}`)}
-                          className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors whitespace-nowrap">
-                          {t.detail.editWatch}
-                        </button>
-                        <button onClick={() => { if (window.confirm(t.removeConfirm)) removeMutation.mutate(vw.id); }}
-                          className="text-obsidian-400 hover:text-red-400 text-xs uppercase tracking-wider transition-colors">
-                          {t.actions.remove}
-                        </button>
-                      </div>
+                      <svg className="w-4 h-4 text-obsidian-600 shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
 
-                  </div>
+                  </Link>
                 )}
               </div>
             ))}
