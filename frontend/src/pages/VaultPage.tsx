@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVault, addToVault, updateVaultWatch, removeFromVault } from '../api/vault';
+import { getVault, addToVault, updateVaultWatch, removeFromVault, uploadVaultImage } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
+import { useAuthStore } from '../store/authStore';
 
 const CONDITIONS = ['new', 'excellent', 'good', 'fair'] as const;
 const SOURCES = ['auction', 'marketplace', 'external', 'gift', 'other'] as const;
@@ -14,17 +15,41 @@ export const VaultPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { tr } = useT();
   const t = tr.vault;
+  const { user } = useAuthStore();
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(blankForm);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({ queryKey: ['vault'], queryFn: getVault });
 
   const addMutation = useMutation({
     mutationFn: addToVault,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vault'] }); setShowAdd(false); setForm(blankForm); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vault'] });
+      setShowAdd(false);
+      setForm(blankForm);
+      setImageFile(null);
+      setImagePreview(null);
+    },
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateVaultWatch(id, data),
@@ -36,9 +61,21 @@ export const VaultPage: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vault'] }),
   });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    addMutation.mutate({ ...form, year: form.year ? parseInt(form.year) : undefined });
+    let image_url: string | undefined;
+    if (imageFile && user?.id) {
+      setUploading(true);
+      try {
+        image_url = await uploadVaultImage(imageFile, user.id as string);
+      } catch (err: any) {
+        setUploading(false);
+        addMutation.reset();
+        return;
+      }
+      setUploading(false);
+    }
+    addMutation.mutate({ ...form, year: form.year ? parseInt(form.year) : undefined, image_url: image_url ?? null });
   };
 
   const handleEditSave = (id: number) => {
@@ -90,7 +127,7 @@ export const VaultPage: React.FC = () => {
           <div className="bg-obsidian-900 border border-gold-500/30 p-6 mb-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif text-xl text-white">{t.addTitle}</h2>
-              <button onClick={() => setShowAdd(false)} className="text-obsidian-400 hover:text-white">✕</button>
+              <button onClick={() => { setShowAdd(false); clearImage(); }} className="text-obsidian-400 hover:text-white">✕</button>
             </div>
             <form onSubmit={handleAdd}>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
@@ -142,11 +179,44 @@ export const VaultPage: React.FC = () => {
                 <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.notes}</label>
                 <textarea className="input-field h-20 resize-none" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
+
+              {/* Image upload */}
+              <div className="mb-6">
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Watch Photo</label>
+                <div className="flex items-start gap-4">
+                  {imagePreview ? (
+                    <div className="relative w-24 h-24 shrink-0">
+                      <img src={imagePreview} alt="preview" className="w-24 h-24 object-cover border border-obsidian-700" />
+                      <button type="button" onClick={clearImage}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-obsidian-900 border border-obsidian-700 text-obsidian-400 hover:text-red-400 text-xs flex items-center justify-center">✕</button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-24 h-24 border border-dashed border-obsidian-700 hover:border-gold-500/50 flex flex-col items-center justify-center cursor-pointer transition-colors shrink-0">
+                      <svg className="w-6 h-6 text-obsidian-600 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-obsidian-500 text-xs">Upload</span>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+                      className="hidden" onChange={handleImageChange} />
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">
+                      {imageFile ? 'Change photo' : 'Choose photo'}
+                    </button>
+                    <p className="text-obsidian-600 text-xs mt-1">JPEG, PNG or WebP · max 5 MB</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex gap-3">
-                <button type="submit" disabled={addMutation.isPending} className="btn-gold">
-                  {addMutation.isPending ? t.actions.adding : t.actions.add}
+                <button type="submit" disabled={addMutation.isPending || uploading} className="btn-gold">
+                  {uploading ? 'Uploading...' : addMutation.isPending ? t.actions.adding : t.actions.add}
                 </button>
-                <button type="button" onClick={() => setShowAdd(false)} className="btn-outline">{t.actions.cancel}</button>
+                <button type="button" onClick={() => { setShowAdd(false); clearImage(); }} className="btn-outline">{t.actions.cancel}</button>
               </div>
               {addMutation.isError && (
                 <p className="text-red-400 text-sm mt-3">{(addMutation.error as Error)?.message || 'Failed to add watch'}</p>
@@ -191,9 +261,14 @@ export const VaultPage: React.FC = () => {
                 ) : (
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-500 text-xs font-bold">
-                        {vw.watch?.brand?.slice(0, 2).toUpperCase()}
-                      </div>
+                      {vw.watch?.image_url ? (
+                        <img src={vw.watch.image_url} alt={vw.watch.model}
+                          className="w-12 h-12 object-cover border border-obsidian-700 shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-500 text-xs font-bold shrink-0">
+                          {vw.watch?.brand?.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
                       <div>
                         <p className="text-gold-500 text-xs uppercase tracking-wider">{vw.watch?.brand}</p>
                         <p className="text-white font-serif text-lg">{vw.watch?.model}</p>

@@ -1,5 +1,16 @@
 import { supabase } from '../lib/supabase';
 
+export const uploadVaultImage = async (file: File, userId: string): Promise<string> => {
+  const ext = file.name.split('.').pop();
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('vault-watches')
+    .upload(path, file, { cacheControl: '3600', upsert: false });
+  if (error) throw new Error(`Image upload failed: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from('vault-watches').getPublicUrl(path);
+  return publicUrl;
+};
+
 function shapeWatch(row: any) {
   return {
     ...row,
@@ -9,6 +20,7 @@ function shapeWatch(row: any) {
       reference_number: row.reference_number,
       year: row.year,
       condition: row.condition,
+      image_url: row.image_url ?? null,
     },
     profit_loss: row.current_value != null
       ? Number(row.current_value) - Number(row.purchase_price)
