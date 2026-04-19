@@ -9,21 +9,37 @@ type GalleryImage = {
 type WatchGalleryProps = {
   images: GalleryImage[];
   title?: string;
+  selectedIndex?: number;
+  onSelect?: (index: number) => void;
+  showThumbs?: boolean;
 };
 
-export default function WatchGallery({ images, title }: WatchGalleryProps) {
+export default function WatchGallery({
+  images,
+  title,
+  selectedIndex: controlledIndex,
+  onSelect,
+  showThumbs = true,
+}: WatchGalleryProps) {
   const safeImages = useMemo(
     () => images.filter((img) => !!img?.url),
     [images]
   );
 
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const isControlled = controlledIndex !== undefined;
+  const [internalIndex, setInternalIndex] = useState(0);
+  const selectedIndex = isControlled ? controlledIndex : internalIndex;
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
+  const setSelectedIndex = (i: number) => {
+    if (isControlled) onSelect?.(i);
+    else setInternalIndex(i);
+  };
+
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [safeImages.length]);
+    if (!isControlled) setInternalIndex(0);
+  }, [safeImages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!safeImages.length) {
     return (
@@ -46,15 +62,11 @@ export default function WatchGallery({ images, title }: WatchGalleryProps) {
   const current = safeImages[selectedIndex];
 
   const goPrev = () => {
-    setSelectedIndex((prev) =>
-      prev === 0 ? safeImages.length - 1 : prev - 1
-    );
+    setSelectedIndex(selectedIndex === 0 ? safeImages.length - 1 : selectedIndex - 1);
   };
 
   const goNext = () => {
-    setSelectedIndex((prev) =>
-      prev === safeImages.length - 1 ? 0 : prev + 1
-    );
+    setSelectedIndex(selectedIndex === safeImages.length - 1 ? 0 : selectedIndex + 1);
   };
 
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -134,7 +146,7 @@ export default function WatchGallery({ images, title }: WatchGalleryProps) {
         )}
       </div>
 
-      {safeImages.length > 1 && (
+      {showThumbs && safeImages.length > 1 && (
         <div
           style={{
             display: "flex",

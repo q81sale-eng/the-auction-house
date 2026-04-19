@@ -27,6 +27,7 @@ export const VaultDetailPage: React.FC = () => {
   const fmtCurrency = (amount: number | null | undefined) =>
     formatCurrency(amount != null ? convertFromGBP(amount, currency) : amount, currency);
 
+  const [activeImg, setActiveImg] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [uploadError, setUploadError] = useState('');
@@ -240,34 +241,46 @@ export const VaultDetailPage: React.FC = () => {
             <WatchGallery
               images={displayImages.map((img: any) => ({ id: img.id, url: img.url }))}
               title={watch.model}
+              selectedIndex={activeImg}
+              onSelect={setActiveImg}
+              showThumbs={false}
             />
 
-            {/* Photo management strip */}
+            {/* Single thumbnail row: click to select + management controls + add button */}
             <div className="flex gap-2 flex-wrap mt-4">
-              {displayImages.filter((img: any) => img.id !== -1).map((img: any) => (
-                <div key={img.id} className="relative group w-16 h-16">
-                  <img src={img.url} alt="" className="w-full h-full object-cover border border-obsidian-700" />
-                  <div className="absolute inset-0 bg-obsidian-950/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
-                    {!img.is_cover && (
-                      <button
-                        type="button"
-                        onClick={() => setCoverMutation.mutate({ imageId: img.id, url: img.url })}
-                        className="text-gold-500 text-[10px] uppercase tracking-wider leading-tight text-center px-1 hover:text-gold-400">
-                        {td.setCover}
+              {displayImages.map((img: any, idx: number) => (
+                <div key={img.id} className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setActiveImg(idx)}
+                    style={{
+                      width: 64, height: 64, padding: 0,
+                      border: activeImg === idx ? '2px solid #d4af37' : '1px solid #444',
+                      background: '#111', cursor: 'pointer',
+                      boxShadow: activeImg === idx ? '0 0 0 1px rgba(212,175,55,0.35)' : 'none',
+                    }}
+                  >
+                    <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </button>
+                  {img.id !== -1 && (
+                    <div className="absolute inset-0 bg-obsidian-950/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none group-hover:pointer-events-auto">
+                      {!img.is_cover && (
+                        <button type="button"
+                          onClick={() => setCoverMutation.mutate({ imageId: img.id, url: img.url })}
+                          className="text-gold-500 text-[10px] uppercase tracking-wider px-1 hover:text-gold-400">
+                          {td.setCover}
+                        </button>
+                      )}
+                      <button type="button"
+                        onClick={() => { if (window.confirm(td.deletePhoto + '?')) removeImageMutation.mutate(img.id); }}
+                        className="text-red-400 text-[10px] uppercase tracking-wider hover:text-red-300">
+                        {td.deletePhoto}
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => { if (window.confirm(td.deletePhoto + '?')) removeImageMutation.mutate(img.id); }}
-                      className="text-red-400 text-[10px] uppercase tracking-wider hover:text-red-300">
-                      {td.deletePhoto}
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
+              <button type="button" onClick={() => fileInputRef.current?.click()}
                 disabled={addImagesMutation.isPending}
                 className="w-16 h-16 border border-dashed border-obsidian-700 hover:border-gold-500/50 flex flex-col items-center justify-center transition-colors">
                 {addImagesMutation.isPending ? (
