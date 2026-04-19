@@ -264,7 +264,9 @@ export const VaultPage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+
+                    {/* ── Image + identity ─────────────────────────── */}
                     <Link to={`/vault/${vw.id}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                       {vw.image_url ? (
                         <img src={vw.image_url} alt={vw.model} className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
@@ -274,39 +276,52 @@ export const VaultPage: React.FC = () => {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-gold-500 text-xs uppercase tracking-wider">{vw.brand}</p>
-                        <p className="text-white font-serif text-lg truncate">{vw.model}</p>
-                        <p className="text-obsidian-400 text-xs">
-                          {vw.reference_number && `Ref. ${vw.reference_number} · `}
-                          {vw.year && `${vw.year} · `}
-                          {t.table.purchased} {formatDate(vw.purchased_at)}
-                        </p>
+                        <p className="text-gold-500 text-xs uppercase tracking-wider mb-0.5">{vw.brand}</p>
+                        <p className="text-white font-serif text-lg leading-snug truncate">{vw.model}</p>
+                        <div className="mt-1.5 space-y-0.5">
+                          {vw.reference_number && (
+                            <p className="text-obsidian-400 text-xs">Ref. {vw.reference_number}</p>
+                          )}
+                          {vw.year && (
+                            <p className="text-obsidian-400 text-xs">
+                              <span className="text-obsidian-600 uppercase tracking-wider mr-1.5">Year</span>{vw.year}
+                            </p>
+                          )}
+                          {vw.purchased_at && (
+                            <p className="text-obsidian-400 text-xs">
+                              <span className="text-obsidian-600 uppercase tracking-wider mr-1.5">{t.table.purchased}</span>{formatDate(vw.purchased_at)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </Link>
 
-                    <div className="flex items-center gap-6 flex-wrap shrink-0">
-                      <div className="text-right">
-                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.cost}</p>
-                        <p className="text-white font-semibold">{fmt(vw.purchase_price)}</p>
+                    {/* ── Financials ───────────────────────────────── */}
+                    <div className="flex items-center gap-5 shrink-0 pl-1 sm:pl-0 border-t border-obsidian-800 sm:border-0 pt-3 sm:pt-0">
+                      <div className="text-right min-w-[64px]">
+                        <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.cost}</p>
+                        <p className="text-white text-sm font-semibold">{fmt(vw.purchase_price)}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.value}</p>
-                        <p className="text-white font-semibold">{vw.current_value ? fmt(vw.current_value) : '—'}</p>
+                      <div className="text-right min-w-[64px]">
+                        <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.value}</p>
+                        <p className="text-white text-sm font-semibold">{vw.current_value ? fmt(vw.current_value) : '—'}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.pl}</p>
-                        <p className={`font-semibold ${plColor(vw.profit_loss)}`}>
+                      <div className="text-right min-w-[64px]">
+                        <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.pl}</p>
+                        <p className={`text-sm font-semibold ${plColor(vw.profit_loss)}`}>
                           {vw.profit_loss != null ? `${vw.profit_loss > 0 ? '+' : ''}${fmt(vw.profit_loss)}` : '—'}
                         </p>
                         {vw.profit_loss_percent != null && (
-                          <p className={`text-xs ${plColor(vw.profit_loss_percent)}`}>
+                          <p className={`text-[10px] ${plColor(vw.profit_loss_percent)}`}>
                             {vw.profit_loss_percent > 0 ? '+' : ''}{Number(vw.profit_loss_percent).toFixed(1)}%
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-3">
+
+                      {/* ── Actions ──────────────────────────────── */}
+                      <div className="flex flex-col gap-2 pl-4 border-l border-obsidian-800">
                         <button onClick={() => navigate(`/vault/${vw.id}`)}
-                          className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">
+                          className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors whitespace-nowrap">
                           {t.detail.editWatch}
                         </button>
                         <button onClick={() => { if (window.confirm(t.removeConfirm)) removeMutation.mutate(vw.id); }}
@@ -315,6 +330,7 @@ export const VaultPage: React.FC = () => {
                         </button>
                       </div>
                     </div>
+
                   </div>
                 )}
               </div>
