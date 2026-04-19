@@ -1,19 +1,29 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Currency = 'GBP' | 'USD' | 'EUR' | 'KWD' | 'SAR' | 'AED' | 'QAR' | 'BHD' | 'OMR';
+export type Currency = 'GBP' | 'USD' | 'KWD' | 'SAR' | 'AED' | 'QAR' | 'BHD' | 'OMR';
 
-// Approximate rates from GBP base
+// GBP-base exchange rates (approximate)
 const RATES: Record<Currency, number> = {
   GBP: 1,
   USD: 1.27,
-  EUR: 1.17,
   KWD: 0.39,
   SAR: 4.76,
   AED: 4.66,
   QAR: 4.62,
   BHD: 0.48,
   OMR: 0.49,
+};
+
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  GBP: '£',
+  USD: '$',
+  KWD: 'د.ك',
+  SAR: 'ر.س',
+  AED: 'د.إ',
+  QAR: 'ر.ق',
+  BHD: 'BD',
+  OMR: 'OMR',
 };
 
 interface CurrencyState {
@@ -23,7 +33,7 @@ interface CurrencyState {
 
 export const useCurrencyStore = create<CurrencyState>()(
   persist(
-    (set) => ({ currency: 'GBP', setCurrency: (currency) => set({ currency }) }),
+    (set) => ({ currency: 'USD', setCurrency: (currency) => set({ currency }) }),
     { name: 'tah-currency' }
   )
 );
@@ -31,4 +41,4 @@ export const useCurrencyStore = create<CurrencyState>()(
 export const convertFromGBP = (amount: number, to: Currency): number =>
   amount * RATES[to];
 
-export const CURRENCIES: Currency[] = ['GBP', 'USD', 'EUR', 'KWD', 'SAR', 'AED', 'QAR', 'BHD', 'OMR'];
+export const CURRENCIES: Currency[] = ['GBP', 'USD', 'KWD', 'SAR', 'AED', 'QAR', 'BHD', 'OMR'];

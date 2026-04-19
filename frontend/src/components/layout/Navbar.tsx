@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
 import { formatCurrency } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
-import { useCurrencyStore, CURRENCIES, convertFromGBP, type Currency } from '../../store/currencyStore';
+import { useCurrencyStore, CURRENCIES, CURRENCY_SYMBOLS, convertFromGBP, type Currency } from '../../store/currencyStore';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
@@ -46,7 +46,7 @@ export const Navbar: React.FC = () => {
               className="bg-obsidian-950 border border-obsidian-700 hover:border-gold-500/50 text-obsidian-300 text-xs uppercase tracking-wider px-2 py-1 cursor-pointer transition-colors focus:outline-none focus:border-gold-500/50"
               aria-label="Select currency"
             >
-              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {CURRENCIES.map(c => <option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>)}
             </select>
 
             {/* Language toggle */}
@@ -125,7 +125,7 @@ export const Navbar: React.FC = () => {
                 className="bg-obsidian-950 border border-obsidian-700 text-obsidian-300 text-xs uppercase tracking-wider px-2 py-1.5 cursor-pointer focus:outline-none"
                 aria-label="Select currency"
               >
-                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {CURRENCIES.map(c => <option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>)}
               </select>
             </div>
 

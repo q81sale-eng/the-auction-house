@@ -1,13 +1,19 @@
-export const formatCurrency = (amount: number | string | null | undefined, currency = 'GBP') => {
+import { CURRENCY_SYMBOLS, type Currency } from '../store/currencyStore';
+
+const LATIN_FMT = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+export const formatCurrency = (amount: number | string | null | undefined, currency: Currency | string = 'GBP') => {
   if (amount == null) return '—';
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   if (isNaN(num)) return '—';
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
+  const symbol = CURRENCY_SYMBOLS[currency as Currency] ?? currency;
+  const formatted = LATIN_FMT.format(num);
+  // Prefix symbols that attach directly (£ $); Arabic/multi-char symbols get a space
+  const glued = symbol.length === 1 && /[£$€]/.test(symbol);
+  return glued ? `${symbol}${formatted}` : `${symbol} ${formatted}`;
 };
 
 export const formatDate = (date: string | Date) =>
