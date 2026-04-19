@@ -1,5 +1,7 @@
-export const formatCurrency = (amount: number | string, currency = 'GBP') => {
+export const formatCurrency = (amount: number | string | null | undefined, currency = 'GBP') => {
+  if (amount == null) return '—';
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '—';
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency,
