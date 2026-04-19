@@ -3,14 +3,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVault, addToVault, updateVaultWatch, removeFromVault } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
 import { formatCurrency, formatDate } from '../utils/format';
+import { useT } from '../i18n/useLanguage';
 
-const CONDITIONS = ['new', 'excellent', 'good', 'fair'];
-const SOURCES = ['auction', 'marketplace', 'external', 'gift', 'other'];
+const CONDITIONS = ['new', 'excellent', 'good', 'fair'] as const;
+const SOURCES = ['auction', 'marketplace', 'external', 'gift', 'other'] as const;
 
 const blankForm = { brand: '', model: '', reference_number: '', year: '', condition: 'excellent', purchase_price: '', purchased_at: '', purchase_source: 'external', notes: '', is_private: true };
 
 export const VaultPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { tr } = useT();
+  const t = tr.vault;
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(blankForm);
@@ -52,21 +55,21 @@ export const VaultPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <p className="section-subtitle">Portfolio</p>
-            <h1 className="section-title">Watch Vault</h1>
+            <p className="section-subtitle">{t.eyebrow}</p>
+            <h1 className="section-title">{t.title}</h1>
           </div>
-          <button onClick={() => setShowAdd(true)} className="btn-gold">+ Add Watch</button>
+          <button onClick={() => setShowAdd(true)} className="btn-gold">{t.addWatch}</button>
         </div>
 
         {/* Summary Cards */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            {[
-              { label: 'Total Watches', value: summary.total_watches, fmt: false },
-              { label: 'Total Cost', value: summary.total_cost, fmt: true },
-              { label: 'Portfolio Value', value: summary.total_value, fmt: true },
-              { label: 'Total P&L', value: summary.total_profit_loss, fmt: true, highlight: true },
-            ].map(({ label, value, fmt, highlight }) => (
+            {([
+              { label: t.summary.totalWatches, value: summary.total_watches, fmt: false },
+              { label: t.summary.totalCost, value: summary.total_cost, fmt: true },
+              { label: t.summary.portfolioValue, value: summary.total_value, fmt: true },
+              { label: t.summary.totalPL, value: summary.total_profit_loss, fmt: true, highlight: true },
+            ] as { label: string; value: number; fmt: boolean; highlight?: boolean }[]).map(({ label, value, fmt, highlight }) => (
               <div key={label} className="bg-obsidian-900 border border-obsidian-800 p-5">
                 <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">{label}</p>
                 <p className={`text-2xl font-semibold ${highlight ? plColor(value) : 'text-white'}`}>
@@ -86,64 +89,64 @@ export const VaultPage: React.FC = () => {
         {showAdd && (
           <div className="bg-obsidian-900 border border-gold-500/30 p-6 mb-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="font-serif text-xl text-white">Add Watch to Vault</h2>
+              <h2 className="font-serif text-xl text-white">{t.addTitle}</h2>
               <button onClick={() => setShowAdd(false)} className="text-obsidian-400 hover:text-white">✕</button>
             </div>
             <form onSubmit={handleAdd}>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Brand *</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.brand} *</label>
                   <input className="input-field" value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))} required />
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Model *</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.model} *</label>
                   <input className="input-field" value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} required />
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Reference</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.reference}</label>
                   <input className="input-field" value={form.reference_number} onChange={e => setForm(p => ({ ...p, reference_number: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Year</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.year}</label>
                   <input type="number" className="input-field" value={form.year} onChange={e => setForm(p => ({ ...p, year: e.target.value }))} min={1900} max={new Date().getFullYear()} />
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Condition *</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.condition} *</label>
                   <select className="input-field" value={form.condition} onChange={e => setForm(p => ({ ...p, condition: e.target.value }))}>
-                    {CONDITIONS.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                    {CONDITIONS.map(c => <option key={c} value={c}>{t.conditions[c]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Purchase Price (£) *</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchasePrice} *</label>
                   <input type="number" className="input-field" value={form.purchase_price} onChange={e => setForm(p => ({ ...p, purchase_price: e.target.value }))} required />
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Purchase Date *</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchaseDate} *</label>
                   <input type="date" className="input-field" value={form.purchased_at} onChange={e => setForm(p => ({ ...p, purchased_at: e.target.value }))} required />
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Source</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.source}</label>
                   <select className="input-field" value={form.purchase_source} onChange={e => setForm(p => ({ ...p, purchase_source: e.target.value }))}>
-                    {SOURCES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    {SOURCES.map(s => <option key={s} value={s}>{t.sources[s]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Visibility</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.visibility}</label>
                   <select className="input-field" value={form.is_private ? 'true' : 'false'} onChange={e => setForm(p => ({ ...p, is_private: e.target.value === 'true' }))}>
-                    <option value="true">Private</option>
-                    <option value="false">Public</option>
+                    <option value="true">{t.fields.private}</option>
+                    <option value="false">{t.fields.public}</option>
                   </select>
                 </div>
               </div>
               <div className="mb-4">
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Notes</label>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.notes}</label>
                 <textarea className="input-field h-20 resize-none" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
               <div className="flex gap-3">
                 <button type="submit" disabled={addMutation.isPending} className="btn-gold">
-                  {addMutation.isPending ? 'Adding...' : 'Add to Vault'}
+                  {addMutation.isPending ? t.actions.adding : t.actions.add}
                 </button>
-                <button type="button" onClick={() => setShowAdd(false)} className="btn-outline">Cancel</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="btn-outline">{t.actions.cancel}</button>
               </div>
               {addMutation.isError && (
                 <p className="text-red-400 text-sm mt-3">{(addMutation.error as Error)?.message || 'Failed to add watch'}</p>
@@ -166,23 +169,23 @@ export const VaultPage: React.FC = () => {
                 {editId === vw.id ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">Purchase Price</label>
+                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.purchasePrice}</label>
                       <input type="number" className="input-field text-sm" defaultValue={vw.purchase_price}
                         onChange={e => setEditForm(p => ({ ...p, purchase_price: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">Current Value</label>
+                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.summary.portfolioValue}</label>
                       <input type="number" className="input-field text-sm" defaultValue={vw.current_value || ''}
                         onChange={e => setEditForm(p => ({ ...p, current_value: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">Notes</label>
+                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.notes}</label>
                       <input type="text" className="input-field text-sm" defaultValue={vw.notes || ''}
                         onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
                     </div>
                     <div className="flex items-end gap-2">
-                      <button onClick={() => handleEditSave(vw.id)} className="btn-gold py-2 px-4 text-xs">Save</button>
-                      <button onClick={() => setEditId(null)} className="btn-outline py-2 px-4 text-xs">Cancel</button>
+                      <button onClick={() => handleEditSave(vw.id)} className="btn-gold py-2 px-4 text-xs">{t.actions.save}</button>
+                      <button onClick={() => setEditId(null)} className="btn-outline py-2 px-4 text-xs">{t.actions.cancel}</button>
                     </div>
                   </div>
                 ) : (
@@ -197,21 +200,21 @@ export const VaultPage: React.FC = () => {
                         <p className="text-obsidian-400 text-xs">
                           {vw.watch?.reference_number && `Ref. ${vw.watch.reference_number} · `}
                           {vw.watch?.year && `${vw.watch.year} · `}
-                          Purchased {formatDate(vw.purchased_at)}
+                          {t.table.purchased} {formatDate(vw.purchased_at)}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-8 flex-wrap">
                       <div className="text-right">
-                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">Cost</p>
+                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.cost}</p>
                         <p className="text-white font-semibold">{formatCurrency(vw.purchase_price)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">Value</p>
+                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.value}</p>
                         <p className="text-white font-semibold">{vw.current_value ? formatCurrency(vw.current_value) : '—'}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">P&L</p>
+                        <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.table.pl}</p>
                         <p className={`font-semibold ${plColor(vw.profit_loss || 0)}`}>
                           {vw.profit_loss ? `${vw.profit_loss > 0 ? '+' : ''}${formatCurrency(vw.profit_loss)}` : '—'}
                         </p>
@@ -223,9 +226,9 @@ export const VaultPage: React.FC = () => {
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => { setEditId(vw.id); setEditForm({}); }}
-                          className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">Edit</button>
-                        <button onClick={() => { if (window.confirm('Remove from vault?')) removeMutation.mutate(vw.id); }}
-                          className="text-obsidian-400 hover:text-red-400 text-xs uppercase tracking-wider transition-colors">Remove</button>
+                          className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{t.actions.edit}</button>
+                        <button onClick={() => { if (window.confirm(t.removeConfirm)) removeMutation.mutate(vw.id); }}
+                          className="text-obsidian-400 hover:text-red-400 text-xs uppercase tracking-wider transition-colors">{t.actions.remove}</button>
                       </div>
                     </div>
                   </div>
@@ -235,9 +238,9 @@ export const VaultPage: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-20 border border-obsidian-800 bg-obsidian-900">
-            <p className="font-serif text-2xl text-white mb-3">Your vault is empty</p>
-            <p className="text-obsidian-400 text-sm mb-6">Start tracking your watch portfolio</p>
-            <button onClick={() => setShowAdd(true)} className="btn-gold">Add Your First Watch</button>
+            <p className="font-serif text-2xl text-white mb-3">{t.empty}</p>
+            <p className="text-obsidian-400 text-sm mb-6">{t.emptyDesc}</p>
+            <button onClick={() => setShowAdd(true)} className="btn-gold">{t.addFirst}</button>
           </div>
         )}
       </div>

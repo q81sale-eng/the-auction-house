@@ -54,6 +54,7 @@ export const Navbar: React.FC = () => {
                   <p className="text-white text-sm font-medium">{user?.name}</p>
                   <p className="text-gold-500 text-xs">{formatCurrency(user?.deposit_balance || 0)} {tr.nav.balance}</p>
                 </div>
+                <Link to="/profile" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.profile}</Link>
                 {user?.is_admin && (
                   <Link to="/admin" className="border border-gold-500/60 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 transition-colors">
                     {tr.nav.admin}
@@ -88,7 +89,7 @@ export const Navbar: React.FC = () => {
             {isAuthenticated && (
               <>
                 <Link to="/vault" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.vault}</Link>
-                <Link to="/profile" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>Profile</Link>
+                <Link to="/profile" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.profile}</Link>
                 {user?.is_admin && (
                   <Link to="/admin" className="block text-gold-500 text-sm uppercase tracking-wider py-2 font-medium" onClick={() => setMenuOpen(false)}>{tr.nav.admin}</Link>
                 )}
