@@ -6,6 +6,7 @@ import {
   addImagesToWatch, setCoverImage, removeWatchImage,
 } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
+import WatchGallery from '../components/vault/WatchGallery';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
 import { useAuthStore } from '../store/authStore';
@@ -26,7 +27,6 @@ export const VaultDetailPage: React.FC = () => {
   const fmtCurrency = (amount: number | null | undefined) =>
     formatCurrency(amount != null ? convertFromGBP(amount, currency) : amount, currency);
 
-  const [activeImg, setActiveImg] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [uploadError, setUploadError] = useState('');
@@ -74,13 +74,9 @@ export const VaultDetailPage: React.FC = () => {
 
   const removeImageMutation = useMutation({
     mutationFn: (imageId: number) => removeWatchImage(imageId, watchId),
-    onSuccess: (_, imageId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault-watch', watchId] });
       queryClient.invalidateQueries({ queryKey: ['vault'] });
-      if (watch?.images) {
-        const idx = watch.images.findIndex((i: any) => i.id === imageId);
-        setActiveImg(Math.max(0, idx - 1));
-      }
     },
   });
 
@@ -153,7 +149,6 @@ export const VaultDetailPage: React.FC = () => {
     : watch.image_url
       ? [{ id: -1, url: watch.image_url, is_cover: true }]
       : [];
-  const activeImage = displayImages[activeImg] ?? displayImages[0] ?? null;
 
   const field = (label: string, value: React.ReactNode) => (
     <div className="flex justify-between items-start py-3 border-b border-obsidian-800 last:border-0">
@@ -242,77 +237,51 @@ export const VaultDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Left: Gallery */}
           <div>
-            {/* Main image */}
-            <div className="aspect-square bg-obsidian-900 border border-obsidian-800 mb-3 overflow-hidden relative">
-              {activeImage ? (
-                <img src={activeImage.url} alt={watch.model}
-                  className="w-full h-full object-contain" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                  <span className="font-serif text-gold-500 text-6xl">{watch.brand?.slice(0, 2).toUpperCase()}</span>
-                  <span className="text-obsidian-500 text-xs uppercase tracking-wider">{td.noPhotos}</span>
-                </div>
-              )}
-              {activeImage?.is_cover && (
-                <span className="absolute top-3 left-3 bg-gold-500 text-obsidian-950 text-xs uppercase tracking-wider px-2 py-1 font-semibold">
-                  {td.cover}
-                </span>
-              )}
-            </div>
+            <WatchGallery
+              images={displayImages.map((img: any) => ({ id: img.id, url: img.url }))}
+              title={watch.model}
+            />
 
-            {/* Thumbnails */}
-            {displayImages.length > 0 && (
-              <div className="flex gap-2 flex-wrap mb-4">
-                {displayImages.map((img: any, idx: number) => (
-                  <div key={img.id} className="relative group">
-                    <button onClick={() => setActiveImg(idx)}
-                      className={`w-16 h-16 border-2 overflow-hidden transition-colors ${activeImg === idx ? 'border-gold-500' : 'border-obsidian-700 hover:border-obsidian-500'}`}>
-                      <img src={img.url} alt="" className="w-full h-full object-cover" />
-                    </button>
-                    {/* Thumbnail controls — only for real DB images */}
-                    {img.id !== -1 && (
-                      <div className="absolute inset-0 bg-obsidian-950/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
-                        {!img.is_cover && (
-                          <button onClick={() => setCoverMutation.mutate({ imageId: img.id, url: img.url })}
-                            className="text-gold-500 text-[10px] uppercase tracking-wider leading-tight text-center px-1 hover:text-gold-400">
-                            {td.setCover}
-                          </button>
-                        )}
-                        <button onClick={() => { if (window.confirm(td.deletePhoto + '?')) removeImageMutation.mutate(img.id); }}
-                          className="text-red-400 text-[10px] uppercase tracking-wider hover:text-red-300">
-                          {td.deletePhoto}
-                        </button>
-                      </div>
+            {/* Photo management strip */}
+            <div className="flex gap-2 flex-wrap mt-4">
+              {displayImages.filter((img: any) => img.id !== -1).map((img: any) => (
+                <div key={img.id} className="relative group w-16 h-16">
+                  <img src={img.url} alt="" className="w-full h-full object-cover border border-obsidian-700" />
+                  <div className="absolute inset-0 bg-obsidian-950/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                    {!img.is_cover && (
+                      <button
+                        type="button"
+                        onClick={() => setCoverMutation.mutate({ imageId: img.id, url: img.url })}
+                        className="text-gold-500 text-[10px] uppercase tracking-wider leading-tight text-center px-1 hover:text-gold-400">
+                        {td.setCover}
+                      </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => { if (window.confirm(td.deletePhoto + '?')) removeImageMutation.mutate(img.id); }}
+                      className="text-red-400 text-[10px] uppercase tracking-wider hover:text-red-300">
+                      {td.deletePhoto}
+                    </button>
                   </div>
-                ))}
-                {/* Add photos slot */}
-                <button onClick={() => fileInputRef.current?.click()}
-                  disabled={addImagesMutation.isPending}
-                  className="w-16 h-16 border border-dashed border-obsidian-700 hover:border-gold-500/50 flex flex-col items-center justify-center transition-colors">
-                  {addImagesMutation.isPending ? (
-                    <span className="text-obsidian-400 text-[10px]">{td.uploading}</span>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 text-obsidian-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-                      </svg>
-                      <span className="text-obsidian-500 text-[10px] mt-1">{td.addPhotos}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {displayImages.length === 0 && (
-              <button onClick={() => fileInputRef.current?.click()}
-                className="w-full border border-dashed border-obsidian-700 hover:border-gold-500/50 py-4 text-obsidian-400 hover:text-gold-500 text-sm transition-colors flex items-center justify-center gap-2 mb-4">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {td.addPhotos}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={addImagesMutation.isPending}
+                className="w-16 h-16 border border-dashed border-obsidian-700 hover:border-gold-500/50 flex flex-col items-center justify-center transition-colors">
+                {addImagesMutation.isPending ? (
+                  <span className="text-obsidian-400 text-[10px]">{td.uploading}</span>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 text-obsidian-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span className="text-obsidian-500 text-[10px] mt-1">{td.addPhotos}</span>
+                  </>
+                )}
               </button>
-            )}
+            </div>
 
             <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp"
               className="hidden" onChange={handleFilePick} />
