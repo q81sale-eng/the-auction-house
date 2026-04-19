@@ -16,10 +16,11 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }
 
   const navItems = [
-    { path: '/admin',          label: t.dashboard, exact: true },
-    { path: '/admin/auctions', label: t.auctions },
-    { path: '/admin/users',    label: t.users },
-    { path: '/admin/bids',     label: t.bids },
+    { path: '/admin',                      label: t.dashboard, exact: true },
+    { path: '/admin/auctions',             label: t.auctions },
+    { path: '/admin/users',                label: t.users },
+    { path: '/admin/bids',                 label: t.bids },
+    { path: '/admin/valuation-requests',   label: t.valuationRequests },
   ];
 
   const sidebarStyle: React.CSSProperties = {

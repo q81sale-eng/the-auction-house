@@ -5,6 +5,7 @@ import {
   getVaultWatch, updateVaultWatch, removeFromVault,
   addImagesToWatch, setCoverImage, removeWatchImage,
 } from '../api/vault';
+import { requestValuation, getWatchValuationRequest } from '../api/valuations';
 import { Layout } from '../components/layout/Layout';
 import WatchGallery from '../components/vault/WatchGallery';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -22,6 +23,7 @@ export const VaultDetailPage: React.FC = () => {
   const { tr } = useT();
   const t = tr.vault;
   const td = t.detail;
+  const tv = t.valuation;
   const { user } = useAuthStore();
   const { currency } = useCurrencyStore();
   const fmtCurrency = (amount: number | null | undefined) =>
@@ -29,6 +31,8 @@ export const VaultDetailPage: React.FC = () => {
 
   const [activeImg, setActiveImg] = useState(0);
   const [editing, setEditing] = useState(false);
+  const [showValuationModal, setShowValuationModal] = useState(false);
+  const [valuationMessage, setValuationMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +82,28 @@ export const VaultDetailPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault-watch', watchId] });
       queryClient.invalidateQueries({ queryKey: ['vault'] });
+    },
+  });
+
+  const { data: valuationRequest, refetch: refetchValuation } = useQuery({
+    queryKey: ['valuation-request', watchId],
+    queryFn: () => getWatchValuationRequest(watchId),
+    enabled: !!watchId,
+  });
+
+  const valuationMutation = useMutation({
+    mutationFn: () => requestValuation(watchId),
+    onSuccess: () => {
+      setShowValuationModal(false);
+      setValuationMessage({ type: 'success', text: tv.requestSent });
+      refetchValuation();
+    },
+    onError: (e: Error) => {
+      setShowValuationModal(false);
+      setValuationMessage({
+        type: 'error',
+        text: e.message === 'duplicate' ? tv.alreadyPending : tv.requestError,
+      });
     },
   });
 
@@ -348,9 +374,48 @@ export const VaultDetailPage: React.FC = () => {
               {watch.notes && field(t.fields.notes, watch.notes)}
             </div>
 
+            {/* Valuation status */}
+            {valuationRequest && (
+              <div className="bg-obsidian-900 border border-obsidian-800 p-4">
+                <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-3">{tv.statusLabel}</p>
+                <div className="flex items-center gap-3 mb-2">
+                  <ValuationBadge status={valuationRequest.status} labels={tv} />
+                  <span className="text-obsidian-500 text-xs">
+                    {new Date(valuationRequest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+                {valuationRequest.status === 'completed' && (
+                  <>
+                    {valuationRequest.valuation_amount && (
+                      <p className="text-gold-500 font-semibold text-lg mt-2">
+                        {tv.valuationAmount}: {fmtCurrency(Number(valuationRequest.valuation_amount))}
+                      </p>
+                    )}
+                    {valuationRequest.valuation_notes && (
+                      <p className="text-obsidian-300 text-sm mt-1">{valuationRequest.valuation_notes}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Feedback message */}
+            {valuationMessage && (
+              <p className={`text-sm ${valuationMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                {valuationMessage.text}
+              </p>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3 flex-wrap">
               <button onClick={handleEditOpen} className="btn-gold">{td.editWatch}</button>
+              {(!valuationRequest || !['pending', 'in_review'].includes(valuationRequest.status)) && (
+                <button
+                  onClick={() => { setValuationMessage(null); setShowValuationModal(true); }}
+                  className="border border-gold-500/40 text-gold-500 hover:bg-gold-500/10 px-4 py-2 text-xs uppercase tracking-wider transition-colors">
+                  {tv.request}
+                </button>
+              )}
               <button
                 onClick={() => { if (window.confirm(td.confirmDelete)) deleteMutation.mutate(); }}
                 disabled={deleteMutation.isPending}
@@ -361,6 +426,50 @@ export const VaultDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Valuation request modal */}
+      {showValuationModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-obsidian-900 border border-obsidian-700 max-w-md w-full p-8">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="font-serif text-xl text-white">{tv.modalTitle}</h2>
+              <button onClick={() => setShowValuationModal(false)} className="text-obsidian-400 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            <div className="space-y-4 mb-8">
+              <p className="text-obsidian-300 text-sm leading-relaxed">{tv.terms}</p>
+              <div className="border-t border-obsidian-800 pt-4 space-y-2">
+                <p className="text-gold-500 text-sm font-semibold">{tv.fee}</p>
+                <p className="text-obsidian-400 text-sm">{tv.turnaround}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => valuationMutation.mutate()}
+                disabled={valuationMutation.isPending}
+                className="btn-gold flex-1">
+                {valuationMutation.isPending ? '...' : tv.confirm}
+              </button>
+              <button onClick={() => setShowValuationModal(false)} className="btn-outline">{tv.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
+
+const STATUS_COLORS: Record<string, string> = {
+  pending:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+  in_review: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  completed: 'bg-green-500/15 text-green-400 border-green-500/30',
+  rejected:  'bg-red-500/15 text-red-400 border-red-500/30',
+};
+
+function ValuationBadge({ status, labels }: { status: string; labels: any }) {
+  const label = labels[status as keyof typeof labels] ?? status;
+  return (
+    <span className={`text-xs uppercase tracking-wider px-2 py-1 border ${STATUS_COLORS[status] ?? 'text-obsidian-400 border-obsidian-700'}`}>
+      {label}
+    </span>
+  );
+}

@@ -19,6 +19,7 @@ import { AdminAuctions } from './pages/admin/AdminAuctions';
 import { AdminAuctionForm } from './pages/admin/AdminAuctionForm';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminBids } from './pages/admin/AdminBids';
+import { AdminValuationRequests } from './pages/admin/AdminValuationRequests';
 import { useAuthStore } from './store/authStore';
 import { fetchProfile } from './api/auth';
 
@@ -148,6 +149,7 @@ function App() {
             <Route path="/admin/auctions/:id/edit" element={<AdminAuctionForm />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/bids" element={<AdminBids />} />
+            <Route path="/admin/valuation-requests" element={<AdminValuationRequests />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
