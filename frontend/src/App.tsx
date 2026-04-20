@@ -20,6 +20,9 @@ import { AdminAuctionForm } from './pages/admin/AdminAuctionForm';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminBids } from './pages/admin/AdminBids';
 import { AdminValuationRequests } from './pages/admin/AdminValuationRequests';
+import { PavePage } from './pages/PavePage';
+import { PaveRegentPage } from './pages/PaveRegentPage';
+import { PaveArtisanaPage } from './pages/PaveArtisanaPage';
 import { useAuthStore } from './store/authStore';
 import { fetchProfile } from './api/auth';
 
@@ -134,6 +137,9 @@ function App() {
             <Route path="/auctions/:slug" element={<AuctionDetailPage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
+            <Route path="/pave" element={<PavePage />} />
+            <Route path="/pave/regent" element={<PaveRegentPage />} />
+            <Route path="/pave/artisana" element={<PaveArtisanaPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 

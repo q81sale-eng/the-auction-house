@@ -32,6 +32,7 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-8">
             <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.auctions}</Link>
             <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.marketplace}</Link>
+            <Link to="/pave" className="text-gold-500/70 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors font-serif italic">{tr.nav.pave}</Link>
             {isAuthenticated && (
               <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
             )}
@@ -102,7 +103,8 @@ export const Navbar: React.FC = () => {
               <p className="text-obsidian-600 text-xs uppercase tracking-widest mb-2 px-1">{tr.nav.explore}</p>
               <Link to="/" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.home}</Link>
               <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
-              <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
+              <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
+              <Link to="/pave" className="block text-gold-500/80 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 font-serif italic" onClick={() => setMenuOpen(false)}>{tr.nav.pave}</Link>
             </div>
 
             {/* My Account */}
