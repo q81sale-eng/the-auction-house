@@ -209,7 +209,7 @@ const en = {
   profile: {
     tabs: {
       profile: 'Profile',
-      bids: 'My Bids',
+      bids: 'My Offers',
       deposits: 'Deposits',
       security: 'Security',
     },
@@ -225,7 +225,23 @@ const en = {
       saved: 'Profile updated successfully',
       saveError: 'Update failed. Please try again.',
     },
-    bids: { title: 'Bid History', empty: 'No bids yet', winning: 'Winning' },
+    bids: {
+      title: 'My Bids',
+      empty: 'No bids yet',
+      winning: 'Winning',
+      won: 'Won',
+      lost: 'Lost',
+      outbid: 'Outbid',
+      active: 'Active',
+      viewAuction: 'View Auction',
+    },
+    purchases: {
+      title: 'My Purchases',
+      empty: 'No purchases yet',
+      finalPrice: 'Final Price',
+      purchaseDate: 'Date',
+      viewListing: 'View Listing',
+    },
     deposits: {
       depositTitle: 'Deposit Funds',
       withdrawTitle: 'Withdraw Funds',

@@ -211,7 +211,7 @@ const ar: Strings = {
   profile: {
     tabs: {
       profile: 'الملف الشخصي',
-      bids: 'عروضي',
+      bids: 'عروضي ومشترياتي',
       deposits: 'الودائع',
       security: 'الأمان',
     },
@@ -227,7 +227,23 @@ const ar: Strings = {
       saved: 'تم تحديث الملف الشخصي بنجاح',
       saveError: 'فشل التحديث. حاول مرة أخرى.',
     },
-    bids: { title: 'سجل العروض', empty: 'لا توجد عروض بعد', winning: 'فائز' },
+    bids: {
+      title: 'عروضي',
+      empty: 'لا توجد عروض بعد',
+      winning: 'متصدر',
+      won: 'فائز',
+      lost: 'خاسر',
+      outbid: 'تجاوزه عرض أعلى',
+      active: 'نشط',
+      viewAuction: 'عرض المزاد',
+    },
+    purchases: {
+      title: 'مشترياتي',
+      empty: 'لا توجد مشتريات بعد',
+      finalPrice: 'السعر النهائي',
+      purchaseDate: 'التاريخ',
+      viewListing: 'عرض الإعلان',
+    },
     deposits: {
       depositTitle: 'إيداع الأموال',
       withdrawTitle: 'سحب الأموال',
