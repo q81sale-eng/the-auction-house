@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../../utils/format';
 import { useCurrencyStore, convertFromGBP } from '../../store/currencyStore';
+import { useT } from '../../i18n/useLanguage';
 
 interface ListingCardProps {
   listing: {
@@ -25,9 +26,18 @@ interface ListingCardProps {
 export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   const imgSrc = listing.watch.primary_image?.path || '/placeholder-watch.jpg';
   const { currency } = useCurrencyStore();
+  const { tr } = useT();
+  const t = tr.marketplace;
   const fmt = (v: string | number) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
+
   const conditionColors: Record<string, string> = {
     new: 'text-green-400', excellent: 'text-blue-400', good: 'text-yellow-400', fair: 'text-orange-400',
+  };
+  const conditionLabel: Record<string, string> = {
+    new: tr.vault.conditions.new,
+    excellent: tr.vault.conditions.excellent,
+    good: tr.vault.conditions.good,
+    fair: tr.vault.conditions.fair,
   };
 
   return (
@@ -40,8 +50,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
           onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/1a1a1a/d4af37?text=Watch'; }}
         />
         {listing.negotiable && (
-          <div className="absolute top-3 right-3 bg-obsidian-900/90 border border-gold-500/50 text-gold-500 text-xs px-2 py-1">
-            Negotiable
+          <div className="absolute top-3 end-3 bg-obsidian-900/90 border border-gold-500/50 text-gold-500 text-xs px-2 py-1">
+            {t.negotiable}
           </div>
         )}
       </div>
@@ -51,15 +61,15 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         <h3 className="text-white font-serif text-lg leading-tight mb-1 line-clamp-2">{listing.title}</h3>
         <p className="text-obsidian-400 text-xs mb-3">
           <span className={conditionColors[listing.watch.condition] || 'text-obsidian-400'}>
-            {listing.watch.condition.charAt(0).toUpperCase() + listing.watch.condition.slice(1)}
+            {conditionLabel[listing.watch.condition] || listing.watch.condition}
           </span>
           {listing.watch.year && ` · ${listing.watch.year}`}
-          {listing.watch.case_diameter && ` · ${listing.watch.case_diameter}mm`}
+          {listing.watch.case_diameter && ` · ${listing.watch.case_diameter}${tr.watchSpecs.mm}`}
         </p>
 
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">Price</p>
+            <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.price}</p>
             <p className="text-white text-xl font-semibold">{fmt(listing.price)}</p>
           </div>
           <p className="text-obsidian-500 text-xs">{listing.seller.name}</p>

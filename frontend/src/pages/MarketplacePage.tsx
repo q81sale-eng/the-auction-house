@@ -3,13 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { getListings } from '../api/marketplace';
 import { ListingCard } from '../components/marketplace/ListingCard';
 import { Layout } from '../components/layout/Layout';
+import { useT } from '../i18n/useLanguage';
 
 const BRANDS = ['Rolex', 'Patek Philippe', 'Audemars Piguet', 'A. Lange & Söhne', 'F.P. Journe', 'Vacheron Constantin', 'Jaeger-LeCoultre', 'Richard Mille', 'Omega'];
-const CONDITIONS = [{ value: '', label: 'All Conditions' }, { value: 'new', label: 'New' }, { value: 'excellent', label: 'Excellent' }, { value: 'good', label: 'Good' }, { value: 'fair', label: 'Fair' }];
-const SORTS = [{ value: 'latest', label: 'Latest' }, { value: 'price_asc', label: 'Price: Low to High' }, { value: 'price_desc', label: 'Price: High to Low' }];
+const DEFAULT_FILTERS = { brand: '', condition: '', min_price: '', max_price: '', search: '', sort: 'latest' };
 
 export const MarketplacePage: React.FC = () => {
-  const [filters, setFilters] = useState({ brand: '', condition: '', min_price: '', max_price: '', search: '', sort: 'latest' });
+  const { tr } = useT();
+  const t = tr.marketplace;
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
@@ -22,15 +24,27 @@ export const MarketplacePage: React.FC = () => {
     setPage(1);
   };
 
+  const conditions = [
+    { value: '', label: t.filters.allConditions },
+    { value: 'new',       label: tr.vault.conditions.new       },
+    { value: 'excellent', label: tr.vault.conditions.excellent },
+    { value: 'good',      label: tr.vault.conditions.good      },
+    { value: 'fair',      label: tr.vault.conditions.fair      },
+  ];
+
+  const sorts = [
+    { value: 'latest',     label: t.filters.sorts.latest     },
+    { value: 'price_asc',  label: t.filters.sorts.price_asc  },
+    { value: 'price_desc', label: t.filters.sorts.price_desc },
+  ];
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="mb-10">
-          <p className="section-subtitle">Buy Now</p>
-          <h1 className="section-title">Marketplace</h1>
-          <p className="text-obsidian-400 text-sm max-w-xl">
-            Authenticated pre-owned luxury watches available for immediate purchase.
-          </p>
+          <p className="section-subtitle">{t.eyebrow}</p>
+          <h1 className="section-title">{t.title}</h1>
+          <p className="text-obsidian-400 text-sm max-w-xl">{t.subtitle}</p>
         </div>
 
         {/* Search + Filters */}
@@ -38,7 +52,7 @@ export const MarketplacePage: React.FC = () => {
           <div className="mb-4">
             <input
               type="text"
-              placeholder="Search by brand, model, reference..."
+              placeholder={t.searchPlaceholder}
               className="input-field"
               value={filters.search}
               onChange={e => handleFilter('search', e.target.value)}
@@ -46,30 +60,30 @@ export const MarketplacePage: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Brand</label>
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.filters.brand}</label>
               <select className="input-field text-sm" value={filters.brand} onChange={e => handleFilter('brand', e.target.value)}>
-                <option value="">All Brands</option>
+                <option value="">{t.filters.allBrands}</option>
                 {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Condition</label>
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.filters.condition}</label>
               <select className="input-field text-sm" value={filters.condition} onChange={e => handleFilter('condition', e.target.value)}>
-                {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {conditions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Min Price</label>
-              <input type="number" placeholder="£0" className="input-field text-sm" value={filters.min_price} onChange={e => handleFilter('min_price', e.target.value)} />
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.filters.minPrice}</label>
+              <input type="number" placeholder="0" className="input-field text-sm" value={filters.min_price} onChange={e => handleFilter('min_price', e.target.value)} />
             </div>
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Max Price</label>
-              <input type="number" placeholder="Any" className="input-field text-sm" value={filters.max_price} onChange={e => handleFilter('max_price', e.target.value)} />
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.filters.maxPrice}</label>
+              <input type="number" className="input-field text-sm" value={filters.max_price} onChange={e => handleFilter('max_price', e.target.value)} />
             </div>
             <div>
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Sort By</label>
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.filters.sortBy}</label>
               <select className="input-field text-sm" value={filters.sort} onChange={e => handleFilter('sort', e.target.value)}>
-                {SORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                {sorts.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
           </div>
@@ -91,7 +105,7 @@ export const MarketplacePage: React.FC = () => {
           </div>
         ) : (data?.data?.length ?? 0) > 0 ? (
           <>
-            <p className="text-obsidian-400 text-sm mb-6">{data!.total} listing{data!.total !== 1 ? 's' : ''}</p>
+            <p className="text-obsidian-400 text-sm mb-6">{t.found(data!.total)}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {data!.data.map((listing: any) => (
                 <ListingCard key={listing.id} listing={listing} />
@@ -110,9 +124,10 @@ export const MarketplacePage: React.FC = () => {
           </>
         ) : (
           <div className="text-center py-20 text-obsidian-400">
-            <p className="text-lg mb-2">No listings found</p>
-            <button onClick={() => setFilters({ brand: '', condition: '', min_price: '', max_price: '', search: '', sort: 'latest' })}
-              className="text-gold-500 text-sm hover:text-gold-400">Clear filters</button>
+            <p className="text-lg mb-2">{t.empty}</p>
+            <button onClick={() => setFilters(DEFAULT_FILTERS)} className="text-gold-500 text-sm hover:text-gold-400">
+              {t.clearFilters}
+            </button>
           </div>
         )}
       </div>

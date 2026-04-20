@@ -5,11 +5,15 @@ import { getListing } from '../api/marketplace';
 import { Layout } from '../components/layout/Layout';
 import { formatCurrency } from '../utils/format';
 import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
+import { useT } from '../i18n/useLanguage';
 
 export const MarketplaceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [activeImage, setActiveImage] = useState(0);
   const { currency } = useCurrencyStore();
+  const { tr } = useT();
+  const t = tr.marketplace;
+  const ws = tr.watchSpecs;
   const fmt = (v: string | number) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
 
   const { data: listing, isLoading } = useQuery({
@@ -34,40 +38,52 @@ export const MarketplaceDetailPage: React.FC = () => {
     );
   }
 
-  if (!listing) return <Layout><div className="text-center py-20 text-obsidian-400">Listing not found</div></Layout>;
+  if (!listing) return <Layout><div className="text-center py-20 text-obsidian-400">{t.notFound}</div></Layout>;
 
   const images = listing.watch?.images || [];
   const currentImage = images[activeImage];
 
-  const conditionLabel: Record<string, string> = { new: 'New', excellent: 'Excellent', good: 'Good', fair: 'Fair' };
-  const conditionColor: Record<string, string> = { new: 'text-green-400', excellent: 'text-blue-400', good: 'text-yellow-400', fair: 'text-orange-400' };
+  const conditionLabel: Record<string, string> = {
+    new: tr.vault.conditions.new,
+    excellent: tr.vault.conditions.excellent,
+    good: tr.vault.conditions.good,
+    fair: tr.vault.conditions.fair,
+  };
+  const conditionColor: Record<string, string> = {
+    new: 'text-green-400', excellent: 'text-blue-400', good: 'text-yellow-400', fair: 'text-orange-400',
+  };
 
-  const specs = [
-    ['Brand', listing.watch?.brand],
-    ['Model', listing.watch?.model],
-    ['Reference', listing.watch?.reference_number],
-    ['Year', listing.watch?.year],
-    ['Movement', listing.watch?.movement],
-    ['Case Material', listing.watch?.case_material],
-    ['Bracelet', listing.watch?.bracelet_material],
-    ['Dial Color', listing.watch?.dial_color],
-    ['Case Diameter', listing.watch?.case_diameter ? `${listing.watch.case_diameter}mm` : null],
-    ['Water Resistance', listing.watch?.water_resistance],
-    ['Power Reserve', listing.watch?.power_reserve],
-    ['Complications', listing.watch?.complications],
-    ['Serial Number', listing.watch?.serial_number],
-    ['Box & Papers', [listing.watch?.has_box && 'Box', listing.watch?.has_papers && 'Papers'].filter(Boolean).join(' & ') || 'None'],
-    ['Condition', listing.watch?.condition ? conditionLabel[listing.watch.condition] : null],
-  ].filter(([, v]) => v);
+  const boxPapers = [
+    listing.watch?.has_box && ws.box,
+    listing.watch?.has_papers && ws.papers,
+  ].filter(Boolean).join(' & ') || ws.none;
+
+  const specs: [string, string | null | undefined][] = [
+    [ws.brand,           listing.watch?.brand],
+    [ws.model,           listing.watch?.model],
+    [ws.reference,       listing.watch?.reference_number],
+    [ws.year,            listing.watch?.year],
+    [ws.movement,        listing.watch?.movement],
+    [ws.caseMaterial,    listing.watch?.case_material],
+    [ws.bracelet,        listing.watch?.bracelet_material],
+    [ws.dialColor,       listing.watch?.dial_color],
+    [ws.caseDiameter,    listing.watch?.case_diameter ? `${listing.watch.case_diameter}${ws.mm}` : null],
+    [ws.waterResistance, listing.watch?.water_resistance],
+    [ws.powerReserve,    listing.watch?.power_reserve],
+    [ws.complications,   listing.watch?.complications],
+    [ws.serialNumber,    listing.watch?.serial_number],
+    [ws.boxPapers,       boxPapers],
+    [ws.condition,       listing.watch?.condition ? conditionLabel[listing.watch.condition] : null],
+  ].filter(([, v]) => v) as [string, string][];
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Back + breadcrumb */}
+        {/* Back */}
         <div className="flex items-center gap-3 mb-8">
           <Link to="/marketplace" className="inline-flex items-center gap-2 text-obsidian-400 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
-            Marketplace
+            {t.back}
           </Link>
           <span className="text-obsidian-700 hidden sm:inline">›</span>
           <span className="text-obsidian-400 text-sm truncate hidden sm:inline">{listing.title}</span>
@@ -111,7 +127,7 @@ export const MarketplaceDetailPage: React.FC = () => {
                 {conditionLabel[listing.watch?.condition] || listing.watch?.condition}
               </span>
               {listing.watch?.year && <span className="text-obsidian-400 text-sm">{listing.watch.year}</span>}
-              {listing.watch?.case_diameter && <span className="text-obsidian-400 text-sm">{listing.watch.case_diameter}mm</span>}
+              {listing.watch?.case_diameter && <span className="text-obsidian-400 text-sm">{listing.watch.case_diameter}{ws.mm}</span>}
             </div>
 
             {listing.description && (
@@ -122,22 +138,22 @@ export const MarketplaceDetailPage: React.FC = () => {
             <div className="bg-obsidian-900 border border-obsidian-800 p-6 mb-6">
               <div className="flex items-end justify-between mb-6">
                 <div>
-                  <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">Asking Price</p>
+                  <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.askingPrice}</p>
                   <p className="text-white text-4xl font-semibold">{fmt(listing.price)}</p>
                   {listing.negotiable && (
-                    <p className="text-gold-500 text-xs mt-1 uppercase tracking-wider">Price Negotiable</p>
+                    <p className="text-gold-500 text-xs mt-1 uppercase tracking-wider">{t.priceNegotiable}</p>
                   )}
                 </div>
               </div>
 
               {listing.status === 'active' ? (
                 <div className="space-y-3">
-                  <button className="btn-gold w-full">Enquire About This Watch</button>
-                  <p className="text-obsidian-500 text-xs text-center">Contact the seller directly through our secure messaging system</p>
+                  <button className="btn-gold w-full">{t.enquire}</button>
+                  <p className="text-obsidian-500 text-xs text-center">{t.enquireDesc}</p>
                 </div>
               ) : (
                 <div className="bg-obsidian-800 text-obsidian-400 text-center py-3 text-sm uppercase tracking-wider">
-                  {listing.status === 'sold' ? 'Sold' : 'Unavailable'}
+                  {listing.status === 'sold' ? t.sold : t.unavailable}
                 </div>
               )}
             </div>
@@ -149,7 +165,7 @@ export const MarketplaceDetailPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-white text-sm">{listing.seller?.name}</p>
-                <p className="text-obsidian-500 text-xs">Verified Seller</p>
+                <p className="text-obsidian-500 text-xs">{t.verifiedSeller}</p>
               </div>
             </div>
           </div>
@@ -157,12 +173,12 @@ export const MarketplaceDetailPage: React.FC = () => {
 
         {/* Specs */}
         <div className="bg-obsidian-900 border border-obsidian-800 p-8">
-          <h2 className="font-serif text-2xl text-white mb-6">Watch Specifications</h2>
+          <h2 className="font-serif text-2xl text-white mb-6">{t.specifications}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12">
             {specs.map(([label, value]) => (
               <div key={label} className="flex justify-between items-center py-3 border-b border-obsidian-800 last:border-0">
                 <span className="text-obsidian-400 text-sm">{label}</span>
-                <span className="text-white text-sm capitalize">{value}</span>
+                <span className="text-white text-sm">{value}</span>
               </div>
             ))}
           </div>

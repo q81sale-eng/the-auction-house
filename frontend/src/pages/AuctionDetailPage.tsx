@@ -6,13 +6,18 @@ import { CountdownTimer } from '../components/ui/CountdownTimer';
 import { Layout } from '../components/layout/Layout';
 import { useAuthStore } from '../store/authStore';
 import { formatCurrency, formatDateTime } from '../utils/format';
-import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
+import { useCurrencyStore, convertFromGBP, CURRENCY_SYMBOLS } from '../store/currencyStore';
+import { useT } from '../i18n/useLanguage';
 
 export const AuctionDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const { currency } = useCurrencyStore();
+  const { tr } = useT();
+  const t = tr.auctions.detail;
+  const tc = tr.auctions.card;
+  const ws = tr.watchSpecs;
   const fmt = (v: number | string) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
   const [bidAmount, setBidAmount] = useState('');
   const [activeImage, setActiveImage] = useState(0);
@@ -21,29 +26,29 @@ export const AuctionDetailPage: React.FC = () => {
   const { data: auction, isLoading } = useQuery({
     queryKey: ['auction', slug],
     queryFn: () => getAuction(slug!),
-    refetchInterval: 10000, // poll every 10s for live auctions
+    refetchInterval: 10000,
   });
 
   const bidMutation = useMutation({
     mutationFn: (amount: number) => placeBid(auction.id, amount),
     onSuccess: () => {
-      setMessage({ type: 'success', text: 'Bid placed successfully!' });
+      setMessage({ type: 'success', text: t.bidSuccess });
       setBidAmount('');
       queryClient.invalidateQueries({ queryKey: ['auction', slug] });
     },
     onError: (err: any) => {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to place bid' });
+      setMessage({ type: 'error', text: err.response?.data?.message || t.bidError });
     },
   });
 
   const buyNowMutation = useMutation({
     mutationFn: () => buyNow(auction.id),
     onSuccess: () => {
-      setMessage({ type: 'success', text: 'Purchase successful!' });
+      setMessage({ type: 'success', text: t.buySuccess });
       queryClient.invalidateQueries({ queryKey: ['auction', slug] });
     },
     onError: (err: any) => {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Purchase failed' });
+      setMessage({ type: 'error', text: err.response?.data?.message || t.buyError });
     },
   });
 
@@ -70,7 +75,7 @@ export const AuctionDetailPage: React.FC = () => {
     );
   }
 
-  if (!auction) return <Layout><div className="text-center py-20 text-obsidian-400">Auction not found</div></Layout>;
+  if (!auction) return <Layout><div className="text-center py-20 text-obsidian-400">{t.notFound}</div></Layout>;
 
   const images = auction.watch?.images || [];
   const currentImage = images[activeImage];
@@ -79,26 +84,39 @@ export const AuctionDetailPage: React.FC = () => {
     ? parseFloat(auction.current_bid) + parseFloat(auction.bid_increment)
     : parseFloat(auction.starting_price);
 
-  const specs = [
-    ['Brand', auction.watch?.brand],
-    ['Model', auction.watch?.model],
-    ['Reference', auction.watch?.reference_number],
-    ['Year', auction.watch?.year],
-    ['Movement', auction.watch?.movement],
-    ['Case Material', auction.watch?.case_material],
-    ['Dial Color', auction.watch?.dial_color],
-    ['Case Diameter', auction.watch?.case_diameter ? `${auction.watch.case_diameter}mm` : null],
-    ['Condition', auction.watch?.condition],
-    ['Box & Papers', [auction.watch?.has_box && 'Box', auction.watch?.has_papers && 'Papers'].filter(Boolean).join(' & ') || 'None'],
-  ].filter(([, v]) => v);
+  const boxPapers = [
+    auction.watch?.has_box && ws.box,
+    auction.watch?.has_papers && ws.papers,
+  ].filter(Boolean).join(' & ') || ws.none;
+
+  const conditionLabel: Record<string, string> = {
+    new: tr.vault.conditions.new,
+    excellent: tr.vault.conditions.excellent,
+    good: tr.vault.conditions.good,
+    fair: tr.vault.conditions.fair,
+  };
+
+  const specs: [string, string | null | undefined][] = [
+    [ws.brand,        auction.watch?.brand],
+    [ws.model,        auction.watch?.model],
+    [ws.reference,    auction.watch?.reference_number],
+    [ws.year,         auction.watch?.year],
+    [ws.movement,     auction.watch?.movement],
+    [ws.caseMaterial, auction.watch?.case_material],
+    [ws.dialColor,    auction.watch?.dial_color],
+    [ws.caseDiameter, auction.watch?.case_diameter ? `${auction.watch.case_diameter}${ws.mm}` : null],
+    [ws.condition,    auction.watch?.condition ? conditionLabel[auction.watch.condition] : null],
+    [ws.boxPapers,    boxPapers],
+  ].filter(([, v]) => v) as [string, string][];
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 py-12">
         <Link to="/auctions" className="inline-flex items-center gap-2 text-obsidian-400 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors mb-8">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
-          Auctions
+          {t.back}
         </Link>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
           {/* Images */}
           <div>
@@ -129,10 +147,10 @@ export const AuctionDetailPage: React.FC = () => {
           {/* Info */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              {auction.status === 'live' && <span className="badge-live"><span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />Live</span>}
-              {auction.status === 'upcoming' && <span className="badge-upcoming">Upcoming</span>}
-              {auction.status === 'sold' && <span className="badge-sold">Sold</span>}
-              <span className="text-obsidian-400 text-xs">{auction.bids?.length || 0} bids</span>
+              {auction.status === 'live'     && <span className="badge-live"><span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />{tc.live}</span>}
+              {auction.status === 'upcoming' && <span className="badge-upcoming">{tc.upcoming}</span>}
+              {auction.status === 'sold'     && <span className="badge-sold">{tc.sold}</span>}
+              <span className="text-obsidian-400 text-xs">{t.bids(auction.bids?.length || 0)}</span>
             </div>
 
             <h1 className="font-serif text-3xl text-white mb-2">{auction.title}</h1>
@@ -143,13 +161,13 @@ export const AuctionDetailPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
                   <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">
-                    {auction.current_bid ? 'Current Bid' : 'Starting Price'}
+                    {auction.current_bid ? t.currentBid : t.startingPrice}
                   </p>
                   <p className="text-white text-3xl font-semibold">{fmt(currentPrice)}</p>
                 </div>
                 {auction.buy_now_price && (
                   <div>
-                    <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">Buy Now</p>
+                    <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.buyNowLabel}</p>
                     <p className="text-gold-500 text-3xl font-semibold">{fmt(auction.buy_now_price)}</p>
                   </div>
                 )}
@@ -157,51 +175,51 @@ export const AuctionDetailPage: React.FC = () => {
 
               {auction.status === 'live' && (
                 <div className="mb-6">
-                  <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">Time Remaining</p>
+                  <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">{t.timeRemaining}</p>
                   <CountdownTimer endsAt={auction.ends_at} />
                 </div>
               )}
 
-              {/* Message */}
               {message && (
                 <div className={`p-3 mb-4 text-sm ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                   {message.text}
                 </div>
               )}
 
-              {/* Bid Form */}
               {auction.status === 'live' && isAuthenticated && (
                 <>
                   <form onSubmit={handleBid} className="flex gap-3 mb-3">
                     <div className="flex-1 relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400">£</span>
+                      <span className="absolute start-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none">
+                        {CURRENCY_SYMBOLS[currency]}
+                      </span>
                       <input
-                        type="number" step="1" min={minBid}
+                        type="text"
+                        inputMode="decimal"
                         value={bidAmount}
                         onChange={e => setBidAmount(e.target.value)}
-                        placeholder={`Min ${fmt(minBid)}`}
-                        className="input-field pl-8"
+                        placeholder={t.minBidHint(fmt(minBid))}
+                        className="input-field ps-8"
                       />
                     </div>
                     <button type="submit" disabled={bidMutation.isPending} className="btn-gold whitespace-nowrap">
-                      {bidMutation.isPending ? 'Placing...' : 'Place Bid'}
+                      {bidMutation.isPending ? t.placing : t.placeBid}
                     </button>
                   </form>
                   {auction.buy_now_price && (
-                    <button onClick={() => buyNowMutation.mutate()} disabled={buyNowMutation.isPending}
-                      className="btn-outline w-full">
-                      {buyNowMutation.isPending ? 'Processing...' : `Buy Now — ${fmt(auction.buy_now_price)}`}
+                    <button onClick={() => buyNowMutation.mutate()} disabled={buyNowMutation.isPending} className="btn-outline w-full">
+                      {buyNowMutation.isPending ? t.processing : t.buyNowBtn(fmt(auction.buy_now_price))}
                     </button>
                   )}
                 </>
               )}
 
               {!isAuthenticated && auction.status === 'live' && (
-                <a href="/login" className="btn-gold block text-center">Sign In to Bid</a>
+                <a href="/login" className="btn-gold block text-center">{t.signInToBid}</a>
               )}
 
               {auction.deposit_required > 0 && (
-                <p className="text-obsidian-500 text-xs mt-3">* Deposit of {fmt(auction.deposit_required)} required to bid</p>
+                <p className="text-obsidian-500 text-xs mt-3">{t.depositRequired(fmt(auction.deposit_required))}</p>
               )}
             </div>
 
@@ -210,35 +228,34 @@ export const AuctionDetailPage: React.FC = () => {
               <div className="w-8 h-8 bg-gold-500/20 rounded-full flex items-center justify-center">
                 <span className="text-gold-500 text-xs font-semibold">{auction.seller?.name?.charAt(0)}</span>
               </div>
-              <span>Listed by <span className="text-white">{auction.seller?.name}</span></span>
+              <span>{t.listedBy} <span className="text-white">{auction.seller?.name}</span></span>
             </div>
           </div>
         </div>
 
-        {/* Watch Specs */}
+        {/* Watch Specs + Bid History */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           <div className="bg-obsidian-900 border border-obsidian-800 p-6">
-            <h2 className="font-serif text-xl text-white mb-6">Watch Specifications</h2>
+            <h2 className="font-serif text-xl text-white mb-6">{t.specifications}</h2>
             <div className="space-y-3">
               {specs.map(([label, value]) => (
                 <div key={label} className="flex justify-between items-center py-2 border-b border-obsidian-800 last:border-0">
                   <span className="text-obsidian-400 text-sm">{label}</span>
-                  <span className="text-white text-sm capitalize">{value}</span>
+                  <span className="text-white text-sm">{value}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Bid History */}
           <div className="bg-obsidian-900 border border-obsidian-800 p-6">
-            <h2 className="font-serif text-xl text-white mb-6">Bid History</h2>
+            <h2 className="font-serif text-xl text-white mb-6">{t.bidHistory}</h2>
             {auction.bids?.length > 0 ? (
               <div className="space-y-2">
                 {auction.bids.slice(0, 10).map((bid: any, i: number) => (
                   <div key={bid.id} className={`flex justify-between items-center py-3 border-b border-obsidian-800 last:border-0 ${i === 0 ? 'text-gold-400' : 'text-white'}`}>
                     <div className="flex items-center gap-3">
                       {i === 0 && <span className="w-2 h-2 rounded-full bg-gold-500 animate-pulse" />}
-                      <span className="text-sm">{bid.user?.name || 'Anonymous'}</span>
+                      <span className="text-sm">{bid.user?.name || t.anonymous}</span>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold">{fmt(bid.amount)}</p>
@@ -248,7 +265,7 @@ export const AuctionDetailPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-obsidian-400 text-sm text-center py-8">No bids yet. Be the first!</p>
+              <p className="text-obsidian-400 text-sm text-center py-8">{t.noBids}</p>
             )}
           </div>
         </div>
