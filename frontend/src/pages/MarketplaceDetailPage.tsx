@@ -63,12 +63,15 @@ export const MarketplaceDetailPage: React.FC = () => {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Breadcrumb */}
-        <nav className="text-obsidian-400 text-sm mb-8">
-          <Link to="/marketplace" className="hover:text-gold-500 transition-colors">Marketplace</Link>
-          <span className="mx-2">›</span>
-          <span className="text-white">{listing.title}</span>
-        </nav>
+        {/* Back + breadcrumb */}
+        <div className="flex items-center gap-3 mb-8">
+          <Link to="/marketplace" className="inline-flex items-center gap-2 text-obsidian-400 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
+            Marketplace
+          </Link>
+          <span className="text-obsidian-700 hidden sm:inline">›</span>
+          <span className="text-obsidian-400 text-sm truncate hidden sm:inline">{listing.title}</span>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
           {/* Images */}

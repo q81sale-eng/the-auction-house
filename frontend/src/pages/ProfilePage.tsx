@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { useAuthStore } from '../store/authStore';
@@ -104,7 +104,9 @@ export const ProfilePage: React.FC = () => {
   const fmt = (v: number | string | null | undefined) =>
     formatCurrency(v != null ? convertFromGBP(Number(v), currency) : v, currency);
 
-  const [tab, setTab]           = useState<'profile' | 'bids' | 'deposits' | 'security'>('profile');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = (searchParams.get('tab') as 'profile' | 'bids' | 'deposits' | 'security') || 'profile';
+  const setTab = (id: 'profile' | 'bids' | 'deposits' | 'security') => { setSearchParams({ tab: id }); setMessage(null); };
   const [offersTab, setOffersTab] = useState<'bids' | 'purchases'>('bids');
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '', phone: user?.phone || '',
@@ -227,7 +229,7 @@ export const ProfilePage: React.FC = () => {
         {/* Primary tabs */}
         <div className="flex border-b border-obsidian-800 mb-8">
           {tabList.map(tb => (
-            <button key={tb.id} onClick={() => { setTab(tb.id); setMessage(null); }}
+            <button key={tb.id} onClick={() => setTab(tb.id)}
               className={`px-6 py-3 text-sm uppercase tracking-wider transition-colors ${
                 tab === tb.id ? 'border-b-2 border-gold-500 text-gold-500' : 'text-obsidian-400 hover:text-white'
               }`}>

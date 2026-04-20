@@ -1,5 +1,6 @@
 const en = {
   nav: {
+    home: 'Home',
     auctions: 'Auctions',
     marketplace: 'Marketplace',
     vault: 'Watch Vault',
@@ -9,6 +10,11 @@ const en = {
     admin: 'Admin',
     balance: 'balance',
     profile: 'My Profile',
+    explore: 'Explore',
+    myAccount: 'My Account',
+    myOffers: 'My Offers',
+    deposits: 'Deposits',
+    security: 'Security',
   },
   home: {
     hero: {

@@ -85,7 +85,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile menu btn */}
-          <button className="md:hidden text-obsidian-400" onClick={() => setMenuOpen(!menuOpen)}>
+          <button className="md:hidden text-obsidian-300 hover:text-white p-2 -mr-2 transition-colors" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
@@ -93,48 +93,78 @@ export const Navbar: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile menu — full-width dropdown */}
         {menuOpen && (
-          <div className="md:hidden border-t border-obsidian-800 py-4 space-y-3">
-            <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
-            <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
-            {isAuthenticated && (
-              <>
-                <Link to="/vault" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.vault}</Link>
-                <Link to="/profile" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2" onClick={() => setMenuOpen(false)}>{tr.nav.profile}</Link>
-                {user?.is_admin && (
-                  <Link to="/admin" className="block text-gold-500 text-sm uppercase tracking-wider py-2 font-medium" onClick={() => setMenuOpen(false)}>{tr.nav.admin}</Link>
-                )}
-                <button onClick={handleLogout} className="block text-obsidian-400 text-sm py-2">{tr.nav.signOut}</button>
-              </>
-            )}
-            {/* Language + Currency — mobile */}
-            <div className="pt-2 border-t border-obsidian-800 flex items-center gap-3">
-              <button
-                onClick={toggle}
-                className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
-                aria-label="Switch language"
-              >
-                <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'en' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>EN</span>
-                <span className="w-px h-4 bg-obsidian-700" />
-                <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'ar' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>AR</span>
-              </button>
-              <select
-                value={currency}
-                onChange={e => setCurrency(e.target.value as Currency)}
-                className="bg-obsidian-950 border border-obsidian-700 text-obsidian-300 text-xs uppercase tracking-wider px-2 py-1.5 cursor-pointer focus:outline-none"
-                aria-label="Select currency"
-              >
-                {CURRENCIES.map(c => <option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>)}
-              </select>
+          <div className="md:hidden border-t border-obsidian-800 overflow-y-auto max-h-[calc(100vh-4rem)]">
+
+            {/* Explore */}
+            <div className="px-2 pt-4 pb-3">
+              <p className="text-obsidian-600 text-xs uppercase tracking-widest mb-2 px-1">{tr.nav.explore}</p>
+              <Link to="/" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.home}</Link>
+              <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
+              <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
             </div>
 
-            {!isAuthenticated && (
-              <>
-                <Link to="/login" className="block text-obsidian-300 text-sm py-2" onClick={() => setMenuOpen(false)}>{tr.nav.signIn}</Link>
-                <Link to="/register" className="block btn-gold text-center" onClick={() => setMenuOpen(false)}>{tr.nav.joinNow}</Link>
-              </>
+            {/* My Account */}
+            {isAuthenticated && (
+              <div className="border-t border-obsidian-800 px-2 pt-4 pb-3">
+                <p className="text-obsidian-600 text-xs uppercase tracking-widest mb-2 px-1">{tr.nav.myAccount}</p>
+                <Link to="/vault" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.vault}</Link>
+                <Link to="/profile" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.profile}</Link>
+                <Link to="/profile?tab=bids" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.myOffers}</Link>
+                <Link to="/profile?tab=deposits" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.deposits}</Link>
+                <Link to="/profile?tab=security" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{tr.nav.security}</Link>
+              </div>
             )}
+
+            {/* Admin */}
+            {user?.is_admin && (
+              <div className="border-t border-obsidian-800 px-2 pt-4 pb-3">
+                <p className="text-obsidian-600 text-xs uppercase tracking-widest mb-2 px-1">{tr.nav.admin}</p>
+                <Link to="/admin" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.admin}</Link>
+                <Link to="/admin/valuation-requests" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{tr.admin.valuationRequests}</Link>
+              </div>
+            )}
+
+            {/* Language, currency, auth */}
+            <div className="border-t border-obsidian-800 px-2 pt-4 pb-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={toggle}
+                  className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
+                  aria-label="Switch language"
+                >
+                  <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'en' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>EN</span>
+                  <span className="w-px h-4 bg-obsidian-700" />
+                  <span className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${lang === 'ar' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500'}`}>AR</span>
+                </button>
+                <select
+                  value={currency}
+                  onChange={e => setCurrency(e.target.value as Currency)}
+                  className="bg-obsidian-950 border border-obsidian-700 text-obsidian-300 text-xs uppercase tracking-wider px-2 py-1.5 cursor-pointer focus:outline-none"
+                  aria-label="Select currency"
+                >
+                  {CURRENCIES.map(c => <option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>)}
+                </select>
+              </div>
+
+              {isAuthenticated ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white text-sm font-medium">{user?.name}</p>
+                    <p className="text-gold-500 text-xs">{formatCurrency(convertFromGBP(user?.deposit_balance || 0, currency), currency)} {tr.nav.balance}</p>
+                  </div>
+                  <button onClick={() => { setMenuOpen(false); handleLogout(); }} className="text-obsidian-400 hover:text-white text-sm uppercase tracking-wider transition-colors">
+                    {tr.nav.signOut}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <Link to="/login" className="flex-1 text-center border border-obsidian-700 text-obsidian-300 text-sm py-2.5 uppercase tracking-wider hover:border-gold-500 hover:text-gold-500 transition-colors" onClick={() => setMenuOpen(false)}>{tr.nav.signIn}</Link>
+                  <Link to="/register" className="flex-1 btn-gold text-center text-xs py-2.5" onClick={() => setMenuOpen(false)}>{tr.nav.joinNow}</Link>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

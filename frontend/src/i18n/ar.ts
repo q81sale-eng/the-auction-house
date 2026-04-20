@@ -2,6 +2,7 @@ import type { Strings } from './en';
 
 const ar: Strings = {
   nav: {
+    home: 'الرئيسية',
     auctions: 'المزادات',
     marketplace: 'السوق',
     vault: 'خزنة الساعات',
@@ -11,6 +12,11 @@ const ar: Strings = {
     admin: 'الإدارة',
     balance: 'الرصيد',
     profile: 'ملفي الشخصي',
+    explore: 'استكشف',
+    myAccount: 'حسابي',
+    myOffers: 'عروضي',
+    deposits: 'الودائع',
+    security: 'الأمان',
   },
   home: {
     hero: {
