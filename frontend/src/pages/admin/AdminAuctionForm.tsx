@@ -108,15 +108,17 @@ export const AdminAuctionForm: React.FC = () => {
 
     setSaving(true);
     try {
-      // 1. Upload new image files
+      // 1. Upload new image files to storage, get back public URLs
       const newItems = images.filter((img): img is { type: 'new'; file: File; preview: string } => img.type === 'new');
-      const uploadedUrls = newItems.length ? await uploadAuctionImages(newItems.map(i => i.file)) : [];
+      const uploadedUrls: string[] = newItems.length
+        ? await uploadAuctionImages(newItems.map(i => i.file))
+        : [];
 
-      // 2. Build ordered URL list (preserving user's sort order)
+      // 2. Build ordered URL list — existing items keep their URL, new items get the uploaded public URL
       let uploadIdx = 0;
-      const orderedUrls = images.map(img =>
+      const orderedUrls: string[] = images.map(img =>
         img.type === 'existing' ? img.url : uploadedUrls[uploadIdx++]
-      );
+      ).filter(Boolean);
 
       // 3. Build auction payload
       const payload: Record<string, any> = {
@@ -130,7 +132,7 @@ export const AdminAuctionForm: React.FC = () => {
         bid_increment:    parseFloat(form.bid_increment    || '100'),
         deposit_required: parseFloat(form.deposit_required || '0'),
         ends_at:          new Date(form.ends_at).toISOString(),
-        image_url:        orderedUrls[0] ?? null, // denormalized first image
+        image_url:        orderedUrls[0] ?? null,
       };
       if (form.current_bid)   payload.current_bid   = parseFloat(form.current_bid);
       if (form.buy_now_price) payload.buy_now_price  = parseFloat(form.buy_now_price);
@@ -147,17 +149,20 @@ export const AdminAuctionForm: React.FC = () => {
       }
 
       // 5. Replace image records (delete all, re-insert in current order)
+      // Errors here are non-fatal (table may not exist in older deployments)
       try {
         await deleteAllAuctionImages(auctionId);
         if (orderedUrls.length > 0) await insertAuctionImages(auctionId, orderedUrls);
-      } catch {
-        // auction_images table might not exist yet — not fatal
+      } catch (imgErr: any) {
+        console.warn('auction_images save failed (non-fatal):', imgErr?.message);
       }
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] });
       navigate('/admin/auctions');
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Save failed. Please try again.');
+      console.error('Auction save error:', err);
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Save failed. Please try again.';
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -294,12 +299,15 @@ export const AdminAuctionForm: React.FC = () => {
           {images.length > 0 ? (
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {images.map((img, i) => {
-                const src = img.type === 'existing' ? img.url : img.preview;
+                // 'new' items use blob object URLs directly; 'existing' items use the stored URL
+                const src = img.type === 'new'
+                  ? img.preview
+                  : (img.url.startsWith('http') ? img.url : `https://localhost:8000/storage/${img.url}`);
                 return (
                   <div key={i} className="relative group aspect-square">
                     <div className={`w-full h-full overflow-hidden border ${i === 0 ? 'border-gold-500' : 'border-obsidian-700'}`}>
                       <img
-                        src={src.startsWith('http') ? src : `http://localhost:8000/storage/${src}`}
+                        src={src}
                         alt=""
                         className="w-full h-full object-cover"
                         onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/120x120/1a1a1a/d4af37?text=?'; }}
