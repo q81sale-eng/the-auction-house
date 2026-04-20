@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useT } from '../../i18n/useLanguage';
 
 interface CountdownTimerProps {
   endsAt: string;
@@ -6,6 +7,8 @@ interface CountdownTimerProps {
 }
 
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endsAt, onExpire }) => {
+  const { tr } = useT();
+  const cd = tr.auctions.countdown;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: false });
 
   useEffect(() => {
@@ -28,7 +31,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endsAt, onExpire
   }, [endsAt, onExpire]);
 
   if (timeLeft.expired) {
-    return <span className="text-obsidian-400 text-sm uppercase tracking-wider">Auction Ended</span>;
+    return <span className="text-obsidian-400 text-sm uppercase tracking-wider">{tr.auctions.card.ended}</span>;
   }
 
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -40,24 +43,24 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endsAt, onExpire
         <>
           <div className="text-center">
             <div className="text-2xl font-mono font-bold">{pad(timeLeft.days)}</div>
-            <div className="text-xs text-obsidian-400 uppercase tracking-wider">Days</div>
+            <div className="text-xs text-obsidian-400 uppercase tracking-wider">{cd.days}</div>
           </div>
           <span className="text-obsidian-600 text-xl">:</span>
         </>
       )}
       <div className="text-center">
         <div className="text-2xl font-mono font-bold">{pad(timeLeft.hours)}</div>
-        <div className="text-xs text-obsidian-400 uppercase tracking-wider">Hrs</div>
+        <div className="text-xs text-obsidian-400 uppercase tracking-wider">{cd.hrs}</div>
       </div>
       <span className="text-obsidian-600 text-xl">:</span>
       <div className="text-center">
         <div className="text-2xl font-mono font-bold">{pad(timeLeft.minutes)}</div>
-        <div className="text-xs text-obsidian-400 uppercase tracking-wider">Min</div>
+        <div className="text-xs text-obsidian-400 uppercase tracking-wider">{cd.min}</div>
       </div>
       <span className="text-obsidian-600 text-xl">:</span>
       <div className="text-center">
         <div className={`text-2xl font-mono font-bold ${isUrgent ? 'animate-pulse' : ''}`}>{pad(timeLeft.seconds)}</div>
-        <div className="text-xs text-obsidian-400 uppercase tracking-wider">Sec</div>
+        <div className="text-xs text-obsidian-400 uppercase tracking-wider">{cd.sec}</div>
       </div>
     </div>
   );
