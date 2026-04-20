@@ -395,11 +395,11 @@ export const ProfilePage: React.FC = () => {
         {/* ── Deposits ───────────────────────────────────────────────────── */}
         {tab === 'deposits' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="card p-6">
                 <h3 className="font-serif text-white text-lg mb-4">{t.deposits.depositTitle}</h3>
-                <div className="flex gap-3">
-                  <div className="flex-1 relative">
+                <div className="flex flex-col gap-3">
+                  <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
                       {CURRENCY_SYMBOLS[currency]}
                     </span>
@@ -415,7 +415,7 @@ export const ProfilePage: React.FC = () => {
                   <button
                     onClick={() => { const n = parseFloat(depositAmount); if (n > 0) depositMutation.mutate(n); }}
                     disabled={depositMutation.isPending || !depositAmount}
-                    className="btn-gold">
+                    className="btn-gold w-full">
                     {depositMutation.isPending ? '...' : t.deposits.deposit}
                   </button>
                 </div>
@@ -423,8 +423,8 @@ export const ProfilePage: React.FC = () => {
               </div>
               <div className="card p-6">
                 <h3 className="font-serif text-white text-lg mb-4">{t.deposits.withdrawTitle}</h3>
-                <div className="flex gap-3">
-                  <div className="flex-1 relative">
+                <div className="flex flex-col gap-3">
+                  <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
                       {CURRENCY_SYMBOLS[currency]}
                     </span>
@@ -440,7 +440,7 @@ export const ProfilePage: React.FC = () => {
                   <button
                     onClick={() => { const n = parseFloat(withdrawAmount); if (n > 0) withdrawMutation.mutate(n); }}
                     disabled={withdrawMutation.isPending || !withdrawAmount}
-                    className="btn-outline">
+                    className="btn-outline w-full">
                     {withdrawMutation.isPending ? '...' : t.deposits.withdraw}
                   </button>
                 </div>
