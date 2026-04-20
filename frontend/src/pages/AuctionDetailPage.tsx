@@ -257,7 +257,7 @@ export const AuctionDetailPage: React.FC = () => {
                       {i === 0 && <span className="w-2 h-2 rounded-full bg-gold-500 animate-pulse" />}
                       <span className="text-sm">{bid.user?.name || t.anonymous}</span>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className="text-sm font-semibold">{fmt(bid.amount)}</p>
                       <p className="text-obsidian-500 text-xs">{formatDateTime(bid.created_at)}</p>
                     </div>

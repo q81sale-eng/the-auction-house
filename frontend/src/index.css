@@ -71,9 +71,18 @@
 [dir="rtl"] .text-left  { text-align: right; }
 [dir="rtl"] .text-right { text-align: left; }
 
-/* Keep numbers and currency inputs visually LTR */
-[dir="rtl"] input[type="number"] {
+/* Keep numeric inputs LTR so digits read naturally */
+[dir="rtl"] input[type="number"],
+[dir="rtl"] input[inputmode="decimal"],
+[dir="rtl"] input[inputmode="numeric"] {
   direction: ltr;
   text-align: right;
+}
+
+/* Countdown / monospace numbers stay LTR */
+[dir="rtl"] .font-mono,
+[dir="rtl"] .tabular-nums {
+  direction: ltr;
+  display: inline-block;
 }
 

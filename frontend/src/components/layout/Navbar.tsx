@@ -62,7 +62,7 @@ export const Navbar: React.FC = () => {
 
             {isAuthenticated ? (
               <>
-                <div className="text-right">
+                <div className="text-end">
                   <p className="text-white text-sm font-medium">{user?.name}</p>
                   <p className="text-gold-500 text-xs">{formatCurrency(convertFromGBP(user?.deposit_balance || 0, currency), currency)} {tr.nav.balance}</p>
                 </div>
@@ -85,7 +85,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile menu btn */}
-          <button className="md:hidden text-obsidian-300 hover:text-white p-2 -mr-2 transition-colors" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+          <button className="md:hidden text-obsidian-300 hover:text-white p-2 -me-2 transition-colors" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}

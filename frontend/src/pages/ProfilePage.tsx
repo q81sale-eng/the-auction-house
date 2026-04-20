@@ -220,7 +220,7 @@ export const ProfilePage: React.FC = () => {
               {user?.country    && <span className="text-obsidian-400 text-xs">{user.country}</span>}
             </div>
           </div>
-          <div className="ml-auto text-right">
+          <div className="ms-auto text-end">
             <p className="text-obsidian-400 text-xs uppercase tracking-wider">{t.header.balance}</p>
             <p className="text-gold-500 text-2xl font-semibold">{fmt(user?.deposit_balance || 0)}</p>
           </div>
@@ -319,7 +319,7 @@ export const ProfilePage: React.FC = () => {
                           </div>
 
                           {/* Amount + status */}
-                          <div className="text-right shrink-0">
+                          <div className="text-end shrink-0">
                             <p className="text-white font-semibold text-sm">{fmt(bid.amount)}</p>
                             <span className={`text-xs uppercase tracking-wider ${statusColor}`}>{statusLabel}</span>
                           </div>
@@ -327,7 +327,7 @@ export const ProfilePage: React.FC = () => {
                           {/* Link if auction still exists */}
                           {slug && (
                             <Link to={`/auctions/${slug}`}
-                              className="text-obsidian-500 hover:text-gold-500 transition-colors shrink-0 ml-2"
+                              className="text-obsidian-500 hover:text-gold-500 transition-colors shrink-0 ms-2"
                               title={t.bids.viewAuction}>
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
@@ -379,7 +379,7 @@ export const ProfilePage: React.FC = () => {
                           </div>
 
                           {/* Price + date */}
-                          <div className="text-right shrink-0">
+                          <div className="text-end shrink-0">
                             <p className="text-white font-semibold text-sm">{fmt(p.final_price)}</p>
                             <p className="text-obsidian-500 text-xs mt-0.5">{formatDate(p.purchased_at)}</p>
                           </div>
@@ -387,7 +387,7 @@ export const ProfilePage: React.FC = () => {
                           {/* Link to detail if slug still valid */}
                           {detailPath && (
                             <Link to={detailPath}
-                              className="text-obsidian-500 hover:text-gold-500 transition-colors shrink-0 ml-2"
+                              className="text-obsidian-500 hover:text-gold-500 transition-colors shrink-0 ms-2"
                               title={p.auction_slug ? t.bids.viewAuction : t.purchases.viewListing}>
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
@@ -412,14 +412,14 @@ export const ProfilePage: React.FC = () => {
                 <h3 className="font-serif text-white text-lg mb-4">{t.deposits.depositTitle}</h3>
                 <div className="flex flex-col gap-3">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
                       {CURRENCY_SYMBOLS[currency]}
                     </span>
                     <input
                       type="text"
                       inputMode="decimal"
                       placeholder="0"
-                      className="input-field pl-9"
+                      className="input-field ps-9"
                       value={depositAmount}
                       onChange={e => setDepositAmount(e.target.value)}
                     />
@@ -437,14 +437,14 @@ export const ProfilePage: React.FC = () => {
                 <h3 className="font-serif text-white text-lg mb-4">{t.deposits.withdrawTitle}</h3>
                 <div className="flex flex-col gap-3">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
                       {CURRENCY_SYMBOLS[currency]}
                     </span>
                     <input
                       type="text"
                       inputMode="decimal"
                       placeholder="0"
-                      className="input-field pl-9"
+                      className="input-field ps-9"
                       value={withdrawAmount}
                       onChange={e => setWithdrawAmount(e.target.value)}
                     />
