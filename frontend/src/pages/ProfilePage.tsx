@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
-import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
+import { useCurrencyStore, convertFromGBP, CURRENCY_SYMBOLS } from '../store/currencyStore';
 
 // ─── Data fetchers ────────────────────────────────────────────────────────────
 
@@ -398,12 +398,22 @@ export const ProfilePage: React.FC = () => {
                 <h3 className="font-serif text-white text-lg mb-4">{t.deposits.depositTitle}</h3>
                 <div className="flex gap-3">
                   <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400">£</span>
-                    <input type="number" min="100" step="100" placeholder="Amount" className="input-field pl-8"
-                      value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
+                      {CURRENCY_SYMBOLS[currency]}
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      className="input-field pl-9"
+                      value={depositAmount}
+                      onChange={e => setDepositAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                    />
                   </div>
-                  <button onClick={() => depositAmount && depositMutation.mutate(parseFloat(depositAmount))}
-                    disabled={depositMutation.isPending} className="btn-gold">
+                  <button
+                    onClick={() => { const n = parseFloat(depositAmount); if (n > 0) depositMutation.mutate(n); }}
+                    disabled={depositMutation.isPending || !depositAmount}
+                    className="btn-gold">
                     {depositMutation.isPending ? '...' : t.deposits.deposit}
                   </button>
                 </div>
@@ -413,12 +423,22 @@ export const ProfilePage: React.FC = () => {
                 <h3 className="font-serif text-white text-lg mb-4">{t.deposits.withdrawTitle}</h3>
                 <div className="flex gap-3">
                   <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400">£</span>
-                    <input type="number" min="100" step="100" placeholder="Amount" className="input-field pl-8"
-                      value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-obsidian-400 pointer-events-none select-none text-sm">
+                      {CURRENCY_SYMBOLS[currency]}
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      className="input-field pl-9"
+                      value={withdrawAmount}
+                      onChange={e => setWithdrawAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                    />
                   </div>
-                  <button onClick={() => withdrawAmount && withdrawMutation.mutate(parseFloat(withdrawAmount))}
-                    disabled={withdrawMutation.isPending} className="btn-outline">
+                  <button
+                    onClick={() => { const n = parseFloat(withdrawAmount); if (n > 0) withdrawMutation.mutate(n); }}
+                    disabled={withdrawMutation.isPending || !withdrawAmount}
+                    className="btn-outline">
                     {withdrawMutation.isPending ? '...' : t.deposits.withdraw}
                   </button>
                 </div>
