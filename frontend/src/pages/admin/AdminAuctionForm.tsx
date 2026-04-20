@@ -12,6 +12,7 @@ const blank = {
   title: '', brand: '', reference: '', description: '',
   condition: 'excellent', status: 'upcoming',
   starting_price: '', current_bid: '', buy_now_price: '',
+  bid_increment: '100', deposit_required: '0',
   starts_at: '', ends_at: '', image_url: '',
 };
 
@@ -45,12 +46,14 @@ export const AdminAuctionForm: React.FC = () => {
         description:    existing.description ?? '',
         condition:      existing.condition ?? 'excellent',
         status:         existing.status ?? 'upcoming',
-        starting_price: existing.starting_price != null ? String(existing.starting_price) : '',
-        current_bid:    existing.current_bid    != null ? String(existing.current_bid)    : '',
-        buy_now_price:  existing.buy_now_price  != null ? String(existing.buy_now_price)  : '',
-        starts_at:      existing.starts_at ? existing.starts_at.slice(0, 16) : '',
-        ends_at:        existing.ends_at   ? existing.ends_at.slice(0, 16)   : '',
-        image_url:      existing.image_url ?? '',
+        starting_price:   existing.starting_price   != null ? String(existing.starting_price)   : '',
+        current_bid:      existing.current_bid       != null ? String(existing.current_bid)       : '',
+        buy_now_price:    existing.buy_now_price     != null ? String(existing.buy_now_price)     : '',
+        bid_increment:    existing.bid_increment     != null ? String(existing.bid_increment)     : '100',
+        deposit_required: existing.deposit_required  != null ? String(existing.deposit_required)  : '0',
+        starts_at:        existing.starts_at ? existing.starts_at.slice(0, 16) : '',
+        ends_at:          existing.ends_at   ? existing.ends_at.slice(0, 16)   : '',
+        image_url:        existing.image_url ?? '',
       });
       if (existing.image_url) setImagePreview(existing.image_url);
     }
@@ -103,11 +106,14 @@ export const AdminAuctionForm: React.FC = () => {
       status:      form.status,
       image_url:   imageUrl || null,
     };
-    if (form.starting_price) payload.starting_price = parseFloat(form.starting_price);
-    if (form.current_bid)    payload.current_bid    = parseFloat(form.current_bid);
-    if (form.buy_now_price)  payload.buy_now_price  = parseFloat(form.buy_now_price);
-    if (form.starts_at)      payload.starts_at      = new Date(form.starts_at).toISOString();
-    if (form.ends_at)        payload.ends_at        = new Date(form.ends_at).toISOString();
+    if (!form.ends_at) { setError('End date/time is required.'); return; }
+    if (form.starting_price)   payload.starting_price   = parseFloat(form.starting_price);
+    if (form.current_bid)      payload.current_bid      = parseFloat(form.current_bid);
+    if (form.buy_now_price)    payload.buy_now_price    = parseFloat(form.buy_now_price);
+    payload.bid_increment    = parseFloat(form.bid_increment || '100');
+    payload.deposit_required = parseFloat(form.deposit_required || '0');
+    if (form.starts_at) payload.starts_at = new Date(form.starts_at).toISOString();
+    payload.ends_at = new Date(form.ends_at).toISOString();
 
     saveMutation.mutate(payload);
   };
@@ -185,7 +191,7 @@ export const AdminAuctionForm: React.FC = () => {
         {/* Pricing */}
         <div className="bg-obsidian-900 border border-obsidian-800 p-6 mb-6">
           <h2 className="font-serif text-white text-lg mb-4">Pricing</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="label-field">{t.form.startingPrice} *</label>
               <input type="number" min="0" step="0.01" value={form.starting_price} onChange={set('starting_price')}
@@ -199,6 +205,18 @@ export const AdminAuctionForm: React.FC = () => {
             <div>
               <label className="label-field">{t.form.buyNowPrice}</label>
               <input type="number" min="0" step="0.01" value={form.buy_now_price} onChange={set('buy_now_price')}
+                className="input-field" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-field">{t.form.bidIncrement}</label>
+              <input type="number" min="1" step="0.01" value={form.bid_increment} onChange={set('bid_increment')}
+                className="input-field" required />
+            </div>
+            <div>
+              <label className="label-field">{t.form.depositRequired}</label>
+              <input type="number" min="0" step="0.01" value={form.deposit_required} onChange={set('deposit_required')}
                 className="input-field" />
             </div>
           </div>

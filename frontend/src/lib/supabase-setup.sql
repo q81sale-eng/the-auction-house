@@ -7,9 +7,11 @@
 CREATE TABLE IF NOT EXISTS profiles (
   id              UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   name            TEXT,
+  full_name       TEXT,
   email           TEXT UNIQUE,
   phone           TEXT,
   country         TEXT,
+  bio             TEXT,
   is_admin        BOOLEAN DEFAULT FALSE,
   deposit_balance DECIMAL(10,2) DEFAULT 0,
   created_at      TIMESTAMPTZ DEFAULT NOW(),
@@ -31,27 +33,44 @@ CREATE POLICY "profiles_admin_all" ON profiles
 
 -- ── Auctions ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS auctions (
-  id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title           TEXT NOT NULL,
-  brand           TEXT NOT NULL DEFAULT '',
-  reference       TEXT,
-  description     TEXT,
-  condition       TEXT DEFAULT 'excellent'
-                  CHECK (condition IN ('new','excellent','good','fair')),
-  status          TEXT DEFAULT 'upcoming'
-                  CHECK (status IN ('upcoming','live','ended','sold','cancelled')),
-  starting_price  DECIMAL(10,2) NOT NULL DEFAULT 0,
-  current_bid     DECIMAL(10,2),
-  buy_now_price   DECIMAL(10,2),
-  image_url       TEXT,
-  starts_at       TIMESTAMPTZ,
-  ends_at         TIMESTAMPTZ,
-  bids_count      INT DEFAULT 0,
-  slug            TEXT UNIQUE,
-  created_by      UUID REFERENCES auth.users(id),
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW()
+  id                UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title             TEXT NOT NULL,
+  brand             TEXT NOT NULL DEFAULT '',
+  reference         TEXT,
+  description       TEXT,
+  condition         TEXT DEFAULT 'excellent'
+                    CHECK (condition IN ('new','excellent','good','fair')),
+  status            TEXT DEFAULT 'upcoming'
+                    CHECK (status IN ('upcoming','live','ended','sold','cancelled')),
+  starting_price    DECIMAL(10,2) NOT NULL DEFAULT 0,
+  current_bid       DECIMAL(10,2),
+  buy_now_price     DECIMAL(10,2),
+  bid_increment     DECIMAL(10,2) NOT NULL DEFAULT 100,
+  deposit_required  DECIMAL(10,2) NOT NULL DEFAULT 0,
+  image_url         TEXT,
+  starts_at         TIMESTAMPTZ,
+  ends_at           TIMESTAMPTZ,
+  bids_count        INT DEFAULT 0,
+  slug              TEXT UNIQUE,
+  seller_id         UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by        UUID REFERENCES auth.users(id),
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure existing installs also have these columns (idempotent)
+ALTER TABLE auctions
+  ADD COLUMN IF NOT EXISTS bid_increment     DECIMAL(10,2) NOT NULL DEFAULT 100,
+  ADD COLUMN IF NOT EXISTS deposit_required  DECIMAL(10,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS seller_id         UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS starts_at         TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS ends_at           TIMESTAMPTZ;
+
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS full_name TEXT,
+  ADD COLUMN IF NOT EXISTS bio       TEXT;
+
+NOTIFY pgrst, 'reload schema';
 
 ALTER TABLE auctions ENABLE ROW LEVEL SECURITY;
 

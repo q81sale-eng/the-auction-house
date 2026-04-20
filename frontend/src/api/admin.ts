@@ -57,10 +57,11 @@ export const getAuction = async (id: string) => {
 };
 
 export const createAuction = async (payload: Record<string, any>) => {
+  const { data: { user } } = await supabase.auth.getUser();
   const slug = `${payload.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
   const { data, error } = await supabase
     .from('auctions')
-    .insert({ ...payload, slug, updated_at: new Date().toISOString() })
+    .insert({ ...payload, slug, seller_id: user?.id ?? null, created_by: user?.id ?? null, updated_at: new Date().toISOString() })
     .select()
     .single();
   if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
