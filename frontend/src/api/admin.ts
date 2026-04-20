@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUrl } from '../lib/supabase';
 
 const PER_PAGE = 20;
 
@@ -59,12 +59,25 @@ export const getAuction = async (id: string) => {
 export const createAuction = async (payload: Record<string, any>) => {
   const { data: { user } } = await supabase.auth.getUser();
   const slug = `${payload.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+  const insertRow = { ...payload, slug, seller_id: user?.id ?? null, created_by: user?.id ?? null, updated_at: new Date().toISOString() };
+
+  // ── Debug: log which Supabase project and exactly what we're inserting ──────
+  console.group('[createAuction] DEBUG');
+  console.info('Supabase project URL :', supabaseUrl);
+  console.info('Authenticated user ID:', user?.id ?? '(not signed in)');
+  console.info('Insert payload        :', JSON.stringify(insertRow, null, 2));
+  console.groupEnd();
+  // ──────────────────────────────────────────────────────────────────────────
+
   const { data, error } = await supabase
     .from('auctions')
-    .insert({ ...payload, slug, seller_id: user?.id ?? null, created_by: user?.id ?? null, updated_at: new Date().toISOString() })
+    .insert(insertRow)
     .select()
     .single();
-  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+  if (error) {
+    console.error('[createAuction] Supabase error:', error);
+    const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e;
+  }
   return data;
 };
 
