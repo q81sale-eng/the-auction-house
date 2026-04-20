@@ -45,10 +45,10 @@ async function updateProfileInDb(userId: string, fields: { name?: string; phone?
   });
   if (metaErr) throw new Error(metaErr.message);
 
-  // Sync the three columns that exist in the profiles table
+  // Sync columns that exist in the profiles table
   const { error } = await supabase
     .from('profiles')
-    .update({ name: fields.name, phone: fields.phone, country: fields.country })
+    .update({ full_name: fields.name, phone: fields.phone, country: fields.country, bio: fields.bio })
     .eq('id', userId);
   if (error) throw new Error(error.message);
 }
