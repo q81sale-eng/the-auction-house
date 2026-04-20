@@ -39,7 +39,17 @@ async function getUserPurchases(userId: string) {
 }
 
 async function updateProfileInDb(userId: string, fields: { name?: string; phone?: string; country?: string; bio?: string }) {
-  const { error } = await supabase.from('profiles').update(fields).eq('id', userId);
+  // Persist all fields to auth metadata (survives across sessions; bio lives here)
+  const { error: metaErr } = await supabase.auth.updateUser({
+    data: { name: fields.name, phone: fields.phone, country: fields.country, bio: fields.bio },
+  });
+  if (metaErr) throw new Error(metaErr.message);
+
+  // Sync the three columns that exist in the profiles table
+  const { error } = await supabase
+    .from('profiles')
+    .update({ name: fields.name, phone: fields.phone, country: fields.country })
+    .eq('id', userId);
   if (error) throw new Error(error.message);
 }
 
@@ -131,7 +141,7 @@ export const ProfilePage: React.FC = () => {
       if (user) setUser({ ...user, ...profileForm });
       setMessage({ type: 'success', text: t.info.saved });
     },
-    onError: () => setMessage({ type: 'error', text: t.info.saveError }),
+    onError: (err: Error) => setMessage({ type: 'error', text: err.message || t.info.saveError }),
   });
 
   const passwordMutation = useMutation({

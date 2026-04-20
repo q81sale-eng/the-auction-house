@@ -92,6 +92,7 @@ function App() {
             deposit_balance: profile.deposit_balance,
             phone: m.phone,
             country: m.country,
+            bio: m.bio,
           },
           session.access_token,
         );
