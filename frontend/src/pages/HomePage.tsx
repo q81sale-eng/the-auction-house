@@ -31,6 +31,7 @@ export const HomePage: React.FC = () => {
             {tr.home.hero.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/pave" className="btn-gold">{tr.home.hero.ctaPave}</Link>
             <Link to="/auctions" className="btn-gold">{tr.home.hero.cta1}</Link>
             <Link to="/marketplace" className="btn-outline">{tr.home.hero.cta2}</Link>
           </div>
@@ -39,6 +40,34 @@ export const HomePage: React.FC = () => {
           <svg className="w-5 h-5 text-gold-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
+        </div>
+      </section>
+
+      {/* PAVÉ Brand Banner */}
+      <section className="bg-obsidian-950 border-y border-gold-500/20 relative overflow-hidden">
+        {/* Subtle radial gold glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse 60% 100% at 10% 50%, rgba(212,175,55,0.06) 0%, transparent 70%)' }} />
+        <div className="max-w-7xl mx-auto px-4 py-10 flex flex-col sm:flex-row items-center gap-8 relative">
+          {/* Brand mark */}
+          <div className="shrink-0 border border-gold-500/30 px-8 py-4 relative">
+            <div className="absolute top-0 start-0 w-3 h-3 border-t border-s border-gold-500/60" />
+            <div className="absolute bottom-0 end-0 w-3 h-3 border-b border-e border-gold-500/60" />
+            <span className="font-serif text-3xl text-white tracking-[0.2em]">PAVÉ</span>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-12 bg-obsidian-700 shrink-0" />
+
+          {/* Copy */}
+          <div className="flex-1 text-center sm:text-start">
+            <p className="text-gold-500 text-xs uppercase tracking-[0.3em] mb-1">{tr.home.paveBanner.eyebrow}</p>
+            <p className="text-obsidian-200 text-sm leading-relaxed">{tr.home.paveBanner.tagline}</p>
+          </div>
+
+          {/* CTA */}
+          <Link to="/pave" className="shrink-0 border border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-xs uppercase tracking-[0.2em] px-6 py-3 transition-colors duration-200 whitespace-nowrap">
+            {tr.home.paveBanner.cta}
+          </Link>
         </div>
       </section>
 

@@ -26,6 +26,12 @@ const en = {
         "Curated auctions and private sales of the world's most coveted watches. Authenticated, verified, and delivered with confidence.",
       cta1: 'View Live Auctions',
       cta2: 'Browse Marketplace',
+      ctaPave: 'PAVÉ Watches',
+    },
+    paveBanner: {
+      eyebrow: 'In-House Brand',
+      tagline: 'PAVÉ — A modern luxury watch brand with exceptional craftsmanship',
+      cta: 'Discover PAVÉ',
     },
     stats: ['Watches Sold', 'In Sales', 'Authenticated'],
     liveAuctions: {
