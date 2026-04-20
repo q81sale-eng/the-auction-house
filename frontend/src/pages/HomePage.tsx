@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getAuctions } from '../api/auctions';
 import { AuctionCard } from '../components/auction/AuctionCard';
 import { Layout } from '../components/layout/Layout';
+import { PromoSlider } from '../components/ui/PromoSlider';
 import { useT } from '../i18n/useLanguage';
 
 export const HomePage: React.FC = () => {
@@ -17,6 +18,9 @@ export const HomePage: React.FC = () => {
 
   return (
     <Layout>
+      {/* Promo Slider */}
+      <PromoSlider />
+
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center bg-obsidian-950 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-obsidian-950 via-obsidian-900/50 to-obsidian-950" />

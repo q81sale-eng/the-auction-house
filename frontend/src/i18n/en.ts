@@ -28,6 +28,26 @@ const en = {
       cta2: 'Browse Marketplace',
       ctaPave: 'PAVÉ Watches',
     },
+    slider: [
+      {
+        eyebrow: 'In-House Collection',
+        title: 'PAVÉ Watches',
+        subtitle: 'Discover our exclusive luxury watch brand — handcrafted in Geneva',
+        cta: 'Discover Now',
+      },
+      {
+        eyebrow: 'Live Now',
+        title: 'Exclusive Auctions',
+        subtitle: 'The rarest timepieces in the world await your bid',
+        cta: 'View Auctions',
+      },
+      {
+        eyebrow: 'Immediate Purchase',
+        title: 'Private Marketplace',
+        subtitle: 'Curated pre-owned luxury watches, available for immediate purchase',
+        cta: 'Browse Now',
+      },
+    ],
     paveBanner: {
       eyebrow: 'In-House Brand',
       tagline: 'PAVÉ — A modern luxury watch brand with exceptional craftsmanship',
