@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
-import { useCurrencyStore, convertFromGBP, CURRENCY_SYMBOLS } from '../store/currencyStore';
+import { useCurrencyStore, convertFromGBP, convertToGBP, CURRENCY_SYMBOLS } from '../store/currencyStore';
 
 // ─── Data fetchers ────────────────────────────────────────────────────────────
 
@@ -147,8 +147,9 @@ export const ProfilePage: React.FC = () => {
 
   const depositMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const newBalance = await adjustBalance(userId, amount, user?.deposit_balance ?? 0);
-      await supabase.from('transactions').insert({ user_id: userId, type: 'deposit', amount, reference: `DEP-${Date.now()}` });
+      const amountGBP = convertToGBP(amount, currency);
+      const newBalance = await adjustBalance(userId, amountGBP, user?.deposit_balance ?? 0);
+      await supabase.from('transactions').insert({ user_id: userId, type: 'deposit', amount: amountGBP, reference: `DEP-${Date.now()}` });
       return newBalance;
     },
     onSuccess: (newBalance) => {
@@ -162,8 +163,9 @@ export const ProfilePage: React.FC = () => {
 
   const withdrawMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const newBalance = await adjustBalance(userId, -amount, user?.deposit_balance ?? 0);
-      await supabase.from('transactions').insert({ user_id: userId, type: 'withdrawal', amount, reference: `WIT-${Date.now()}` });
+      const amountGBP = convertToGBP(amount, currency);
+      const newBalance = await adjustBalance(userId, -amountGBP, user?.deposit_balance ?? 0);
+      await supabase.from('transactions').insert({ user_id: userId, type: 'withdrawal', amount: amountGBP, reference: `WIT-${Date.now()}` });
       return newBalance;
     },
     onSuccess: (newBalance) => {
@@ -407,7 +409,7 @@ export const ProfilePage: React.FC = () => {
                       placeholder="0"
                       className="input-field pl-9"
                       value={depositAmount}
-                      onChange={e => setDepositAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                      onChange={e => setDepositAmount(e.target.value)}
                     />
                   </div>
                   <button
@@ -417,7 +419,7 @@ export const ProfilePage: React.FC = () => {
                     {depositMutation.isPending ? '...' : t.deposits.deposit}
                   </button>
                 </div>
-                <p className="text-obsidian-500 text-xs mt-2">{t.deposits.minDeposit}</p>
+                <p className="text-obsidian-500 text-xs mt-2">{t.deposits.minimum}: {fmt(100)}</p>
               </div>
               <div className="card p-6">
                 <h3 className="font-serif text-white text-lg mb-4">{t.deposits.withdrawTitle}</h3>
@@ -432,7 +434,7 @@ export const ProfilePage: React.FC = () => {
                       placeholder="0"
                       className="input-field pl-9"
                       value={withdrawAmount}
-                      onChange={e => setWithdrawAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                      onChange={e => setWithdrawAmount(e.target.value)}
                     />
                   </div>
                   <button

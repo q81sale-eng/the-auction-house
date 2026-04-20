@@ -247,7 +247,7 @@ const en = {
       withdrawTitle: 'Withdraw Funds',
       deposit: 'Deposit',
       withdraw: 'Withdraw',
-      minDeposit: 'Minimum: £100',
+      minimum: 'Minimum',
       available: 'Available:',
       history: 'Transaction History',
       empty: 'No transactions yet',

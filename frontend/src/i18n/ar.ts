@@ -249,7 +249,7 @@ const ar: Strings = {
       withdrawTitle: 'سحب الأموال',
       deposit: 'إيداع',
       withdraw: 'سحب',
-      minDeposit: 'الحد الأدنى: £100',
+      minimum: 'الحد الأدنى',
       available: 'المتاح:',
       history: 'سجل المعاملات',
       empty: 'لا توجد معاملات بعد',
