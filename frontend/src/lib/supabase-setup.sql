@@ -82,6 +82,28 @@ CREATE POLICY "auctions_admin_all" ON auctions
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
   );
 
+-- ── Auction Images ───────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS auction_images (
+  id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  auction_id  UUID REFERENCES auctions(id) ON DELETE CASCADE NOT NULL,
+  image_url   TEXT NOT NULL,
+  sort_order  INT  NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE auction_images ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auction_images_public_select" ON auction_images
+  FOR SELECT USING (true);
+
+CREATE POLICY "auction_images_admin_all" ON auction_images
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+  );
+
+CREATE INDEX IF NOT EXISTS idx_auction_images_auction_id
+  ON auction_images(auction_id, sort_order);
+
 -- ── Bids ─────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS bids (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,

@@ -84,13 +84,41 @@ export const deleteAuction = async (id: string) => {
   if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
 };
 
-export const uploadAuctionImage = async (file: File): Promise<string> => {
-  const ext      = file.name.split('.').pop();
-  const path     = `${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from('auctions').upload(path, file, { cacheControl: '3600', upsert: false });
-  if (error) throw new Error(`Image upload failed: ${error.message}`);
-  const { data: { publicUrl } } = supabase.storage.from('auctions').getPublicUrl(path);
-  return publicUrl;
+export const uploadAuctionImages = async (files: File[]): Promise<string[]> => {
+  const urls: string[] = [];
+  for (const file of files) {
+    const ext  = file.name.split('.').pop() ?? 'jpg';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage
+      .from('auction-images')
+      .upload(path, file, { cacheControl: '3600', upsert: false });
+    if (error) throw new Error(`Image upload failed: ${error.message}`);
+    const { data: { publicUrl } } = supabase.storage.from('auction-images').getPublicUrl(path);
+    urls.push(publicUrl);
+  }
+  return urls;
+};
+
+export const getAuctionImages = async (auctionId: string) => {
+  const { data, error } = await supabase
+    .from('auction_images')
+    .select('id, image_url, sort_order')
+    .eq('auction_id', auctionId)
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+};
+
+export const insertAuctionImages = async (auctionId: string, urls: string[]) => {
+  if (!urls.length) return;
+  const rows = urls.map((image_url, sort_order) => ({ auction_id: auctionId, image_url, sort_order }));
+  const { error } = await supabase.from('auction_images').insert(rows);
+  if (error) throw new Error(error.message);
+};
+
+export const deleteAllAuctionImages = async (auctionId: string) => {
+  const { error } = await supabase.from('auction_images').delete().eq('auction_id', auctionId);
+  if (error) throw new Error(error.message);
 };
 
 // ─── Users ────────────────────────────────────────────────────────────────────

@@ -2,15 +2,27 @@ import { supabase } from '../lib/supabase';
 
 function shapeAuction(a: any) {
   if (!a) return a;
+  const dbImages: { path: string; alt_text: string }[] = (
+    (a.auction_images ?? []) as { image_url: string; sort_order: number }[]
+  )
+    .sort((x, y) => x.sort_order - y.sort_order)
+    .map(img => ({ path: img.image_url, alt_text: a.title }));
+
+  // Fallback: if no auction_images rows, use legacy image_url column
+  const images = dbImages.length > 0
+    ? dbImages
+    : (a.image_url ? [{ path: a.image_url, alt_text: a.title }] : []);
+
   return {
     ...a,
+    bid_increment: a.bid_increment ?? 100,
     watch: {
       brand: a.brand,
       model: a.title,
       reference_number: a.reference,
       condition: a.condition,
-      primary_image: a.image_url ? { path: a.image_url, alt_text: a.title } : undefined,
-      images: a.image_url ? [{ path: a.image_url, alt_text: a.title }] : [],
+      primary_image: images[0] ?? undefined,
+      images,
     },
   };
 }
@@ -23,7 +35,7 @@ export const getAuctions = async (params?: Record<string, any>) => {
 
   let q = supabase
     .from('auctions')
-    .select('*', { count: 'exact' })
+    .select('*, auction_images(image_url, sort_order)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -46,7 +58,7 @@ export const getAuctions = async (params?: Record<string, any>) => {
 export const getAuction = async (slug: string) => {
   const { data, error } = await supabase
     .from('auctions')
-    .select('*, bids(id, amount, created_at, user_id, profiles(name))')
+    .select('*, auction_images(id, image_url, sort_order), bids(id, amount, created_at, user_id, profiles(name))')
     .eq('slug', slug)
     .single();
 
