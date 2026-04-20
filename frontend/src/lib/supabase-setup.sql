@@ -58,14 +58,25 @@ CREATE TABLE IF NOT EXISTS auctions (
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ensure existing installs also have these columns (idempotent)
+-- Ensure existing installs also have these columns (idempotent, safe to re-run)
 ALTER TABLE auctions
-  ADD COLUMN IF NOT EXISTS bid_increment     DECIMAL(10,2) NOT NULL DEFAULT 100,
-  ADD COLUMN IF NOT EXISTS deposit_required  DECIMAL(10,2) NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS seller_id         UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS reference         TEXT,
+  ADD COLUMN IF NOT EXISTS description       TEXT,
+  ADD COLUMN IF NOT EXISTS condition         TEXT         DEFAULT 'excellent',
+  ADD COLUMN IF NOT EXISTS status            TEXT         DEFAULT 'upcoming',
+  ADD COLUMN IF NOT EXISTS current_bid       DECIMAL(10,2),
+  ADD COLUMN IF NOT EXISTS buy_now_price     DECIMAL(10,2),
+  ADD COLUMN IF NOT EXISTS bid_increment     DECIMAL(10,2) DEFAULT 100,
+  ADD COLUMN IF NOT EXISTS deposit_required  DECIMAL(10,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS image_url         TEXT,
   ADD COLUMN IF NOT EXISTS starts_at         TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS ends_at           TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS created_by        UUID;
+  ADD COLUMN IF NOT EXISTS bids_count        INT          DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS slug              TEXT,
+  ADD COLUMN IF NOT EXISTS seller_id         UUID,
+  ADD COLUMN IF NOT EXISTS created_by        UUID,
+  ADD COLUMN IF NOT EXISTS created_at        TIMESTAMPTZ  DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at        TIMESTAMPTZ  DEFAULT NOW();
 
 ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS full_name TEXT,
