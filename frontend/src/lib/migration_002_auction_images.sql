@@ -5,13 +5,14 @@
 -- Safe to run multiple times (IF NOT EXISTS / ADD COLUMN IF NOT EXISTS)
 -- =============================================================================
 
--- 1. Ensure bid_increment exists on auctions (catches any missed migration 001)
+-- 1. Ensure all required columns exist on auctions (catches any missed migration 001)
 ALTER TABLE auctions
   ADD COLUMN IF NOT EXISTS bid_increment     DECIMAL(10,2) NOT NULL DEFAULT 100,
   ADD COLUMN IF NOT EXISTS deposit_required  DECIMAL(10,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS starts_at         TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS ends_at           TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS seller_id         UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS seller_id         UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS created_by        UUID;
 
 -- 2. Create auction_images table
 CREATE TABLE IF NOT EXISTS auction_images (
