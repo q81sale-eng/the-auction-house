@@ -1,16 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-// REACT_APP_* vars are embedded at CRA build time. Fall back to a no-op
-// placeholder so createClient never throws when env vars are absent —
-// the app loads, auth calls simply fail with a network error instead.
 const url = process.env.REACT_APP_SUPABASE_URL  || 'https://placeholder.supabase.co';
 const key = process.env.REACT_APP_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
+// Always log which Supabase project this build is wired to so mismatches are obvious.
+console.info('[Supabase] project URL →', url);
+
 if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_APP_SUPABASE_ANON_KEY) {
-  console.warn(
-    '[Supabase] REACT_APP_SUPABASE_URL / REACT_APP_SUPABASE_ANON_KEY are not set. ' +
-    'Auth will not work until these are configured in Vercel → Settings → Environment Variables.'
+  console.error(
+    '[Supabase] ❌ REACT_APP_SUPABASE_URL / REACT_APP_SUPABASE_ANON_KEY are NOT set.\n' +
+    'If running locally: add them to frontend/.env.local\n' +
+    'If on Vercel: add them in Vercel → Project → Settings → Environment Variables, then redeploy.'
   );
 }
 
 export const supabase = createClient(url, key);
+export const supabaseUrl = url; // re-exported so other modules can reference it in logs
