@@ -95,11 +95,13 @@ export const getAuction = async (slug: string) => {
   }
 
   // Always fetch bids separately for fresh data
-  const { data: freshBids } = await supabase
+  const { data: freshBids, error: bidsError } = await supabase
     .from('bids')
-    .select('id, amount, created_at, user_id, profiles(name)')
+    .select('id, amount, created_at, user_id')
     .eq('auction_id', data.id)
     .order('amount', { ascending: false });
+
+  if (bidsError) console.warn('[getAuction] bids fetch error:', bidsError.message);
 
   const bidsData = freshBids ?? data.bids ?? [];
 
