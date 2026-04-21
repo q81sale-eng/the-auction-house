@@ -23,10 +23,11 @@ export const AuctionDetailPage: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const { data: auction, isLoading } = useQuery({
+  const { data: auction, isLoading, isError, error } = useQuery({
     queryKey: ['auction', slug],
     queryFn: () => getAuction(slug!),
     refetchInterval: 10000,
+    retry: 2,
   });
 
   const bidMutation = useMutation({
@@ -70,6 +71,18 @@ export const AuctionDetailPage: React.FC = () => {
               <div className="h-16 bg-obsidian-800 rounded" />
             </div>
           </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isError) {
+    console.error('[AuctionDetailPage] query error:', error);
+    return (
+      <Layout>
+        <div className="text-center py-20 text-obsidian-400">
+          <p className="text-lg mb-2">{t.notFound}</p>
+          <p className="text-xs text-obsidian-600">{(error as any)?.message}</p>
         </div>
       </Layout>
     );

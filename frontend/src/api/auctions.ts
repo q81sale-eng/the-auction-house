@@ -61,25 +61,36 @@ export const getAuctions = async (params?: Record<string, any>) => {
 };
 
 export const getAuction = async (slug: string) => {
-  // Try with auction_images join first; fall back to plain select if RLS blocks the join
+  // Try full query with all joins
   let result = await supabase
     .from('auctions')
     .select('*, auction_images(id, image_url, sort_order), bids(id, amount, created_at, user_id, profiles(name))')
     .eq('slug', slug)
     .single();
 
-  if (result.error?.message?.toLowerCase().includes('auction_images')) {
-    console.warn('[getAuction] auction_images join failed, retrying without it:', result.error.message);
+  // If full query fails, try without bids (RLS or missing table)
+  if (result.error) {
+    console.warn('[getAuction] full join failed:', result.error.message, '— retrying without bids');
     result = await supabase
       .from('auctions')
-      .select('*, bids(id, amount, created_at, user_id, profiles(name))')
+      .select('*, auction_images(id, image_url, sort_order)')
+      .eq('slug', slug)
+      .single();
+  }
+
+  // If still failing, try bare select (auction_images RLS issue)
+  if (result.error) {
+    console.warn('[getAuction] auction_images join failed:', result.error.message, '— retrying bare');
+    result = await supabase
+      .from('auctions')
+      .select('*')
       .eq('slug', slug)
       .single();
   }
 
   const { data, error } = result;
   if (error) {
-    console.error('[getAuction] error:', error.message, error);
+    console.error('[getAuction] all queries failed:', error.message, error);
     throw new Error(error.message);
   }
 
