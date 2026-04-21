@@ -35,7 +35,7 @@ export const useCurrencyStore = create<CurrencyState>()(
   persist(
     (set) => ({ currency: 'KWD', setCurrency: (currency) => set({ currency }) }),
     {
-      name: 'tah-currency',
+      name: 'tah-currency-v2',
       onRehydrateStorage: () => (state) => {
         if (state && !CURRENCIES.includes(state.currency)) {
           state.currency = 'KWD';
