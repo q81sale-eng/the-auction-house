@@ -1,19 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { logout } from '../../api/auth';
+import { logout, fetchProfile } from '../../api/auth';
 import { formatCurrency } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
 import { useCurrencyStore, CURRENCIES, CURRENCY_SYMBOLS, convertFromGBP, type Currency } from '../../store/currencyStore';
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
+  const { user, isAuthenticated, logout: logoutStore, setUser } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const adminRef = useRef<HTMLDivElement>(null);
   const { tr, lang, toggle } = useT();
   const { currency, setCurrency } = useCurrencyStore();
+
+  // Re-check admin status from the DB every time the Navbar mounts while authenticated.
+  // This overwrites any stale is_admin: false that localStorage may have cached from
+  // before the user's admin status was granted.
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    fetchProfile(String(user.id), user.email)
+      .then(({ is_admin, deposit_balance }) => {
+        if (is_admin !== user.is_admin || deposit_balance !== user.deposit_balance) {
+          setUser({ ...user, is_admin, deposit_balance });
+        }
+      })
+      .catch((err) => console.warn('[Navbar] profile refresh failed:', err?.message));
+  }, [isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close admin dropdown when clicking outside
   useEffect(() => {

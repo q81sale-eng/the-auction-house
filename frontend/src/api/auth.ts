@@ -19,27 +19,33 @@ async function checkAdminByEmail(email: string): Promise<boolean> {
     .eq('role', 'admin')
     .maybeSingle();
   if (error) console.warn('[Auth] admins table check failed:', error.message, '— email:', email);
+  console.info('[Auth] admins table →', email, '→ is_admin:', !!data, data ? `(role=${data.role})` : '(no row / RLS blocked)');
   return !!data;
 }
 
 export async function fetchProfile(userId: string, email?: string): Promise<{ is_admin: boolean; deposit_balance: number }> {
   let profileAdmin = false;
   let depositBalance = 0;
-  try {
-    const { data } = await supabase
-      .from('profiles')
-      .select('is_admin,deposit_balance')
-      .eq('id', userId)
-      .single();
-    profileAdmin = data?.is_admin ?? false;
-    depositBalance = data?.deposit_balance ?? 0;
-  } catch {
-    // profiles table may not exist yet; continue
+
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('is_admin,deposit_balance')
+    .eq('id', userId)
+    .single();
+
+  if (profileError) {
+    console.warn('[Auth] profiles query failed:', profileError.message);
+  } else {
+    profileAdmin   = profileData?.is_admin   ?? false;
+    depositBalance = profileData?.deposit_balance ?? 0;
+    console.info('[Auth] profiles table → is_admin:', profileAdmin, '| deposit_balance:', depositBalance);
   }
 
   const adminTableResult = email ? await checkAdminByEmail(email) : false;
 
-  return { is_admin: profileAdmin || adminTableResult, deposit_balance: depositBalance };
+  const is_admin = profileAdmin || adminTableResult;
+  console.info('[Auth] fetchProfile final → is_admin:', is_admin, '| source: profiles=', profileAdmin, 'admins_table=', adminTableResult);
+  return { is_admin, deposit_balance: depositBalance };
 }
 
 function supabaseError(msg: string): never {
