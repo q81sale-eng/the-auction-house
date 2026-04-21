@@ -23,10 +23,11 @@ export const AuctionDetailPage: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const { data: auction, isLoading } = useQuery({
+  const { data: auction, isLoading, isError, error } = useQuery({
     queryKey: ['auction', slug],
     queryFn: () => getAuction(slug!),
     refetchInterval: 10000,
+    retry: 2,
   });
 
   const bidMutation = useMutation({
@@ -37,7 +38,7 @@ export const AuctionDetailPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['auction', slug] });
     },
     onError: (err: any) => {
-      setMessage({ type: 'error', text: err.response?.data?.message || t.bidError });
+      setMessage({ type: 'error', text: err.message || err.response?.data?.message || t.bidError });
     },
   });
 
@@ -48,7 +49,7 @@ export const AuctionDetailPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['auction', slug] });
     },
     onError: (err: any) => {
-      setMessage({ type: 'error', text: err.response?.data?.message || t.buyError });
+      setMessage({ type: 'error', text: err.message || err.response?.data?.message || t.buyError });
     },
   });
 
@@ -70,6 +71,18 @@ export const AuctionDetailPage: React.FC = () => {
               <div className="h-16 bg-obsidian-800 rounded" />
             </div>
           </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isError) {
+    console.error('[AuctionDetailPage] query error:', error);
+    return (
+      <Layout>
+        <div className="text-center py-20 text-obsidian-400">
+          <p className="text-lg mb-2">{t.notFound}</p>
+          <p className="text-xs text-obsidian-600">{(error as any)?.message}</p>
         </div>
       </Layout>
     );
@@ -173,7 +186,7 @@ export const AuctionDetailPage: React.FC = () => {
                 )}
               </div>
 
-              {auction.status === 'live' && (
+              {auction.status === 'live' && auction.ends_at && (
                 <div className="mb-6">
                   <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">{t.timeRemaining}</p>
                   <CountdownTimer endsAt={auction.ends_at} />
@@ -224,12 +237,14 @@ export const AuctionDetailPage: React.FC = () => {
             </div>
 
             {/* Seller */}
-            <div className="flex items-center gap-3 text-sm text-obsidian-400">
-              <div className="w-8 h-8 bg-gold-500/20 rounded-full flex items-center justify-center">
-                <span className="text-gold-500 text-xs font-semibold">{auction.seller?.name?.charAt(0)}</span>
+            {auction.seller?.name && (
+              <div className="flex items-center gap-3 text-sm text-obsidian-400">
+                <div className="w-8 h-8 bg-gold-500/20 rounded-full flex items-center justify-center">
+                  <span className="text-gold-500 text-xs font-semibold">{auction.seller.name.charAt(0)}</span>
+                </div>
+                <span>{t.listedBy} <span className="text-white">{auction.seller.name}</span></span>
               </div>
-              <span>{t.listedBy} <span className="text-white">{auction.seller?.name}</span></span>
-            </div>
+            )}
           </div>
         </div>
 

@@ -109,7 +109,7 @@ const DEMO_AUCTIONS = [
   },
 ];
 
-const DEFAULT_FILTERS = { status: 'live', brand: '', min_price: '', max_price: '' };
+const DEFAULT_FILTERS = { status: '', brand: '', min_price: '', max_price: '' };
 
 export const AuctionsPage: React.FC = () => {
   const { tr } = useT();
@@ -127,8 +127,9 @@ export const AuctionsPage: React.FC = () => {
     setPage(1);
   };
 
-  const filtersActive = filters.brand || filters.min_price || filters.max_price || filters.status !== DEFAULT_FILTERS.status;
-  const showDemo = !isLoading && !filtersActive && (isError || !data?.data?.length);
+  const filtersActive = !!(filters.brand || filters.min_price || filters.max_price || filters.status !== DEFAULT_FILTERS.status);
+  // Only show demo when there's a connection error AND no filters are active (i.e. Supabase not configured yet)
+  const showDemo = !isLoading && !filtersActive && isError;
   const items: any[] = showDemo ? DEMO_AUCTIONS : (data?.data || []);
   const total: number = showDemo ? DEMO_AUCTIONS.length : (data?.total || 0);
 

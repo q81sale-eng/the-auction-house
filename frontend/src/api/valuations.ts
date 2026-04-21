@@ -2,6 +2,44 @@ import { supabase } from '../lib/supabase';
 
 export type ValuationStatus = 'pending' | 'in_review' | 'completed' | 'rejected';
 
+// ── Vault Watches ─────────────────────────────────────────────────────────────
+
+export const getUserVaultWatches = async () => {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) return [];
+
+  const { data, error } = await supabase
+    .from('vault_watches')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+};
+
+export const createVaultWatch = async (payload: {
+  brand: string;
+  model?: string;
+  reference_number?: string;
+  year?: number;
+  condition?: string;
+  description?: string;
+  image_url?: string;
+}) => {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('vault_watches')
+    .insert({ ...payload, user_id: user.id })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+// ── Valuation Requests ────────────────────────────────────────────────────────
+
 export const requestValuation = async (watchId: number) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error('Not authenticated');
@@ -41,12 +79,30 @@ export const getWatchValuationRequest = async (watchId: number) => {
   return data ?? null;
 };
 
-export const getAllValuationRequests = async () => {
+export const getUserValuationRequests = async () => {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) return [];
+
   const { data, error } = await supabase
     .from('valuation_requests')
     .select('*, vault_watches(brand, model, reference_number)')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
+  return data ?? [];
+};
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export const getAllValuationRequests = async () => {
+  const { data, error } = await supabase
+    .from('valuation_requests')
+    .select('*, vault_watches(brand, model, reference_number), profiles(name, email)')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('[getAllValuationRequests] error:', error.message);
+    throw new Error(error.message);
+  }
   return data ?? [];
 };
 

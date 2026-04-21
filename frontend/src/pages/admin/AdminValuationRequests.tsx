@@ -147,7 +147,10 @@ export const AdminValuationRequests: React.FC = () => {
                       <p className="text-obsidian-500 text-xs">{req.vault_watches.reference_number}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-obsidian-300 text-xs">{req.user_id?.slice(0, 8)}…</td>
+                  <td className="px-4 py-3 text-obsidian-300 text-xs">
+                    <p>{req.profiles?.name || '—'}</p>
+                    <p className="text-obsidian-500">{req.profiles?.email || req.user_id?.slice(0, 8)}</p>
+                  </td>
                   <td className="px-4 py-3 text-obsidian-400 text-xs">{formatDate(req.created_at)}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs uppercase tracking-wider px-2 py-1 border ${STATUS_COLORS[req.status as ValuationStatus] ?? 'text-obsidian-400'}`}>

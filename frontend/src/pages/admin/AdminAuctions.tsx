@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from './AdminLayout';
-import { getAdminAuctions, deleteAuction } from '../../api/admin';
+import { getAdminAuctions, deleteAuction, updateAuctionStatus } from '../../api/admin';
 import { useT } from '../../i18n/useLanguage';
 import { formatCurrency, formatDateTime } from '../../utils/format';
 
@@ -27,6 +27,11 @@ export const AdminAuctions: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteAuction,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] }),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateAuctionStatus(id, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] }),
   });
 
@@ -91,11 +96,27 @@ export const AdminAuctions: React.FC = () => {
                   </td>
                   <td className="px-4 py-3 text-obsidian-300 text-center">{a.bids_count ?? 0}</td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3 items-center">
                       <Link to={`/admin/auctions/${a.id}/edit`}
                         className="text-obsidian-400 hover:text-gold-500 text-xs transition-colors">
                         {t.actions.edit}
                       </Link>
+                      {a.status === 'upcoming' && (
+                        <button
+                          onClick={() => statusMutation.mutate({ id: a.id, status: 'live' })}
+                          disabled={statusMutation.isPending}
+                          className="text-green-500 hover:text-green-400 text-xs transition-colors disabled:opacity-50">
+                          Go Live
+                        </button>
+                      )}
+                      {a.status === 'live' && (
+                        <button
+                          onClick={() => statusMutation.mutate({ id: a.id, status: 'ended' })}
+                          disabled={statusMutation.isPending}
+                          className="text-obsidian-400 hover:text-orange-400 text-xs transition-colors disabled:opacity-50">
+                          End
+                        </button>
+                      )}
                       <button
                         onClick={() => { if (window.confirm(t.actions.confirmDelete)) deleteMutation.mutate(a.id); }}
                         className="text-obsidian-400 hover:text-red-400 text-xs transition-colors">

@@ -45,7 +45,12 @@ export const getAuctions = async (params?: Record<string, any>) => {
   if (params?.max_price) q = q.lte('starting_price', params.max_price);
 
   const { data, count, error } = await q;
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('[getAuctions] Supabase error:', error.message, error);
+    throw new Error(error.message);
+  }
+
+  console.info('[getAuctions] rows returned:', data?.length ?? 0, '| total count:', count, '| params:', params);
 
   return {
     data: (data ?? []).map(shapeAuction),
@@ -56,13 +61,38 @@ export const getAuctions = async (params?: Record<string, any>) => {
 };
 
 export const getAuction = async (slug: string) => {
-  const { data, error } = await supabase
+  // Try full query with all joins
+  let result = await supabase
     .from('auctions')
     .select('*, auction_images(id, image_url, sort_order), bids(id, amount, created_at, user_id, profiles(name))')
     .eq('slug', slug)
     .single();
 
-  if (error) throw new Error(error.message);
+  // If full query fails, try without bids (RLS or missing table)
+  if (result.error) {
+    console.warn('[getAuction] full join failed:', result.error.message, '— retrying without bids');
+    result = await supabase
+      .from('auctions')
+      .select('*, auction_images(id, image_url, sort_order)')
+      .eq('slug', slug)
+      .single();
+  }
+
+  // If still failing, try bare select (auction_images RLS issue)
+  if (result.error) {
+    console.warn('[getAuction] auction_images join failed:', result.error.message, '— retrying bare');
+    result = await supabase
+      .from('auctions')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+  }
+
+  const { data, error } = result;
+  if (error) {
+    console.error('[getAuction] all queries failed:', error.message, error);
+    throw new Error(error.message);
+  }
 
   return {
     ...shapeAuction(data),
@@ -93,7 +123,8 @@ export const placeBid = async (auctionId: string, amount: number) => {
     .eq('id', auctionId)
     .single();
 
-  if (!auction || auction.status !== 'live') throw new Error('This auction is not live');
+  if (!auction) throw new Error('Auction not found');
+  if (auction.status !== 'live') throw new Error(`Auction is not live (status: ${auction.status})`);
   const floor = Number(auction.current_bid ?? auction.starting_price);
   if (amount <= floor) throw new Error(`Bid must be greater than ${floor}`);
 
@@ -102,11 +133,16 @@ export const placeBid = async (auctionId: string, amount: number) => {
     .insert({ auction_id: auctionId, user_id: user.id, amount })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('[placeBid] insert error:', error);
+    throw new Error(error.message);
+  }
 
+  // Update current bid and counter — ignore error if column name differs
+  const currentCount = (auction as any).bids_count ?? (auction as any).bid_count ?? 0;
   await supabase
     .from('auctions')
-    .update({ current_bid: amount, bids_count: (auction as any).bids_count + 1, updated_at: new Date().toISOString() })
+    .update({ current_bid: amount, bids_count: currentCount + 1, updated_at: new Date().toISOString() })
     .eq('id', auctionId);
 
   return data;

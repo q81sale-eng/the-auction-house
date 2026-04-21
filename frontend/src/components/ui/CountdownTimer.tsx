@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useT } from '../../i18n/useLanguage';
 
 interface CountdownTimerProps {
-  endsAt: string;
+  endsAt: string | null | undefined;
   onExpire?: () => void;
 }
 
@@ -12,6 +12,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ endsAt, onExpire
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: false });
 
   useEffect(() => {
+    if (!endsAt) return;
     const calculate = () => {
       const diff = new Date(endsAt).getTime() - Date.now();
       if (diff <= 0) {
