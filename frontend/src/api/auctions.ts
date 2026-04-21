@@ -68,19 +68,19 @@ export const getAuction = async (slug: string) => {
     .eq('slug', slug)
     .single();
 
-  // If full query fails, try without bids (RLS or missing table)
+  // If full query fails, try bids only (auction_images RLS issue)
   if (result.error) {
-    console.warn('[getAuction] full join failed:', result.error.message, '— retrying without bids');
+    console.warn('[getAuction] full join failed:', result.error.message);
     result = await supabase
       .from('auctions')
-      .select('*, auction_images(id, image_url, sort_order)')
+      .select('*, bids(id, amount, created_at, user_id, profiles(name))')
       .eq('slug', slug)
       .single();
   }
 
-  // If still failing, try bare select (auction_images RLS issue)
+  // If still failing, try bare select
   if (result.error) {
-    console.warn('[getAuction] auction_images join failed:', result.error.message, '— retrying bare');
+    console.warn('[getAuction] bids join failed:', result.error.message, '— retrying bare');
     result = await supabase
       .from('auctions')
       .select('*')
@@ -94,12 +94,23 @@ export const getAuction = async (slug: string) => {
     throw new Error(error.message);
   }
 
+  // Fetch bids separately if joins failed
+  let bidsData = data.bids ?? [];
+  if (!data.bids) {
+    const { data: bids } = await supabase
+      .from('bids')
+      .select('id, amount, created_at, user_id, profiles(name)')
+      .eq('auction_id', data.id)
+      .order('amount', { ascending: false });
+    bidsData = bids ?? [];
+  }
+
   return {
     ...shapeAuction(data),
-    bids: (data.bids ?? [])
+    bids: bidsData
       .sort((a: any, b: any) => Number(b.amount) - Number(a.amount))
       .map((b: any) => ({ ...b, user: b.profiles })),
-    bids_count: data.bids?.length ?? 0,
+    bids_count: bidsData.length,
   };
 };
 
