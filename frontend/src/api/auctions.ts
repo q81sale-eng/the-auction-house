@@ -138,9 +138,11 @@ export const placeBid = async (auctionId: string, amount: number) => {
     throw new Error(error.message);
   }
 
+  // Update current bid and counter — ignore error if column name differs
+  const currentCount = (auction as any).bids_count ?? (auction as any).bid_count ?? 0;
   await supabase
     .from('auctions')
-    .update({ current_bid: amount, bids_count: (auction as any).bids_count + 1, updated_at: new Date().toISOString() })
+    .update({ current_bid: amount, bids_count: currentCount + 1, updated_at: new Date().toISOString() })
     .eq('id', auctionId);
 
   return data;
