@@ -173,7 +173,7 @@ export const AuctionDetailPage: React.FC = () => {
                 )}
               </div>
 
-              {auction.status === 'live' && (
+              {auction.status === 'live' && auction.ends_at && (
                 <div className="mb-6">
                   <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">{t.timeRemaining}</p>
                   <CountdownTimer endsAt={auction.ends_at} />
@@ -224,12 +224,14 @@ export const AuctionDetailPage: React.FC = () => {
             </div>
 
             {/* Seller */}
-            <div className="flex items-center gap-3 text-sm text-obsidian-400">
-              <div className="w-8 h-8 bg-gold-500/20 rounded-full flex items-center justify-center">
-                <span className="text-gold-500 text-xs font-semibold">{auction.seller?.name?.charAt(0)}</span>
+            {auction.seller?.name && (
+              <div className="flex items-center gap-3 text-sm text-obsidian-400">
+                <div className="w-8 h-8 bg-gold-500/20 rounded-full flex items-center justify-center">
+                  <span className="text-gold-500 text-xs font-semibold">{auction.seller.name.charAt(0)}</span>
+                </div>
+                <span>{t.listedBy} <span className="text-white">{auction.seller.name}</span></span>
               </div>
-              <span>{t.listedBy} <span className="text-white">{auction.seller?.name}</span></span>
-            </div>
+            )}
           </div>
         </div>
 

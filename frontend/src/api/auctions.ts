@@ -61,13 +61,27 @@ export const getAuctions = async (params?: Record<string, any>) => {
 };
 
 export const getAuction = async (slug: string) => {
-  const { data, error } = await supabase
+  // Try with auction_images join first; fall back to plain select if RLS blocks the join
+  let result = await supabase
     .from('auctions')
     .select('*, auction_images(id, image_url, sort_order), bids(id, amount, created_at, user_id, profiles(name))')
     .eq('slug', slug)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (result.error?.message?.toLowerCase().includes('auction_images')) {
+    console.warn('[getAuction] auction_images join failed, retrying without it:', result.error.message);
+    result = await supabase
+      .from('auctions')
+      .select('*, bids(id, amount, created_at, user_id, profiles(name))')
+      .eq('slug', slug)
+      .single();
+  }
+
+  const { data, error } = result;
+  if (error) {
+    console.error('[getAuction] error:', error.message, error);
+    throw new Error(error.message);
+  }
 
   return {
     ...shapeAuction(data),
