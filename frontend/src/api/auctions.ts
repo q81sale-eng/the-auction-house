@@ -94,22 +94,18 @@ export const getAuction = async (slug: string) => {
     throw new Error(error.message);
   }
 
-  // Fetch bids separately if joins failed
-  let bidsData = data.bids ?? [];
-  if (!data.bids) {
-    const { data: bids } = await supabase
-      .from('bids')
-      .select('id, amount, created_at, user_id, profiles(name)')
-      .eq('auction_id', data.id)
-      .order('amount', { ascending: false });
-    bidsData = bids ?? [];
-  }
+  // Always fetch bids separately for fresh data
+  const { data: freshBids } = await supabase
+    .from('bids')
+    .select('id, amount, created_at, user_id, profiles(name)')
+    .eq('auction_id', data.id)
+    .order('amount', { ascending: false });
+
+  const bidsData = freshBids ?? data.bids ?? [];
 
   return {
     ...shapeAuction(data),
-    bids: bidsData
-      .sort((a: any, b: any) => Number(b.amount) - Number(a.amount))
-      .map((b: any) => ({ ...b, user: b.profiles })),
+    bids: bidsData.map((b: any) => ({ ...b, user: b.profiles })),
     bids_count: bidsData.length,
   };
 };
