@@ -464,6 +464,7 @@ const ar: Strings = {
       confirmDeleteUser: 'حذف هذا الحساب؟ لا يمكن التراجع عن هذا الإجراء.',
     },
     form: {
+      pricing: 'الأسعار (د.ك)',
       title: 'العنوان',
       brand: 'الماركة',
       reference: 'الرقم المرجعي',

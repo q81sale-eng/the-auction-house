@@ -462,6 +462,7 @@ const en = {
       confirmDeleteUser: 'Delete this user account? This cannot be undone.',
     },
     form: {
+      pricing: 'Pricing (KWD)',
       title: 'Title',
       brand: 'Brand',
       reference: 'Reference No.',

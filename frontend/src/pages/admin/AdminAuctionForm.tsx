@@ -229,7 +229,7 @@ export const AdminAuctionForm: React.FC = () => {
 
         {/* ── Pricing ─────────────────────────────────────────────────────── */}
         <div className="bg-obsidian-900 border border-obsidian-800 p-6 mb-6 space-y-4">
-          <h2 className="font-serif text-white text-lg">Pricing</h2>
+          <h2 className="font-serif text-white text-lg">{t.form.pricing}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
               <label className="label-field">{t.form.startingPrice} *</label>
