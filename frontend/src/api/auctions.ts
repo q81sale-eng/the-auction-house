@@ -35,7 +35,7 @@ export const getAuctions = async (params?: Record<string, any>) => {
 
   let q = supabase
     .from('auctions')
-    .select('*, auction_images(image_url, sort_order)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 
