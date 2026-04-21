@@ -35,7 +35,7 @@ export const getAuctions = async (params?: Record<string, any>) => {
 
   let q = supabase
     .from('auctions')
-    .select('*, auction_images(image_url, sort_order)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -45,7 +45,12 @@ export const getAuctions = async (params?: Record<string, any>) => {
   if (params?.max_price) q = q.lte('starting_price', params.max_price);
 
   const { data, count, error } = await q;
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('[getAuctions] Supabase error:', error.message, error);
+    throw new Error(error.message);
+  }
+
+  console.info('[getAuctions] rows returned:', data?.length ?? 0, '| total count:', count, '| params:', params);
 
   return {
     data: (data ?? []).map(shapeAuction),
