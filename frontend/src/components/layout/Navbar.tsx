@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
@@ -10,8 +10,21 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const adminRef = useRef<HTMLDivElement>(null);
   const { tr, lang, toggle } = useT();
   const { currency, setCurrency } = useCurrencyStore();
+
+  // Close admin dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (adminRef.current && !adminRef.current.contains(e.target as Node)) {
+        setAdminOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleLogout = async () => {
     try { await logout(); } catch {}
@@ -69,9 +82,42 @@ export const Navbar: React.FC = () => {
                 </div>
                 <Link to="/profile" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.profile}</Link>
                 {user?.is_admin && (
-                  <Link to="/admin" className="border border-gold-500/60 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 transition-colors">
-                    {tr.nav.admin}
-                  </Link>
+                  <div className="relative" ref={adminRef}>
+                    <button
+                      onClick={() => setAdminOpen(v => !v)}
+                      className="flex items-center gap-1 border border-gold-500/60 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 transition-colors"
+                    >
+                      {tr.nav.admin}
+                      <svg className={`w-3 h-3 transition-transform ${adminOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {adminOpen && (
+                      <div className="absolute end-0 top-full mt-1 w-52 bg-obsidian-900 border border-obsidian-700 shadow-lg z-50">
+                        <Link
+                          to="/admin"
+                          onClick={() => setAdminOpen(false)}
+                          className="block px-4 py-2.5 text-xs uppercase tracking-wider text-gold-500 hover:bg-obsidian-800 border-b border-obsidian-800"
+                        >
+                          {tr.nav.admin}
+                        </Link>
+                        <Link
+                          to="/admin/valuation-requests"
+                          onClick={() => setAdminOpen(false)}
+                          className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800 border-b border-obsidian-800"
+                        >
+                          {tr.admin.valuationRequests}
+                        </Link>
+                        <Link
+                          to="/admin/auctions/new"
+                          onClick={() => setAdminOpen(false)}
+                          className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800"
+                        >
+                          {tr.admin.actions.createAuction}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <button onClick={handleLogout} className="text-obsidian-400 hover:text-white text-sm transition-colors">
                   {tr.nav.signOut}
@@ -124,7 +170,8 @@ export const Navbar: React.FC = () => {
               <div className="border-t border-obsidian-800 px-2 pt-4 pb-3">
                 <p className="text-obsidian-600 text-xs uppercase tracking-widest mb-2 px-1">{tr.nav.admin}</p>
                 <Link to="/admin" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.admin}</Link>
-                <Link to="/admin/valuation-requests" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{tr.admin.valuationRequests}</Link>
+                <Link to="/admin/valuation-requests" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.admin.valuationRequests}</Link>
+                <Link to="/admin/auctions/new" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{tr.admin.actions.createAuction}</Link>
               </div>
             )}
 
