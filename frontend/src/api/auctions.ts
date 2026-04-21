@@ -123,7 +123,8 @@ export const placeBid = async (auctionId: string, amount: number) => {
     .eq('id', auctionId)
     .single();
 
-  if (!auction || auction.status !== 'live') throw new Error('This auction is not live');
+  if (!auction) throw new Error('Auction not found');
+  if (auction.status !== 'live') throw new Error(`Auction is not live (status: ${auction.status})`);
   const floor = Number(auction.current_bid ?? auction.starting_price);
   if (amount <= floor) throw new Error(`Bid must be greater than ${floor}`);
 
@@ -132,7 +133,10 @@ export const placeBid = async (auctionId: string, amount: number) => {
     .insert({ auction_id: auctionId, user_id: user.id, amount })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('[placeBid] insert error:', error);
+    throw new Error(error.message);
+  }
 
   await supabase
     .from('auctions')

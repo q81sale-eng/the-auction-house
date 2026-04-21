@@ -38,7 +38,7 @@ export const AuctionDetailPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['auction', slug] });
     },
     onError: (err: any) => {
-      setMessage({ type: 'error', text: err.response?.data?.message || t.bidError });
+      setMessage({ type: 'error', text: err.message || err.response?.data?.message || t.bidError });
     },
   });
 
@@ -49,7 +49,7 @@ export const AuctionDetailPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['auction', slug] });
     },
     onError: (err: any) => {
-      setMessage({ type: 'error', text: err.response?.data?.message || t.buyError });
+      setMessage({ type: 'error', text: err.message || err.response?.data?.message || t.buyError });
     },
   });
 
