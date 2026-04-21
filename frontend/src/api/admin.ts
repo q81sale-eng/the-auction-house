@@ -92,6 +92,9 @@ export const updateAuction = async (id: string, payload: Record<string, any>) =>
   return data;
 };
 
+export const updateAuctionStatus = async (id: string, status: string) =>
+  updateAuction(id, { status });
+
 export const deleteAuction = async (id: string) => {
   const { error } = await supabase.from('auctions').delete().eq('id', id);
   if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }

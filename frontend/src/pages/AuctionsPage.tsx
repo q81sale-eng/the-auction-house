@@ -109,7 +109,7 @@ const DEMO_AUCTIONS = [
   },
 ];
 
-const DEFAULT_FILTERS = { status: 'live', brand: '', min_price: '', max_price: '' };
+const DEFAULT_FILTERS = { status: '', brand: '', min_price: '', max_price: '' };
 
 export const AuctionsPage: React.FC = () => {
   const { tr } = useT();
