@@ -1,10 +1,10 @@
 import { supabase } from '../lib/supabase';
 
-function shapeAuction(a: any) {
+function shapeAuction(a: any, auctionImages?: { image_url: string; sort_order: number }[]) {
   if (!a) return a;
-  const dbImages: { path: string; alt_text: string }[] = (
-    (a.auction_images ?? []) as { image_url: string; sort_order: number }[]
-  )
+
+  const rows = auctionImages ?? (a.auction_images ?? []);
+  const dbImages: { path: string; alt_text: string }[] = (rows as { image_url: string; sort_order: number }[])
     .sort((x, y) => x.sort_order - y.sort_order)
     .map(img => ({ path: img.image_url, alt_text: a.title }));
 
@@ -53,7 +53,7 @@ export const getAuctions = async (params?: Record<string, any>) => {
   console.info('[getAuctions] rows returned:', data?.length ?? 0, '| total count:', count, '| params:', params);
 
   return {
-    data: (data ?? []).map(shapeAuction),
+    data: (data ?? []).map((a: any) => shapeAuction(a)),
     total: count ?? 0,
     last_page: Math.ceil((count ?? 0) / perPage),
     current_page: page,
@@ -61,53 +61,41 @@ export const getAuctions = async (params?: Record<string, any>) => {
 };
 
 export const getAuction = async (slug: string) => {
-  // Try full query with all joins
-  let result = await supabase
+  // Bare auction fetch — no joins to avoid RLS failures
+  const { data, error } = await supabase
     .from('auctions')
-    .select('*, auction_images(id, image_url, sort_order), bids(id, amount, created_at, user_id, profiles(name))')
+    .select('*')
     .eq('slug', slug)
     .single();
 
-  // If full query fails, try bids only (auction_images RLS issue)
-  if (result.error) {
-    console.warn('[getAuction] full join failed:', result.error.message);
-    result = await supabase
-      .from('auctions')
-      .select('*, bids(id, amount, created_at, user_id, profiles(name))')
-      .eq('slug', slug)
-      .single();
-  }
-
-  // If still failing, try bare select
-  if (result.error) {
-    console.warn('[getAuction] bids join failed:', result.error.message, '— retrying bare');
-    result = await supabase
-      .from('auctions')
-      .select('*')
-      .eq('slug', slug)
-      .single();
-  }
-
-  const { data, error } = result;
   if (error) {
-    console.error('[getAuction] all queries failed:', error.message, error);
+    console.error('[getAuction] fetch failed:', error.message, error);
     throw new Error(error.message);
   }
 
-  // Always fetch bids separately for fresh data
-  const { data: freshBids, error: bidsError } = await supabase
-    .from('bids')
-    .select('id, amount, created_at, user_id')
-    .eq('auction_id', data.id)
-    .order('amount', { ascending: false });
+  // Fetch images and bids in parallel — both are independent queries
+  const [imagesResult, bidsResult] = await Promise.all([
+    supabase
+      .from('auction_images')
+      .select('image_url, sort_order')
+      .eq('auction_id', data.id)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('bids')
+      .select('id, amount, created_at, user_id')
+      .eq('auction_id', data.id)
+      .order('amount', { ascending: false }),
+  ]);
 
-  if (bidsError) console.warn('[getAuction] bids fetch error:', bidsError.message);
+  if (imagesResult.error) console.warn('[getAuction] images fetch error:', imagesResult.error.message);
+  if (bidsResult.error)  console.warn('[getAuction] bids fetch error:',   bidsResult.error.message);
 
-  const bidsData = freshBids ?? data.bids ?? [];
+  const auctionImages = imagesResult.data ?? [];
+  const bidsData      = bidsResult.data   ?? [];
 
   return {
-    ...shapeAuction(data),
-    bids: bidsData.map((b: any) => ({ ...b, user: b.profiles })),
+    ...shapeAuction(data, auctionImages),
+    bids: bidsData,
     bids_count: bidsData.length,
   };
 };
