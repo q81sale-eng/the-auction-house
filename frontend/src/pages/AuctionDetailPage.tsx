@@ -171,19 +171,11 @@ export const AuctionDetailPage: React.FC = () => {
 
             {/* Price & Timer */}
             <div className="bg-obsidian-900 border border-obsidian-800 p-6 mb-6">
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div>
-                  <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">
-                    {auction.current_bid ? t.currentBid : t.startingPrice}
-                  </p>
-                  <p className="text-white text-3xl font-semibold">{fmt(currentPrice)}</p>
-                </div>
-                {auction.buy_now_price && (
-                  <div>
-                    <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.buyNowLabel}</p>
-                    <p className="text-gold-500 text-3xl font-semibold">{fmt(auction.buy_now_price)}</p>
-                  </div>
-                )}
+              <div className="mb-6">
+                <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">
+                  {auction.current_bid ? t.currentBid : t.startingPrice}
+                </p>
+                <p className="text-white text-3xl font-semibold">{fmt(currentPrice)}</p>
               </div>
 
               {auction.status === 'live' && auction.ends_at && (

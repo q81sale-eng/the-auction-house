@@ -22,6 +22,7 @@ const blank = {
   starting_price: '', current_bid: '', buy_now_price: '',
   bid_increment: '100', deposit_required: '0',
   starts_at: '', ends_at: '',
+  buy_now_active: false as boolean,
 };
 
 export const AdminAuctionForm: React.FC = () => {
@@ -56,6 +57,7 @@ export const AdminAuctionForm: React.FC = () => {
       starting_price:   existing.starting_price   != null ? String(existing.starting_price)   : '',
       current_bid:      existing.current_bid      != null ? String(existing.current_bid)       : '',
       buy_now_price:    existing.buy_now_price    != null ? String(existing.buy_now_price)     : '',
+      buy_now_active:   existing.buy_now_price    != null,
       bid_increment:    existing.bid_increment    != null ? String(existing.bid_increment)     : '100',
       deposit_required: existing.deposit_required != null ? String(existing.deposit_required)  : '0',
       starts_at:        existing.starts_at ? existing.starts_at.slice(0, 16) : '',
@@ -134,8 +136,9 @@ export const AdminAuctionForm: React.FC = () => {
         ends_at:          new Date(form.ends_at).toISOString(),
         image_url:        orderedUrls[0] ?? null,
       };
-      if (form.current_bid)   payload.current_bid   = parseFloat(form.current_bid);
-      if (form.buy_now_price) payload.buy_now_price  = parseFloat(form.buy_now_price);
+      if (form.current_bid)                          payload.current_bid   = parseFloat(form.current_bid);
+      if (form.buy_now_active && form.buy_now_price) payload.buy_now_price = parseFloat(form.buy_now_price);
+      else                                           payload.buy_now_price = null;
       if (form.starts_at)     payload.starts_at      = new Date(form.starts_at).toISOString();
 
       // 4. Create or update auction row
@@ -240,8 +243,19 @@ export const AdminAuctionForm: React.FC = () => {
               <input type="number" min="0" step="0.01" value={form.current_bid} onChange={set('current_bid')} className="input-field" />
             </div>
             <div>
-              <label className="label-field">{t.form.buyNowPrice}</label>
-              <input type="number" min="0" step="0.01" value={form.buy_now_price} onChange={set('buy_now_price')} className="input-field" />
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setForm(p => ({ ...p, buy_now_active: !p.buy_now_active }))}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.buy_now_active ? 'bg-gold-500' : 'bg-obsidian-700'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${form.buy_now_active ? 'translate-x-4' : 'translate-x-1'}`} />
+                </button>
+                <label className="label-field mb-0">{t.form.buyNowPrice}</label>
+              </div>
+              {form.buy_now_active && (
+                <input type="number" min="0" step="0.01" value={form.buy_now_price} onChange={set('buy_now_price')} className="input-field" placeholder="0" />
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
