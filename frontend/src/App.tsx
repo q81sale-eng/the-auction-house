@@ -22,6 +22,7 @@ import { AdminBids } from './pages/admin/AdminBids';
 import { AdminValuationRequests } from './pages/admin/AdminValuationRequests';
 import { AdminListings } from './pages/admin/AdminListings';
 import { AdminListingForm } from './pages/admin/AdminListingForm';
+import { AdminBanners } from './pages/admin/AdminBanners';
 import { PavePage } from './pages/PavePage';
 import { PaveRegentPage } from './pages/PaveRegentPage';
 import { PaveArtisanaPage } from './pages/PaveArtisanaPage';
@@ -162,6 +163,7 @@ function App() {
             <Route path="/admin/listings" element={<AdminListings />} />
             <Route path="/admin/listings/new" element={<AdminListingForm />} />
             <Route path="/admin/listings/:id/edit" element={<AdminListingForm />} />
+            <Route path="/admin/banners" element={<AdminBanners />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

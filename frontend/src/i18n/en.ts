@@ -408,6 +408,7 @@ const en = {
     bids: 'Bids',
     valuationRequests: 'Valuation Requests',
     listings: 'Marketplace',
+    banners: 'Banners',
     backToSite: '← Back to Site',
     overview: 'Platform overview',
     total: 'total',

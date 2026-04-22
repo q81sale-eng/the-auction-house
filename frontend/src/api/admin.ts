@@ -174,6 +174,43 @@ export const deleteListing = async (id: string) => {
   if (error) throw new Error(error.message);
 };
 
+// ─── Banners ──────────────────────────────────────────────────────────────────
+
+export const getAdminBanners = async () => {
+  const { data, error } = await supabase
+    .from('banners').select('*').order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+};
+
+export const createBanner = async (payload: Record<string, any>) => {
+  const { data, error } = await supabase.from('banners').insert(payload).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const updateBanner = async (id: string, payload: Record<string, any>) => {
+  const { error } = await supabase
+    .from('banners').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+export const deleteBanner = async (id: string) => {
+  const { error } = await supabase.from('banners').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+export const uploadBannerImage = async (file: File): Promise<string> => {
+  const ext  = file.name.split('.').pop() ?? 'jpg';
+  const path = `banners/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage
+    .from('auction-images')
+    .upload(path, file, { cacheControl: '3600', upsert: false });
+  if (error) throw new Error(`Image upload failed: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from('auction-images').getPublicUrl(path);
+  return publicUrl;
+};
+
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const getAdminUsers = async (params?: { page?: number }) => {
