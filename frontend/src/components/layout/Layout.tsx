@@ -1,11 +1,16 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Navbar } from './Navbar';
+import { useT } from '../../i18n/useLanguage';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { tr } = useT();
+  const t = tr.footer;
+
   return (
     <div className="min-h-screen bg-obsidian-950">
       <Navbar />
@@ -15,30 +20,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
               <h3 className="font-serif text-gold-500 text-xl tracking-widest uppercase mb-4">The Auction House</h3>
-              <p className="text-obsidian-400 text-sm leading-relaxed max-w-sm">
-                The world's premier destination for rare and collectible timepieces.
-                Connecting discerning collectors with extraordinary watches.
-              </p>
+              <p className="text-obsidian-400 text-sm leading-relaxed max-w-sm">{t.tagline}</p>
             </div>
             <div>
-              <h4 className="text-white text-xs uppercase tracking-widest mb-4">Platform</h4>
+              <h4 className="text-white text-xs uppercase tracking-widest mb-4">{t.platform}</h4>
               <ul className="space-y-2 text-obsidian-400 text-sm">
-                <li><a href="/auctions" className="hover:text-gold-500 transition-colors">Live Auctions</a></li>
-                <li><a href="/marketplace" className="hover:text-gold-500 transition-colors">Marketplace</a></li>
-                <li><a href="/vault" className="hover:text-gold-500 transition-colors">Watch Vault</a></li>
+                <li><Link to="/auctions" className="hover:text-gold-500 transition-colors">{t.liveAuctions}</Link></li>
+                <li><Link to="/marketplace" className="hover:text-gold-500 transition-colors">{t.marketplace}</Link></li>
+                <li><Link to="/vault" className="hover:text-gold-500 transition-colors">{t.watchVault}</Link></li>
+                <li><Link to="/about" className="hover:text-gold-500 transition-colors">{t.about}</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white text-xs uppercase tracking-widest mb-4">Support</h4>
+              <h4 className="text-white text-xs uppercase tracking-widest mb-4">{t.support}</h4>
               <ul className="space-y-2 text-obsidian-400 text-sm">
-                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">How It Works</span></li>
-                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">Authentication</span></li>
-                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">Contact Us</span></li>
+                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">{t.howItWorks}</span></li>
+                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">{t.authentication}</span></li>
+                <li><span className="hover:text-gold-500 transition-colors cursor-pointer">{t.contactUs}</span></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-obsidian-800 mt-8 pt-8 text-center text-obsidian-500 text-xs">
-            © {new Date().getFullYear()} The Auction House. All rights reserved.
+            © {new Date().getFullYear()} {t.rights}
           </div>
         </div>
       </footer>

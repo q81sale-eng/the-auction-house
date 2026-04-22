@@ -603,6 +603,19 @@ const en = {
       inquire: 'Inquire About This Piece',
     },
   },
+  footer: {
+    tagline: "The world's premier destination for rare and collectible timepieces. Connecting discerning collectors with extraordinary watches.",
+    platform: 'Platform',
+    liveAuctions: 'Live Auctions',
+    marketplace: 'Marketplace',
+    watchVault: 'Watch Vault',
+    support: 'Support',
+    howItWorks: 'How It Works',
+    authentication: 'Authentication',
+    contactUs: 'Contact Us',
+    about: 'About Us',
+    rights: 'The Auction House. All rights reserved.',
+  },
 };
 
 export default en;

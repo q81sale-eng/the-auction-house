@@ -605,6 +605,19 @@ const ar: Strings = {
       inquire: 'استفسر عن هذه القطعة',
     },
   },
+  footer: {
+    tagline: 'الوجهة الأولى في المنطقة للساعات النادرة والفاخرة. نربط الجامعين الراقيين بأرقى القطع.',
+    platform: 'المنصة',
+    liveAuctions: 'المزادات',
+    marketplace: 'السوق',
+    watchVault: 'خزنة الساعات',
+    support: 'الدعم',
+    howItWorks: 'كيف تعمل المنصة',
+    authentication: 'التحقق والمصادقة',
+    contactUs: 'تواصل معنا',
+    about: 'من نحن',
+    rights: 'The Auction House. جميع الحقوق محفوظة.',
+  },
 };
 
 export default ar;
