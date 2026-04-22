@@ -16,8 +16,17 @@ export const uploadVaultImage = async (file: File, userId: string): Promise<stri
 // ─── Shape helpers ────────────────────────────────────────────────────────────
 
 function shapeWatch(row: any) {
+  const isSold = row.status === 'sold';
+  const comparePrice = isSold
+    ? (row.sold_price != null ? Number(row.sold_price) : null)
+    : (row.current_value != null ? Number(row.current_value) : null);
+  const cost = Number(row.purchase_price ?? 0);
+  const pl = comparePrice != null ? comparePrice - cost : null;
+  const plPct = pl != null && cost > 0 ? (pl / cost) * 100 : null;
+
   return {
     ...row,
+    status: row.status ?? 'active',
     watch: {
       brand: row.brand,
       model: row.model,
@@ -26,17 +35,12 @@ function shapeWatch(row: any) {
       condition: row.condition,
       image_url: row.image_url ?? null,
     },
-    // Normalize images: support both 'url' and 'image_url' column names
     images: (row.vault_watch_images ?? [])
       .sort((a: any, b: any) => (a.sort_order ?? a.id ?? 0) - (b.sort_order ?? b.id ?? 0))
       .map((img: any) => ({ ...img, url: img.url ?? img.image_url })),
     cover_image_url: row.image_url ?? null,
-    profit_loss: row.current_value != null
-      ? Number(row.current_value) - Number(row.purchase_price)
-      : null,
-    profit_loss_percent: row.current_value != null && Number(row.purchase_price) > 0
-      ? ((Number(row.current_value) - Number(row.purchase_price)) / Number(row.purchase_price)) * 100
-      : null,
+    profit_loss: pl,
+    profit_loss_percent: plPct,
   };
 }
 
@@ -54,15 +58,19 @@ export const getVault = async () => {
 
   if (error) throw new Error(error.message);
 
-  const watches = (data ?? []).map(shapeWatch);
-  const totalCost = watches.reduce((s, w) => s + Number(w.purchase_price ?? 0), 0);
-  const totalValue = watches.reduce((s, w) => s + Number(w.current_value ?? w.purchase_price ?? 0), 0);
-  const totalPL = totalValue - totalCost;
+  const all = (data ?? []).map(shapeWatch);
+  const activeWatches = all.filter(w => w.status !== 'sold');
+  const soldWatches   = all.filter(w => w.status === 'sold');
+
+  const totalCost  = activeWatches.reduce((s, w) => s + Number(w.purchase_price ?? 0), 0);
+  const totalValue = activeWatches.reduce((s, w) => s + Number(w.current_value ?? w.purchase_price ?? 0), 0);
+  const totalPL    = totalValue - totalCost;
 
   return {
-    watches,
+    watches: activeWatches,
+    soldWatches,
     summary: {
-      total_watches: watches.length,
+      total_watches: activeWatches.length,
       total_cost: totalCost,
       total_value: totalValue,
       total_profit_loss: totalPL,
@@ -214,6 +222,17 @@ export const updateVaultWatch = async (id: number, data: Record<string, any>) =>
     .single();
   if (error) throw new Error(error.message);
   return row;
+};
+
+export const markAsSold = async (id: number, soldPrice: number) => {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error('Not authenticated');
+  const { error } = await supabase
+    .from('vault_watches')
+    .update({ status: 'sold', sold_price: soldPrice, sold_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id);
+  if (error) throw new Error(error.message);
 };
 
 export const removeFromVault = async (id: number) => {

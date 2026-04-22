@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVault, addToVault, uploadImagesForWatch, updateVaultWatch } from '../api/vault';
+import { getVault, addToVault, uploadImagesForWatch, updateVaultWatch, markAsSold, removeFromVault } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
 import { formatCurrency } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
@@ -33,6 +33,11 @@ export const VaultPage: React.FC = () => {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [previews, setPreviews] = useState<Preview[]>([]);
   const [addError, setAddError] = useState('');
+
+  // Sold flow
+  const [soldModalId, setSoldModalId] = useState<number | null>(null);
+  const [soldPriceInput, setSoldPriceInput] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, error: vaultError } = useQuery({
@@ -45,16 +50,14 @@ export const VaultPage: React.FC = () => {
     mutationFn: addToVault,
     onSuccess: (row) => {
       queryClient.invalidateQueries({ queryKey: ['vault'] });
-      setShowAdd(false);
-      setForm(blankForm);
-      setAddError('');
+      setShowAdd(false); setForm(blankForm); setAddError('');
       const files = previews.map(p => p.file);
       previews.forEach(p => URL.revokeObjectURL(p.previewUrl));
       setPreviews([]);
       if (files.length > 0 && user?.id) {
         uploadImagesForWatch(row.id, user.id as string, files)
           .then(() => queryClient.invalidateQueries({ queryKey: ['vault'] }))
-          .catch(err => console.warn('[Vault] image upload error:', err.message));
+          .catch(err => console.warn('[Vault] image upload:', err.message));
       }
     },
     onError: (err: Error) => setAddError(err.message),
@@ -63,6 +66,16 @@ export const VaultPage: React.FC = () => {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateVaultWatch(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vault'] }); setEditId(null); },
+  });
+
+  const soldMutation = useMutation({
+    mutationFn: ({ id, price }: { id: number; price: number }) => markAsSold(id, price),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vault'] }); setSoldModalId(null); setSoldPriceInput(''); },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: removeFromVault,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vault'] }),
   });
 
   const handleFilesPick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,10 +93,172 @@ export const VaultPage: React.FC = () => {
     setShowAdd(false); setForm(blankForm); setPreviews([]); setAddError('');
   };
 
+  const handleDelete = (id: number, label: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف الساعة "${label}"؟\nلا يمكن التراجع عن هذا الإجراء.`)) {
+      deleteMutation.mutate(id);
+    }
+  };
+
   const summary = data?.summary;
-  const watches = data?.watches || [];
+  const watches = data?.watches ?? [];
+  const soldWatches = data?.soldWatches ?? [];
+
   const plColor = (val: number | null) =>
     val == null ? 'text-obsidian-400' : val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-obsidian-400';
+
+  // ── Watch card (shared for active and sold) ───────────────────────────────────
+  const WatchRow = ({ vw, isSold = false }: { vw: any; isSold?: boolean }) => (
+    <div className={`card p-5 ${isSold ? 'opacity-70' : ''}`}>
+      {/* Edit mode */}
+      {editId === vw.id ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.purchasePrice}</label>
+            <input type="number" className="input-field text-sm" defaultValue={vw.purchase_price}
+              onChange={e => setEditForm(p => ({ ...p, purchase_price: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.currentValue}</label>
+            <input type="number" className="input-field text-sm" defaultValue={vw.current_value || ''}
+              onChange={e => setEditForm(p => ({ ...p, current_value: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.notes}</label>
+            <input type="text" className="input-field text-sm" defaultValue={vw.notes || ''}
+              onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
+          </div>
+          <div className="flex items-end gap-2">
+            <button onClick={() => updateMutation.mutate({ id: vw.id, data: editForm })} className="btn-gold py-2 px-4 text-xs">{t.actions.save}</button>
+            <button onClick={() => setEditId(null)} className="btn-outline py-2 px-4 text-xs">{t.actions.cancel}</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Main row */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <Link to={`/vault/${vw.id}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-90 transition-opacity">
+              {/* Image */}
+              {vw.image_url ? (
+                <img src={vw.image_url} alt={vw.model} className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
+              ) : (
+                <div className="w-14 h-14 bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-500 text-xs font-bold shrink-0">
+                  {vw.brand?.slice(0, 2).toUpperCase()}
+                </div>
+              )}
+              {/* Identity */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-gold-500 text-xs uppercase tracking-wider">{vw.brand}</p>
+                  {isSold && (
+                    <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-obsidian-800 border border-obsidian-600 text-obsidian-400">
+                      مباعة
+                    </span>
+                  )}
+                </div>
+                <p className="text-white font-serif text-lg leading-snug truncate">{vw.model}</p>
+                <div className="flex items-center gap-3 mt-1">
+                  {vw.reference_number && <p className="text-obsidian-400 text-xs">Ref. {vw.reference_number}</p>}
+                  {vw.year && <p className="text-obsidian-400 text-xs">{vw.year}</p>}
+                </div>
+              </div>
+            </Link>
+
+            {/* Financials */}
+            <div className="flex items-center gap-5 shrink-0 border-t border-obsidian-800 sm:border-0 pt-3 sm:pt-0">
+              <div className="text-right min-w-[64px]">
+                <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.cost}</p>
+                <p className="text-white text-sm font-semibold">{fmt(vw.purchase_price)}</p>
+              </div>
+              {isSold ? (
+                <div className="text-right min-w-[64px]">
+                  <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">سعر البيع</p>
+                  <p className="text-white text-sm font-semibold">{vw.sold_price ? fmt(vw.sold_price) : '—'}</p>
+                </div>
+              ) : (
+                <div className="text-right min-w-[64px]">
+                  <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.value}</p>
+                  <p className="text-white text-sm font-semibold">{vw.current_value ? fmt(vw.current_value) : '—'}</p>
+                </div>
+              )}
+              <div className="text-right min-w-[64px]">
+                <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.pl}</p>
+                <p className={`text-sm font-semibold ${plColor(vw.profit_loss)}`}>
+                  {vw.profit_loss != null ? `${vw.profit_loss > 0 ? '+' : ''}${fmt(vw.profit_loss)}` : '—'}
+                </p>
+                {vw.profit_loss_percent != null && (
+                  <p className={`text-[10px] ${plColor(vw.profit_loss_percent)}`}>
+                    {vw.profit_loss_percent > 0 ? '+' : ''}{Number(vw.profit_loss_percent).toFixed(1)}%
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              {!isSold && (
+                <div className="flex flex-col gap-1 shrink-0 ms-1">
+                  <button
+                    onClick={() => { setSoldModalId(vw.id); setSoldPriceInput(''); }}
+                    className="text-[11px] whitespace-nowrap px-3 py-1.5 border border-gold-500/40 text-gold-500 hover:bg-gold-500/10 transition-colors"
+                  >
+                    تم البيع
+                  </button>
+                  <button
+                    onClick={() => handleDelete(vw.id, `${vw.brand} ${vw.model}`)}
+                    disabled={deleteMutation.isPending}
+                    className="text-[11px] whitespace-nowrap px-3 py-1.5 border border-obsidian-700 text-obsidian-400 hover:text-red-400 hover:border-red-400/50 transition-colors"
+                  >
+                    حذف
+                  </button>
+                </div>
+              )}
+              {isSold && (
+                <button
+                  onClick={() => handleDelete(vw.id, `${vw.brand} ${vw.model}`)}
+                  disabled={deleteMutation.isPending}
+                  className="text-[11px] whitespace-nowrap px-3 py-1.5 border border-obsidian-700 text-obsidian-400 hover:text-red-400 hover:border-red-400/50 transition-colors ms-1"
+                >
+                  حذف
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Sold price input */}
+          {soldModalId === vw.id && (
+            <div className="mt-4 pt-4 border-t border-obsidian-800 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex-1">
+                <p className="text-obsidian-300 text-sm mb-2">أدخل سعر البيع (د.ك) لحساب الربح / الخسارة:</p>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  autoFocus
+                  value={soldPriceInput}
+                  onChange={e => setSoldPriceInput(e.target.value)}
+                  placeholder="0.000"
+                  className="input-field w-48 text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => soldMutation.mutate({ id: vw.id, price: parseFloat(soldPriceInput) || 0 })}
+                  disabled={soldMutation.isPending}
+                  className="btn-gold text-sm py-2 px-5"
+                >
+                  {soldMutation.isPending ? 'جارٍ...' : 'تأكيد البيع'}
+                </button>
+                <button
+                  onClick={() => setSoldModalId(null)}
+                  className="btn-outline text-sm py-2 px-4"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 
   return (
     <Layout>
@@ -96,14 +271,14 @@ export const VaultPage: React.FC = () => {
           <button onClick={() => setShowAdd(true)} className="btn-gold">{t.addWatch}</button>
         </div>
 
-        {/* Summary Cards */}
+        {/* Summary Cards — active watches only */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
             {([
-              { label: t.summary.totalWatches, value: summary.total_watches, isCurrency: false },
-              { label: t.summary.totalCost,    value: summary.total_cost,    isCurrency: true },
-              { label: t.summary.portfolioValue, value: summary.total_value, isCurrency: true },
-              { label: t.summary.totalPL, value: summary.total_profit_loss,  isCurrency: true, highlight: true },
+              { label: t.summary.totalWatches,   value: summary.total_watches,      isCurrency: false },
+              { label: t.summary.totalCost,       value: summary.total_cost,         isCurrency: true  },
+              { label: t.summary.portfolioValue,  value: summary.total_value,        isCurrency: true  },
+              { label: t.summary.totalPL,         value: summary.total_profit_loss,  isCurrency: true, highlight: true },
             ] as { label: string; value: number; isCurrency: boolean; highlight?: boolean }[]).map(({ label, value, isCurrency, highlight }) => (
               <div key={label} className="bg-obsidian-900 border border-obsidian-800 p-5">
                 <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-2">{label}</p>
@@ -156,12 +331,12 @@ export const VaultPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchasePrice} (£) *</label>
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchasePrice} *</label>
                   <input type="number" className="input-field" value={form.purchase_price} onChange={e => setForm(p => ({ ...p, purchase_price: e.target.value }))} required min={0} />
                 </div>
                 <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.currentValue} (£)</label>
-                  <input type="number" className="input-field" value={form.current_value} onChange={e => setForm(p => ({ ...p, current_value: e.target.value }))} min={0} placeholder="Optional" />
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.currentValue}</label>
+                  <input type="number" className="input-field" value={form.current_value} onChange={e => setForm(p => ({ ...p, current_value: e.target.value }))} min={0} placeholder="اختياري" />
                 </div>
                 <div>
                   <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchaseDate} *</label>
@@ -178,10 +353,8 @@ export const VaultPage: React.FC = () => {
                 <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.notes}</label>
                 <textarea className="input-field h-20 resize-none" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
-
-              {/* Multi-image upload */}
               <div className="mb-6">
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Watch Photos</label>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">صور الساعة</label>
                 <div className="flex flex-wrap gap-3 items-start">
                   {previews.map((p, idx) => (
                     <div key={idx} className="relative w-20 h-20 shrink-0">
@@ -206,9 +379,8 @@ export const VaultPage: React.FC = () => {
                   </button>
                   <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFilesPick} />
                 </div>
-                <p className="text-obsidian-600 text-xs mt-2">JPEG, PNG or WebP · max 5 MB each · first image becomes cover</p>
+                <p className="text-obsidian-600 text-xs mt-2">JPEG, PNG أو WebP · الحد الأقصى 5 MB · أول صورة تصبح الغلاف</p>
               </div>
-
               <div className="flex gap-3 items-center">
                 <button type="submit" disabled={addMutation.isPending} className="btn-gold">
                   {addMutation.isPending ? t.actions.adding : t.actions.add}
@@ -226,99 +398,34 @@ export const VaultPage: React.FC = () => {
           </div>
         )}
 
-        {/* Watch List */}
+        {/* Active watches */}
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => <div key={i} className="card p-6 animate-pulse h-24" />)}
           </div>
         ) : watches.length > 0 ? (
-          <div className="space-y-4">
-            {watches.map((vw: any) => (
-              <div key={vw.id} className="card p-6">
-                {editId === vw.id ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.purchasePrice}</label>
-                      <input type="number" className="input-field text-sm" defaultValue={vw.purchase_price}
-                        onChange={e => setEditForm(p => ({ ...p, purchase_price: e.target.value }))} />
-                    </div>
-                    <div>
-                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.currentValue}</label>
-                      <input type="number" className="input-field text-sm" defaultValue={vw.current_value || ''}
-                        onChange={e => setEditForm(p => ({ ...p, current_value: e.target.value }))} />
-                    </div>
-                    <div>
-                      <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.notes}</label>
-                      <input type="text" className="input-field text-sm" defaultValue={vw.notes || ''}
-                        onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <button onClick={() => updateMutation.mutate({ id: vw.id, data: editForm })} className="btn-gold py-2 px-4 text-xs">{t.actions.save}</button>
-                      <button onClick={() => setEditId(null)} className="btn-outline py-2 px-4 text-xs">{t.actions.cancel}</button>
-                    </div>
-                  </div>
-                ) : (
-                  <Link to={`/vault/${vw.id}`} className="flex flex-col sm:flex-row sm:items-center gap-4 hover:opacity-90 transition-opacity">
-
-                    {/* Image + identity */}
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      {vw.image_url ? (
-                        <img src={vw.image_url} alt={vw.model} className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
-                      ) : (
-                        <div className="w-14 h-14 bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-500 text-xs font-bold shrink-0">
-                          {vw.brand?.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-gold-500 text-xs uppercase tracking-wider mb-0.5">{vw.brand}</p>
-                        <p className="text-white font-serif text-lg leading-snug truncate">{vw.model}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          {vw.reference_number && (
-                            <p className="text-obsidian-400 text-xs">Ref. {vw.reference_number}</p>
-                          )}
-                          {vw.year && (
-                            <p className="text-obsidian-400 text-xs">{vw.year}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Financials */}
-                    <div className="flex items-center gap-5 shrink-0 border-t border-obsidian-800 sm:border-0 pt-3 sm:pt-0">
-                      <div className="text-right min-w-[64px]">
-                        <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.cost}</p>
-                        <p className="text-white text-sm font-semibold">{fmt(vw.purchase_price)}</p>
-                      </div>
-                      <div className="text-right min-w-[64px]">
-                        <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.value}</p>
-                        <p className="text-white text-sm font-semibold">{vw.current_value ? fmt(vw.current_value) : '—'}</p>
-                      </div>
-                      <div className="text-right min-w-[64px]">
-                        <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.pl}</p>
-                        <p className={`text-sm font-semibold ${plColor(vw.profit_loss)}`}>
-                          {vw.profit_loss != null ? `${vw.profit_loss > 0 ? '+' : ''}${fmt(vw.profit_loss)}` : '—'}
-                        </p>
-                        {vw.profit_loss_percent != null && (
-                          <p className={`text-[10px] ${plColor(vw.profit_loss_percent)}`}>
-                            {vw.profit_loss_percent > 0 ? '+' : ''}{Number(vw.profit_loss_percent).toFixed(1)}%
-                          </p>
-                        )}
-                      </div>
-                      <svg className="w-4 h-4 text-obsidian-600 shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-
-                  </Link>
-                )}
-              </div>
-            ))}
+          <div className="space-y-3 mb-12">
+            {watches.map((vw: any) => <WatchRow key={vw.id} vw={vw} />)}
           </div>
         ) : (
-          <div className="text-center py-20 border border-obsidian-800 bg-obsidian-900">
+          <div className="text-center py-20 border border-obsidian-800 bg-obsidian-900 mb-12">
             <p className="font-serif text-2xl text-white mb-3">{t.empty}</p>
             <p className="text-obsidian-400 text-sm mb-6">{t.emptyDesc}</p>
             <button onClick={() => setShowAdd(true)} className="btn-gold">{t.addFirst}</button>
+          </div>
+        )}
+
+        {/* Sold watches section */}
+        {soldWatches.length > 0 && (
+          <div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="h-px flex-1 bg-obsidian-800" />
+              <p className="text-obsidian-500 text-xs uppercase tracking-widest">الساعات المباعة ({soldWatches.length})</p>
+              <div className="h-px flex-1 bg-obsidian-800" />
+            </div>
+            <div className="space-y-3">
+              {soldWatches.map((vw: any) => <WatchRow key={vw.id} vw={vw} isSold />)}
+            </div>
           </div>
         )}
       </div>
