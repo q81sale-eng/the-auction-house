@@ -21,7 +21,7 @@ function slugify(text: string) {
 const blank = {
   title: '', brand: '', model: '', reference_number: '', year: '',
   condition: 'excellent' as string, status: 'active' as string,
-  price: '', negotiable: false as boolean,
+  price: '', retail_price: '', negotiable: false as boolean,
   description: '',
   movement: '', case_material: '', bracelet_material: '',
   dial_color: '', case_diameter: '', water_resistance: '',
@@ -65,6 +65,7 @@ export const AdminListingForm: React.FC = () => {
       condition:         existing.condition         ?? 'excellent',
       status:            existing.status            ?? 'active',
       price:             existing.price             != null ? String(existing.price)          : '',
+      retail_price:      existing.retail_price      != null ? String(existing.retail_price)   : '',
       negotiable:        existing.negotiable        ?? false,
       description:       existing.description       ?? '',
       movement:          existing.movement          ?? '',
@@ -117,6 +118,7 @@ export const AdminListingForm: React.FC = () => {
         condition:         form.condition,
         status:            form.status,
         price:             parseFloat(form.price),
+        retail_price:      form.retail_price ? parseFloat(form.retail_price) : null,
         negotiable:        form.negotiable,
         description:       form.description       || null,
         movement:          form.movement          || null,
@@ -234,9 +236,16 @@ export const AdminListingForm: React.FC = () => {
         {/* ── السعر ── */}
         <div className="bg-obsidian-900 border border-obsidian-800 p-6 mb-6 space-y-4">
           <h2 className="font-serif text-white text-lg">السعر</h2>
-          <div>
-            <label className="label-field">السعر (د.ك) *</label>
-            <input type="number" min="0" step="0.001" value={form.price} onChange={set('price')} className="input-field" required />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-field">السعر (د.ك) *</label>
+              <input type="number" min="0" step="0.001" value={form.price} onChange={set('price')} className="input-field" required />
+            </div>
+            <div>
+              <label className="label-field">سعر الوكيل الرسمي (اختياري)</label>
+              <input type="number" min="0" step="0.001" value={form.retail_price} onChange={set('retail_price')} className="input-field" placeholder="0" />
+              <p className="text-obsidian-600 text-xs mt-1">يُظهر نسبة التوفير للعميل</p>
+            </div>
           </div>
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={form.negotiable} onChange={e => setForm(p => ({ ...p, negotiable: e.target.checked }))} className="accent-gold-500 w-4 h-4" />

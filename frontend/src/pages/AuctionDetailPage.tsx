@@ -176,6 +176,20 @@ export const AuctionDetailPage: React.FC = () => {
                   {auction.current_bid ? t.currentBid : t.startingPrice}
                 </p>
                 <p className="text-white text-3xl font-semibold">{fmt(currentPrice)}</p>
+                {auction.retail_price && (() => {
+                  const saving = Math.round(((parseFloat(auction.retail_price) - parseFloat(String(currentPrice))) / parseFloat(auction.retail_price)) * 100);
+                  return saving > 0 ? (
+                    <div className="flex items-center gap-3 mt-3 pt-3 border-t border-obsidian-800">
+                      <div>
+                        <p className="text-obsidian-500 text-[10px] uppercase tracking-wider">سعر الوكيل</p>
+                        <p className="text-obsidian-500 text-sm line-through">{fmt(auction.retail_price)}</p>
+                      </div>
+                      <span className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs px-3 py-1 uppercase tracking-wider">
+                        وفّر {saving}%
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               {auction.status === 'live' && auction.ends_at && (

@@ -19,7 +19,7 @@ type ImageItem =
 const blank = {
   title: '', brand: '', reference: '', description: '',
   condition: 'excellent', status: 'upcoming',
-  starting_price: '', current_bid: '', buy_now_price: '',
+  starting_price: '', current_bid: '', buy_now_price: '', retail_price: '',
   bid_increment: '100', deposit_required: '0',
   starts_at: '', ends_at: '',
   buy_now_active: false as boolean,
@@ -58,6 +58,7 @@ export const AdminAuctionForm: React.FC = () => {
       current_bid:      existing.current_bid      != null ? String(existing.current_bid)       : '',
       buy_now_price:    existing.buy_now_price    != null ? String(existing.buy_now_price)     : '',
       buy_now_active:   existing.buy_now_price    != null,
+      retail_price:     existing.retail_price     != null ? String(existing.retail_price)      : '',
       bid_increment:    existing.bid_increment    != null ? String(existing.bid_increment)     : '100',
       deposit_required: existing.deposit_required != null ? String(existing.deposit_required)  : '0',
       starts_at:        existing.starts_at ? existing.starts_at.slice(0, 16) : '',
@@ -139,6 +140,7 @@ export const AdminAuctionForm: React.FC = () => {
       if (form.current_bid)                          payload.current_bid   = parseFloat(form.current_bid);
       if (form.buy_now_active && form.buy_now_price) payload.buy_now_price = parseFloat(form.buy_now_price);
       else                                           payload.buy_now_price = null;
+      payload.retail_price = form.retail_price ? parseFloat(form.retail_price) : null;
       if (form.starts_at)     payload.starts_at      = new Date(form.starts_at).toISOString();
 
       // 4. Create or update auction row
@@ -257,6 +259,14 @@ export const AdminAuctionForm: React.FC = () => {
                 <input type="number" min="0" step="0.01" value={form.buy_now_price} onChange={set('buy_now_price')} className="input-field" placeholder="0" />
               )}
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-field">سعر الوكيل الرسمي (اختياري)</label>
+              <input type="number" min="0" step="0.01" value={form.retail_price} onChange={set('retail_price')} className="input-field" placeholder="0" />
+              <p className="text-obsidian-600 text-xs mt-1">يُستخدم لحساب نسبة التوفير في صفحة المزاد</p>
+            </div>
+            <div />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

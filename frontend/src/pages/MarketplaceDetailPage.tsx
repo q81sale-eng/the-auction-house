@@ -139,6 +139,20 @@ export const MarketplaceDetailPage: React.FC = () => {
                   {listing.negotiable && (
                     <p className="text-gold-500 text-xs mt-1 uppercase tracking-wider">{t.priceNegotiable}</p>
                   )}
+                  {listing.retail_price && (() => {
+                    const saving = Math.round(((parseFloat(listing.retail_price) - parseFloat(String(listing.price))) / parseFloat(listing.retail_price)) * 100);
+                    return saving > 0 ? (
+                      <div className="flex items-center gap-3 mt-3 pt-3 border-t border-obsidian-800">
+                        <div>
+                          <p className="text-obsidian-500 text-[10px] uppercase tracking-wider">سعر الوكيل</p>
+                          <p className="text-obsidian-500 text-sm line-through">{fmt(listing.retail_price)}</p>
+                        </div>
+                        <span className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs px-3 py-1 uppercase tracking-wider">
+                          وفّر {saving}%
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
