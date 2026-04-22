@@ -60,7 +60,10 @@ export const Navbar: React.FC = () => {
             <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.auctions}</Link>
             <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.marketplace}</Link>
             <Link to="/pave" className="text-gold-500/70 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors font-serif italic">{tr.nav.pave}</Link>
-            <Link to="/catalog" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{lang === 'ar' ? 'الأسعار' : 'Prices'}</Link>
+            <Link to="/catalog" className="flex items-center gap-1.5 border border-gold-500/40 text-gold-500 hover:bg-gold-500/10 text-xs uppercase tracking-wider px-3 py-1.5 transition-colors">
+              <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/></svg>
+              {lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}
+            </Link>
             <Link to="/about" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
             {isAuthenticated && (
               <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
@@ -167,7 +170,7 @@ export const Navbar: React.FC = () => {
               <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
               <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
               <Link to="/pave" className="block text-gold-500/80 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900 font-serif italic" onClick={() => setMenuOpen(false)}>{tr.nav.pave}</Link>
-              <Link to="/catalog" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{lang === 'ar' ? 'الأسعار' : 'Prices'}</Link>
+              <Link to="/catalog" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}</Link>
               <Link to="/about" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{lang === 'ar' ? 'من نحن' : 'About'}</Link>
             </div>
 

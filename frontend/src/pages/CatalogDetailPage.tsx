@@ -11,9 +11,8 @@ import { useT } from '../i18n/useLanguage';
 export const CatalogDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { currency } = useCurrencyStore();
-  const { lang, tr } = useT();
+  const { lang } = useT();
   const fmt = (v: number) => formatCurrency(convertFromGBP(v, currency), currency);
-  const ws = tr.watchSpecs;
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['catalog', slug],
@@ -46,22 +45,15 @@ export const CatalogDetailPage: React.FC = () => {
   );
 
   const specs: [string, string | number | undefined][] = [
-    [ws.movement,        watch.movement],
-    [ws.caseMaterial,    watch.case_material],
-    [ws.caseDiameter,    watch.case_diameter ? `${watch.case_diameter}mm` : undefined],
-    [ws.bracelet,        watch.bracelet_material],
-    [ws.dialColor,       watch.dial_color],
-    [ws.waterResistance, watch.water_resistance],
-    [ws.powerReserve,    watch.power_reserve],
-    [ws.complications,   watch.complications],
-    [lang === 'ar' ? 'سنة الإصدار' : 'Year Introduced', watch.year_introduced],
+    [lang === 'ar' ? 'قطر العلبة' : 'Case Diameter', watch.case_diameter ? `${watch.case_diameter}mm` : undefined],
+    [lang === 'ar' ? 'نوع السوار'  : 'Bracelet Type',  watch.bracelet_material],
   ].filter(([, v]) => v) as [string, string][];
 
   return (
     <Layout>
       <Breadcrumb items={[
         { label: lang === 'ar' ? 'الرئيسية' : 'Home', href: '/' },
-        { label: lang === 'ar' ? 'كاتالوج الأسعار' : 'Catalog', href: '/catalog' },
+        { label: lang === 'ar' ? 'أسعار الساعات لدى الوكيل' : 'Dealer Prices', href: '/catalog' },
         { label: `${watch.brand} ${watch.model}` },
       ]} />
 
@@ -82,8 +74,17 @@ export const CatalogDetailPage: React.FC = () => {
             {watch.reference_number && (
               <p className="text-obsidian-400 text-sm mb-6" dir="ltr">{watch.reference_number}</p>
             )}
-            {watch.description && (
-              <p className="text-obsidian-300 text-sm leading-loose mb-6">{watch.description}</p>
+
+            {/* Specs inline */}
+            {specs.length > 0 && (
+              <div className="flex flex-wrap gap-3 mb-6">
+                {specs.map(([label, value]) => (
+                  <div key={label} className="bg-obsidian-900 border border-obsidian-800 px-4 py-2">
+                    <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{label}</p>
+                    <p className="text-white text-sm font-medium">{value}</p>
+                  </div>
+                ))}
+              </div>
             )}
 
             {/* Price box */}
@@ -108,23 +109,6 @@ export const CatalogDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Specs table */}
-        {specs.length > 0 && (
-          <div className="mt-12 border-t border-obsidian-800 pt-10">
-            <h2 className="font-serif text-2xl text-white mb-6">
-              {lang === 'ar' ? 'المواصفات الكاملة' : 'Full Specifications'}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-obsidian-800">
-              {specs.map(([label, value]) => (
-                <div key={label} className="bg-obsidian-950 px-5 py-4 flex justify-between items-center">
-                  <span className="text-obsidian-400 text-xs uppercase tracking-wider">{label}</span>
-                  <span className="text-white text-sm font-medium">{value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </Layout>
   );

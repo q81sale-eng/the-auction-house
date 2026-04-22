@@ -39,7 +39,7 @@ export const CatalogPage: React.FC = () => {
     <Layout>
       <Breadcrumb items={[
         { label: lang === 'ar' ? 'الرئيسية' : 'Home', href: '/' },
-        { label: lang === 'ar' ? 'كاتالوج الأسعار' : 'Price Catalog' },
+        { label: lang === 'ar' ? 'أسعار الساعات لدى الوكيل' : 'Dealer Prices' },
       ]} />
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
@@ -52,7 +52,7 @@ export const CatalogPage: React.FC = () => {
           {lang === 'ar' ? 'The Auction House' : 'The Auction House'}
         </p>
         <h1 className="font-serif text-4xl sm:text-5xl text-white mb-3">
-          {lang === 'ar' ? 'كاتالوج أسعار الوكيل' : 'Official Retail Price Catalog'}
+          {lang === 'ar' ? 'أسعار الساعات لدى الوكيل' : 'Official Dealer Prices'}
         </h1>
         <p className="text-obsidian-400 text-sm max-w-lg mx-auto">
           {lang === 'ar'

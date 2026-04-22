@@ -179,7 +179,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/admin/valuation-requests', label: t.valuationRequests,     icon: Ic.valuations },
     { path: '/admin/listings',           label: t.listings ?? 'السوق',         icon: Ic.listings },
     { path: '/admin/banners',            label: t.banners  ?? 'البنرات',       icon: Ic.banners  },
-    { path: '/admin/catalog',            label: 'كاتالوج الأسعار',              icon: Ic.catalog  },
+    { path: '/admin/catalog',            label: 'أسعار الوكيل',                 icon: Ic.catalog  },
   ];
 
   const mobileSidebarStyle: React.CSSProperties = {

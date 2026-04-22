@@ -39,7 +39,7 @@ export const AdminCatalog: React.FC = () => {
     <AdminLayout>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-serif text-3xl text-white mb-1">كاتالوج الساعات</h1>
+          <h1 className="font-serif text-3xl text-white mb-1">أسعار الساعات لدى الوكيل</h1>
           <p className="text-obsidian-400 text-sm">{watches.length} قطعة · {brands.length} ماركة</p>
         </div>
         <Link to="/admin/catalog/new" className="btn-gold">+ إضافة ساعة</Link>
