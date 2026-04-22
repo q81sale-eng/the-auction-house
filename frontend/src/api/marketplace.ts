@@ -24,6 +24,7 @@ function shapeListing(l: any) {
       primary_image: l.image_url ? { path: l.image_url, alt_text: l.title } : undefined,
       images: l.image_url ? [{ path: l.image_url, alt_text: l.title }] : [],
     },
+    seller: { name: l.seller_name || 'The Auction House' },
   };
 }
 

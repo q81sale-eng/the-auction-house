@@ -407,6 +407,7 @@ const en = {
     users: 'Users',
     bids: 'Bids',
     valuationRequests: 'Valuation Requests',
+    listings: 'Marketplace',
     backToSite: '← Back to Site',
     overview: 'Platform overview',
     total: 'total',

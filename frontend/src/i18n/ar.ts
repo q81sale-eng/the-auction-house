@@ -409,6 +409,7 @@ const ar: Strings = {
     users: 'المستخدمون',
     bids: 'العروض',
     valuationRequests: 'طلبات التقييم',
+    listings: 'السوق',
     backToSite: 'العودة للموقع →',
     overview: 'نظرة عامة على المنصة',
     total: 'إجمالي',

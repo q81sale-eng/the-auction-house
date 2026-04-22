@@ -137,6 +137,43 @@ export const deleteAllAuctionImages = async (auctionId: string) => {
   if (error) throw new Error(error.message);
 };
 
+// ─── Marketplace Listings ─────────────────────────────────────────────────────
+
+export const getAdminListings = async (params?: { page?: number }) => {
+  const page = params?.page ?? 1;
+  const from = (page - 1) * PER_PAGE;
+  const to   = from + PER_PAGE - 1;
+  const { data, count } = await supabase
+    .from('marketplace_listings')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+  return paginate(data, count, page);
+};
+
+export const createListing = async (payload: Record<string, any>) => {
+  const { data, error } = await supabase
+    .from('marketplace_listings')
+    .insert(payload)
+    .select()
+    .single();
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+  return data;
+};
+
+export const updateListing = async (id: string, payload: Record<string, any>) => {
+  const { error } = await supabase
+    .from('marketplace_listings')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+};
+
+export const deleteListing = async (id: string) => {
+  const { error } = await supabase.from('marketplace_listings').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const getAdminUsers = async (params?: { page?: number }) => {
