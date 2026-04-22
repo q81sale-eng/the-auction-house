@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getListings } from '../api/marketplace';
 import { ListingCard } from '../components/marketplace/ListingCard';
 import { Layout } from '../components/layout/Layout';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useT } from '../i18n/useLanguage';
 
 const BRANDS = ['Rolex', 'Patek Philippe', 'Audemars Piguet', 'A. Lange & Söhne', 'F.P. Journe', 'Vacheron Constantin', 'Jaeger-LeCoultre', 'Richard Mille', 'Omega'];
@@ -40,6 +41,7 @@ export const MarketplacePage: React.FC = () => {
 
   return (
     <Layout>
+      <Breadcrumb items={[{ label: tr.nav.home, href: '/' }, { label: tr.nav.marketplace }]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="mb-10">
           <p className="section-subtitle">{t.eyebrow}</p>

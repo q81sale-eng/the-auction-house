@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getAuctions } from '../api/auctions';
 import { AuctionCard } from '../components/auction/AuctionCard';
 import { Layout } from '../components/layout/Layout';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useT } from '../i18n/useLanguage';
 
 const BRANDS = ['Rolex', 'Patek Philippe', 'Audemars Piguet', 'A. Lange & Söhne', 'F.P. Journe', 'Vacheron Constantin', 'Jaeger-LeCoultre'];
@@ -135,6 +136,7 @@ export const AuctionsPage: React.FC = () => {
 
   return (
     <Layout>
+      <Breadcrumb items={[{ label: tr.nav.home, href: '/' }, { label: tr.nav.auctions }]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-10">
           <div>

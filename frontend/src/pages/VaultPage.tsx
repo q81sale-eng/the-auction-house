@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVault, addToVault, uploadImagesForWatch } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { formatCurrency } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
 import { useAuthStore } from '../store/authStore';
@@ -140,6 +141,7 @@ export const VaultPage: React.FC = () => {
 
   return (
     <Layout>
+      <Breadcrumb items={[{ label: tr.nav.home, href: '/' }, { label: tr.nav.vault }]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-10">
           <div>
