@@ -271,3 +271,40 @@ export const updateWatch        = (_id: any, _d: any) => Promise.resolve({});
 export const deleteWatch        = (_id: any) => Promise.resolve({});
 export const getAdminValuations = (_p?: any) => Promise.resolve(emptyPage);
 export const createValuation    = (_d: any) => Promise.resolve({});
+
+// ─── Catalog ──────────────────────────────────────────────────────────────────
+
+export const getAdminCatalog = async () => {
+  const { data, error } = await supabase
+    .from('catalog_watches')
+    .select('*')
+    .order('brand', { ascending: true })
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+};
+
+export const createCatalogWatch = async (payload: Record<string, any>) => {
+  const { data, error } = await supabase.from('catalog_watches').insert(payload).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const updateCatalogWatch = async (id: string, payload: Record<string, any>) => {
+  const { error } = await supabase.from('catalog_watches').update(payload).eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+export const deleteCatalogWatch = async (id: string) => {
+  const { error } = await supabase.from('catalog_watches').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+export const uploadCatalogImage = async (file: File): Promise<string> => {
+  const ext  = file.name.split('.').pop();
+  const path = `catalog/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from('auction-images').upload(path, file, { upsert: true });
+  if (error) throw new Error(error.message);
+  const { data: { publicUrl } } = supabase.storage.from('auction-images').getPublicUrl(path);
+  return publicUrl;
+};

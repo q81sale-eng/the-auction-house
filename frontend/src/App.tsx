@@ -23,6 +23,10 @@ import { AdminValuationRequests } from './pages/admin/AdminValuationRequests';
 import { AdminListings } from './pages/admin/AdminListings';
 import { AdminListingForm } from './pages/admin/AdminListingForm';
 import { AdminBanners } from './pages/admin/AdminBanners';
+import { AdminCatalog } from './pages/admin/AdminCatalog';
+import { AdminCatalogForm } from './pages/admin/AdminCatalogForm';
+import { CatalogPage } from './pages/CatalogPage';
+import { CatalogDetailPage } from './pages/CatalogDetailPage';
 import { PavePage } from './pages/PavePage';
 import { PaveRegentPage } from './pages/PaveRegentPage';
 import { PaveArtisanaPage } from './pages/PaveArtisanaPage';
@@ -146,6 +150,8 @@ function App() {
             <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/catalog/:slug" element={<CatalogDetailPage />} />
             <Route path="/pave" element={<PavePage />} />
             <Route path="/pave/regent" element={<PaveRegentPage />} />
             <Route path="/pave/artisana" element={<PaveArtisanaPage />} />
@@ -170,6 +176,9 @@ function App() {
             <Route path="/admin/listings/new" element={<AdminListingForm />} />
             <Route path="/admin/listings/:id/edit" element={<AdminListingForm />} />
             <Route path="/admin/banners" element={<AdminBanners />} />
+            <Route path="/admin/catalog" element={<AdminCatalog />} />
+            <Route path="/admin/catalog/new" element={<AdminCatalogForm />} />
+            <Route path="/admin/catalog/:id/edit" element={<AdminCatalogForm />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

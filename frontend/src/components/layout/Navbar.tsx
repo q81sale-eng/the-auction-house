@@ -60,6 +60,7 @@ export const Navbar: React.FC = () => {
             <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.auctions}</Link>
             <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.marketplace}</Link>
             <Link to="/pave" className="text-gold-500/70 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors font-serif italic">{tr.nav.pave}</Link>
+            <Link to="/catalog" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{lang === 'ar' ? 'الأسعار' : 'Prices'}</Link>
             <Link to="/about" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
             {isAuthenticated && (
               <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
@@ -166,6 +167,7 @@ export const Navbar: React.FC = () => {
               <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
               <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
               <Link to="/pave" className="block text-gold-500/80 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900 font-serif italic" onClick={() => setMenuOpen(false)}>{tr.nav.pave}</Link>
+              <Link to="/catalog" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{lang === 'ar' ? 'الأسعار' : 'Prices'}</Link>
               <Link to="/about" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{lang === 'ar' ? 'من نحن' : 'About'}</Link>
             </div>
 
