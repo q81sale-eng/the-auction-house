@@ -28,6 +28,7 @@ import { PaveRegentPage } from './pages/PaveRegentPage';
 import { PaveArtisanaPage } from './pages/PaveArtisanaPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
+import { ScrollToTop } from './components/ui/ScrollToTop';
 import { useAuthStore } from './store/authStore';
 import { fetchProfile } from './api/auth';
 
@@ -135,6 +136,7 @@ function App() {
     <LanguageProvider>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Public */}
             <Route path="/" element={<HomePage />} />
