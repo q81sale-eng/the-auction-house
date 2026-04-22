@@ -82,7 +82,7 @@ export const PromoSlider: React.FC = () => {
     >
       {/* ── Image area ───────────────────────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden h-52 sm:h-72"
+        className="relative overflow-hidden h-52 sm:h-80 md:h-96 lg:h-[480px] xl:h-[560px]"
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={e => {
           const delta = touchStartX.current - e.changedTouches[0].clientX;
