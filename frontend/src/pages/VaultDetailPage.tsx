@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getVaultWatch, updateVaultWatch, removeFromVault,
-  addImagesToWatch, setCoverImage, removeWatchImage,
+  addImagesToWatch, setCoverImage, removeWatchImage, markAsSold,
 } from '../api/vault';
 import { requestValuation, getWatchValuationRequest } from '../api/valuations';
 import { Layout } from '../components/layout/Layout';
@@ -34,6 +34,8 @@ export const VaultDetailPage: React.FC = () => {
   const [showValuationModal, setShowValuationModal] = useState(false);
   const [valuationMessage, setValuationMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [showSoldForm, setShowSoldForm] = useState(false);
+  const [soldPriceInput, setSoldPriceInput] = useState('');
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,6 +59,16 @@ export const VaultDetailPage: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: () => removeFromVault(watchId),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vault'] }); navigate('/vault'); },
+  });
+
+  const soldMutation = useMutation({
+    mutationFn: (price: number) => markAsSold(watchId, price),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vault-watch', watchId] });
+      queryClient.invalidateQueries({ queryKey: ['vault'] });
+      setShowSoldForm(false);
+      setSoldPriceInput('');
+    },
   });
 
   const addImagesMutation = useMutation({
@@ -416,6 +428,13 @@ export const VaultDetailPage: React.FC = () => {
                   {tv.request}
                 </button>
               )}
+              {watch?.status !== 'sold' && (
+                <button
+                  onClick={() => { setShowSoldForm(s => !s); setSoldPriceInput(''); }}
+                  className="border border-obsidian-600 text-obsidian-300 hover:border-gold-500/50 hover:text-gold-500 px-4 py-2 text-xs uppercase tracking-wider transition-colors">
+                  تم البيع
+                </button>
+              )}
               <button
                 onClick={() => { if (window.confirm(td.confirmDelete)) deleteMutation.mutate(); }}
                 disabled={deleteMutation.isPending}
@@ -423,6 +442,50 @@ export const VaultDetailPage: React.FC = () => {
                 {deleteMutation.isPending ? '...' : td.deleteWatch}
               </button>
             </div>
+
+            {/* Sold price form */}
+            {showSoldForm && watch?.status !== 'sold' && (
+              <div className="mt-4 p-4 bg-obsidian-800 border border-obsidian-700">
+                <p className="text-obsidian-300 text-sm mb-3">أدخل سعر البيع لحساب الربح / الخسارة:</p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    autoFocus
+                    value={soldPriceInput}
+                    onChange={e => setSoldPriceInput(e.target.value)}
+                    placeholder="0.000 د.ك"
+                    className="input-field w-44 text-sm"
+                  />
+                  <button
+                    onClick={() => soldMutation.mutate(parseFloat(soldPriceInput) || 0)}
+                    disabled={soldMutation.isPending}
+                    className="btn-gold text-sm py-2 px-5">
+                    {soldMutation.isPending ? 'جارٍ...' : 'تأكيد البيع'}
+                  </button>
+                  <button
+                    onClick={() => setShowSoldForm(false)}
+                    className="btn-outline text-sm py-2 px-4">
+                    إلغاء
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Sold badge */}
+            {watch?.status === 'sold' && (
+              <div className="mt-4 p-4 bg-obsidian-800 border border-obsidian-700 flex items-center gap-4">
+                <span className="text-xs uppercase tracking-wider px-3 py-1 border border-obsidian-600 text-obsidian-400">
+                  مباعة
+                </span>
+                {watch.sold_price != null && (
+                  <p className="text-obsidian-300 text-sm">
+                    سعر البيع: <span className="text-white font-semibold">{fmtCurrency(watch.sold_price)}</span>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

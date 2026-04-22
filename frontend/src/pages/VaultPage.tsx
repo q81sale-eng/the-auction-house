@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVault, addToVault, uploadImagesForWatch, updateVaultWatch, markAsSold, removeFromVault } from '../api/vault';
+import { getVault, addToVault, uploadImagesForWatch } from '../api/vault';
 import { Layout } from '../components/layout/Layout';
 import { formatCurrency } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
@@ -28,15 +28,9 @@ export const VaultPage: React.FC = () => {
     formatCurrency(amount != null ? convertFromGBP(amount, currency) : amount, currency);
 
   const [showAdd, setShowAdd] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(blankForm);
-  const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [previews, setPreviews] = useState<Preview[]>([]);
   const [addError, setAddError] = useState('');
-
-  // Sold flow
-  const [soldModalId, setSoldModalId] = useState<number | null>(null);
-  const [soldPriceInput, setSoldPriceInput] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,21 +57,6 @@ export const VaultPage: React.FC = () => {
     onError: (err: Error) => setAddError(err.message),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => updateVaultWatch(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vault'] }); setEditId(null); },
-  });
-
-  const soldMutation = useMutation({
-    mutationFn: ({ id, price }: { id: number; price: number }) => markAsSold(id, price),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vault'] }); setSoldModalId(null); setSoldPriceInput(''); },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: removeFromVault,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vault'] }),
-  });
-
   const handleFilesPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     setPreviews(p => [...p, ...files.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))]);
@@ -93,12 +72,6 @@ export const VaultPage: React.FC = () => {
     setShowAdd(false); setForm(blankForm); setPreviews([]); setAddError('');
   };
 
-  const handleDelete = (id: number, label: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف الساعة "${label}"؟\nلا يمكن التراجع عن هذا الإجراء.`)) {
-      deleteMutation.mutate(id);
-    }
-  };
-
   const summary = data?.summary;
   const watches = data?.watches ?? [];
   const soldWatches = data?.soldWatches ?? [];
@@ -106,158 +79,63 @@ export const VaultPage: React.FC = () => {
   const plColor = (val: number | null) =>
     val == null ? 'text-obsidian-400' : val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-obsidian-400';
 
-  // ── Watch card (shared for active and sold) ───────────────────────────────────
+  // ── Watch card (list view — actions are inside detail page) ──────────────────
   const WatchRow = ({ vw, isSold = false }: { vw: any; isSold?: boolean }) => (
-    <div className={`card p-5 ${isSold ? 'opacity-70' : ''}`}>
-      {/* Edit mode */}
-      {editId === vw.id ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.purchasePrice}</label>
-            <input type="number" className="input-field text-sm" defaultValue={vw.purchase_price}
-              onChange={e => setEditForm(p => ({ ...p, purchase_price: e.target.value }))} />
-          </div>
-          <div>
-            <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.currentValue}</label>
-            <input type="number" className="input-field text-sm" defaultValue={vw.current_value || ''}
-              onChange={e => setEditForm(p => ({ ...p, current_value: e.target.value }))} />
-          </div>
-          <div>
-            <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.fields.notes}</label>
-            <input type="text" className="input-field text-sm" defaultValue={vw.notes || ''}
-              onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} />
-          </div>
-          <div className="flex items-end gap-2">
-            <button onClick={() => updateMutation.mutate({ id: vw.id, data: editForm })} className="btn-gold py-2 px-4 text-xs">{t.actions.save}</button>
-            <button onClick={() => setEditId(null)} className="btn-outline py-2 px-4 text-xs">{t.actions.cancel}</button>
-          </div>
-        </div>
+    <Link to={`/vault/${vw.id}`} className={`card p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-obsidian-700 transition-colors ${isSold ? 'opacity-60' : ''}`}>
+      {/* Image */}
+      {vw.image_url ? (
+        <img src={vw.image_url} alt={vw.model} className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
       ) : (
-        <>
-          {/* Main row */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <Link to={`/vault/${vw.id}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-90 transition-opacity">
-              {/* Image */}
-              {vw.image_url ? (
-                <img src={vw.image_url} alt={vw.model} className="w-14 h-14 object-cover border border-obsidian-700 shrink-0" />
-              ) : (
-                <div className="w-14 h-14 bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-500 text-xs font-bold shrink-0">
-                  {vw.brand?.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              {/* Identity */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-gold-500 text-xs uppercase tracking-wider">{vw.brand}</p>
-                  {isSold && (
-                    <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-obsidian-800 border border-obsidian-600 text-obsidian-400">
-                      مباعة
-                    </span>
-                  )}
-                </div>
-                <p className="text-white font-serif text-lg leading-snug truncate">{vw.model}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  {vw.reference_number && <p className="text-obsidian-400 text-xs">Ref. {vw.reference_number}</p>}
-                  {vw.year && <p className="text-obsidian-400 text-xs">{vw.year}</p>}
-                </div>
-              </div>
-            </Link>
-
-            {/* Financials */}
-            <div className="flex items-center gap-5 shrink-0 border-t border-obsidian-800 sm:border-0 pt-3 sm:pt-0">
-              <div className="text-right min-w-[64px]">
-                <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.cost}</p>
-                <p className="text-white text-sm font-semibold">{fmt(vw.purchase_price)}</p>
-              </div>
-              {isSold ? (
-                <div className="text-right min-w-[64px]">
-                  <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">سعر البيع</p>
-                  <p className="text-white text-sm font-semibold">{vw.sold_price ? fmt(vw.sold_price) : '—'}</p>
-                </div>
-              ) : (
-                <div className="text-right min-w-[64px]">
-                  <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.value}</p>
-                  <p className="text-white text-sm font-semibold">{vw.current_value ? fmt(vw.current_value) : '—'}</p>
-                </div>
-              )}
-              <div className="text-right min-w-[64px]">
-                <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.pl}</p>
-                <p className={`text-sm font-semibold ${plColor(vw.profit_loss)}`}>
-                  {vw.profit_loss != null ? `${vw.profit_loss > 0 ? '+' : ''}${fmt(vw.profit_loss)}` : '—'}
-                </p>
-                {vw.profit_loss_percent != null && (
-                  <p className={`text-[10px] ${plColor(vw.profit_loss_percent)}`}>
-                    {vw.profit_loss_percent > 0 ? '+' : ''}{Number(vw.profit_loss_percent).toFixed(1)}%
-                  </p>
-                )}
-              </div>
-
-              {/* Actions */}
-              {!isSold && (
-                <div className="flex flex-col gap-1 shrink-0 ms-1">
-                  <button
-                    onClick={() => { setSoldModalId(vw.id); setSoldPriceInput(''); }}
-                    className="text-[11px] whitespace-nowrap px-3 py-1.5 border border-gold-500/40 text-gold-500 hover:bg-gold-500/10 transition-colors"
-                  >
-                    تم البيع
-                  </button>
-                  <button
-                    onClick={() => handleDelete(vw.id, `${vw.brand} ${vw.model}`)}
-                    disabled={deleteMutation.isPending}
-                    className="text-[11px] whitespace-nowrap px-3 py-1.5 border border-obsidian-700 text-obsidian-400 hover:text-red-400 hover:border-red-400/50 transition-colors"
-                  >
-                    حذف
-                  </button>
-                </div>
-              )}
-              {isSold && (
-                <button
-                  onClick={() => handleDelete(vw.id, `${vw.brand} ${vw.model}`)}
-                  disabled={deleteMutation.isPending}
-                  className="text-[11px] whitespace-nowrap px-3 py-1.5 border border-obsidian-700 text-obsidian-400 hover:text-red-400 hover:border-red-400/50 transition-colors ms-1"
-                >
-                  حذف
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Sold price input */}
-          {soldModalId === vw.id && (
-            <div className="mt-4 pt-4 border-t border-obsidian-800 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex-1">
-                <p className="text-obsidian-300 text-sm mb-2">أدخل سعر البيع (د.ك) لحساب الربح / الخسارة:</p>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  autoFocus
-                  value={soldPriceInput}
-                  onChange={e => setSoldPriceInput(e.target.value)}
-                  placeholder="0.000"
-                  className="input-field w-48 text-sm"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => soldMutation.mutate({ id: vw.id, price: parseFloat(soldPriceInput) || 0 })}
-                  disabled={soldMutation.isPending}
-                  className="btn-gold text-sm py-2 px-5"
-                >
-                  {soldMutation.isPending ? 'جارٍ...' : 'تأكيد البيع'}
-                </button>
-                <button
-                  onClick={() => setSoldModalId(null)}
-                  className="btn-outline text-sm py-2 px-4"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+        <div className="w-14 h-14 bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-500 text-xs font-bold shrink-0">
+          {vw.brand?.slice(0, 2).toUpperCase()}
+        </div>
       )}
-    </div>
+
+      {/* Identity */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-gold-500 text-xs uppercase tracking-wider">{vw.brand}</p>
+          {isSold && (
+            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-obsidian-800 border border-obsidian-600 text-obsidian-400">
+              مباعة
+            </span>
+          )}
+        </div>
+        <p className="text-white font-serif text-lg leading-snug truncate">{vw.model}</p>
+        <div className="flex items-center gap-3 mt-1">
+          {vw.reference_number && <p className="text-obsidian-400 text-xs">Ref. {vw.reference_number}</p>}
+          {vw.year && <p className="text-obsidian-400 text-xs">{vw.year}</p>}
+        </div>
+      </div>
+
+      {/* Financials */}
+      <div className="flex items-center gap-5 shrink-0 border-t border-obsidian-800 sm:border-0 pt-3 sm:pt-0">
+        <div className="text-right min-w-[64px]">
+          <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.cost}</p>
+          <p className="text-white text-sm font-semibold">{fmt(vw.purchase_price)}</p>
+        </div>
+        <div className="text-right min-w-[64px]">
+          <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{isSold ? 'سعر البيع' : t.table.value}</p>
+          <p className="text-white text-sm font-semibold">
+            {isSold ? (vw.sold_price ? fmt(vw.sold_price) : '—') : (vw.current_value ? fmt(vw.current_value) : '—')}
+          </p>
+        </div>
+        <div className="text-right min-w-[64px]">
+          <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-0.5">{t.table.pl}</p>
+          <p className={`text-sm font-semibold ${plColor(vw.profit_loss)}`}>
+            {vw.profit_loss != null ? `${vw.profit_loss > 0 ? '+' : ''}${fmt(vw.profit_loss)}` : '—'}
+          </p>
+          {vw.profit_loss_percent != null && (
+            <p className={`text-[10px] ${plColor(vw.profit_loss_percent)}`}>
+              {vw.profit_loss_percent > 0 ? '+' : ''}{Number(vw.profit_loss_percent).toFixed(1)}%
+            </p>
+          )}
+        </div>
+        <svg className="w-4 h-4 text-obsidian-600 shrink-0 ms-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </Link>
   );
 
   return (
