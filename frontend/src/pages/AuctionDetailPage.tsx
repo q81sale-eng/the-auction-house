@@ -9,13 +9,14 @@ import { useAuthStore } from '../store/authStore';
 import { formatCurrency, formatDateTime } from '../utils/format';
 import { useCurrencyStore, convertFromGBP, CURRENCY_SYMBOLS } from '../store/currencyStore';
 import { useT } from '../i18n/useLanguage';
+import { WhatsAppShare } from '../components/ui/WhatsAppShare';
 
 export const AuctionDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const { currency } = useCurrencyStore();
-  const { tr } = useT();
+  const { tr, lang } = useT();
   const t = tr.auctions.detail;
   const tc = tr.auctions.card;
   const ws = tr.watchSpecs;
@@ -240,6 +241,8 @@ export const AuctionDetailPage: React.FC = () => {
               {auction.deposit_required > 0 && (
                 <p className="text-obsidian-500 text-xs mt-3">{t.depositRequired(fmt(auction.deposit_required))}</p>
               )}
+
+              <WhatsAppShare title={auction.title} lang={lang} />
             </div>
 
             {/* Seller */}

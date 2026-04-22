@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { useT } from '../i18n/useLanguage';
+import { WhatsAppShare } from '../components/ui/WhatsAppShare';
 
 export const PaveArtisanaPage: React.FC = () => {
-  const { tr } = useT();
+  const { tr, lang } = useT();
   const t = tr.pave.artisana;
   const tInquiry = tr.pave.inquiry;
   const [submitted, setSubmitted] = useState(false);
@@ -97,12 +98,13 @@ export const PaveArtisanaPage: React.FC = () => {
                     ))}
                   </div>
 
-                  <div className="flex items-end justify-between">
+                  <div className="flex items-end justify-between mb-3">
                     <p className="text-gold-500 font-semibold">{piece.price}</p>
                     <a href="#artisana-inquiry" className="text-obsidian-500 hover:text-gold-500 text-xs uppercase tracking-[0.2em] transition-colors">
                       {t.inquire} →
                     </a>
                   </div>
+                  <WhatsAppShare title={`Pavé Artisana — ${piece.name}`} lang={lang} />
                 </div>
               </article>
             ))}

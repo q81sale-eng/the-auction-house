@@ -7,12 +7,13 @@ import { Layout } from '../components/layout/Layout';
 import { formatCurrency } from '../utils/format';
 import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
 import { useT } from '../i18n/useLanguage';
+import { WhatsAppShare } from '../components/ui/WhatsAppShare';
 
 export const MarketplaceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [activeImage, setActiveImage] = useState(0);
   const { currency } = useCurrencyStore();
-  const { tr } = useT();
+  const { tr, lang } = useT();
   const t = tr.marketplace;
   const ws = tr.watchSpecs;
   const fmt = (v: string | number) => formatCurrency(convertFromGBP(parseFloat(String(v)), currency), currency);
@@ -166,6 +167,8 @@ export const MarketplaceDetailPage: React.FC = () => {
                   {listing.status === 'sold' ? t.sold : t.unavailable}
                 </div>
               )}
+
+              <WhatsAppShare title={`${listing.brand} ${listing.model}`} lang={lang} />
             </div>
 
             {/* Seller */}

@@ -7,6 +7,7 @@ import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { formatCurrency } from '../utils/format';
 import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
 import { useT } from '../i18n/useLanguage';
+import { WhatsAppShare } from '../components/ui/WhatsAppShare';
 
 export const CatalogDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -107,6 +108,8 @@ export const CatalogDetailPage: React.FC = () => {
                 {lang === 'ar' ? 'السوق' : 'Marketplace'}
               </Link>
             </div>
+
+            <WhatsAppShare title={`${watch.brand} ${watch.model}`} lang={lang} />
           </div>
         </div>
       </div>
