@@ -145,19 +145,31 @@ export const PromoSlider: React.FC = () => {
           </>
         )}
 
-        {/* CTA button — bottom-centre of image, transparent background */}
+        {/* Dot indicators — inside image, above the gold line */}
+        {total > 1 && (
+          <div className="absolute bottom-10 inset-x-0 flex justify-center gap-2 z-20">
+            {Array.from({ length: total }).map((_, i) => (
+              <button key={i} onClick={() => go(i)}
+                className={`transition-all duration-300 ${
+                  i === current ? 'w-6 h-1 bg-gold-500' : 'w-1 h-1 rounded-full bg-white/30 hover:bg-white/60'
+                }`} />
+            ))}
+          </div>
+        )}
+
+        {/* CTA button — sits on the gold progress line */}
         {active.cta && (
-          <div className="absolute bottom-8 inset-x-0 flex justify-center z-20">
+          <div className="absolute bottom-1 inset-x-0 flex justify-center z-30">
             <Link
               to={active.href}
-              className="border border-gold-500 text-gold-500 bg-transparent hover:bg-gold-500/15 text-[10px] sm:text-xs uppercase tracking-[0.3em] px-8 py-3 transition-colors duration-200 whitespace-nowrap"
+              className="border border-gold-500 text-gold-500 bg-transparent hover:bg-gold-500/15 text-[10px] sm:text-xs uppercase tracking-[0.3em] px-8 py-2.5 transition-colors duration-200 whitespace-nowrap"
             >
               {active.cta}
             </Link>
           </div>
         )}
 
-        {/* Progress bar */}
+        {/* Progress bar (gold line) */}
         <div className="absolute bottom-0 inset-x-0 h-px bg-obsidian-800 z-20">
           <div
             key={`${current}-${timerKey}`}
@@ -165,31 +177,6 @@ export const PromoSlider: React.FC = () => {
             style={{ animation: `slideProgress ${INTERVAL}ms linear forwards` }}
           />
         </div>
-      </div>
-
-      {/* ── CTA section — always below the image ─────────────────────────────── */}
-      <div className="bg-obsidian-900 border-b border-obsidian-800 py-5 px-6 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all duration-500">
-        <div className="text-center sm:text-start">
-          {active.eyebrow && (
-            <p className="text-gold-500 text-[10px] uppercase tracking-[0.35em] mb-1">{active.eyebrow}</p>
-          )}
-          <h3 className="font-serif text-white text-lg sm:text-xl leading-tight">{active.title}</h3>
-          {active.subtitle && (
-            <p className="text-obsidian-400 text-xs sm:text-sm mt-1">{active.subtitle}</p>
-          )}
-        </div>
-
-        {/* Dot indicators */}
-        {total > 1 && (
-          <div className="flex gap-2 shrink-0">
-            {Array.from({ length: total }).map((_, i) => (
-              <button key={i} onClick={() => go(i)}
-                className={`transition-all duration-300 ${
-                  i === current ? 'w-6 h-1.5 bg-gold-500' : 'w-1.5 h-1.5 rounded-full bg-obsidian-700 hover:bg-obsidian-500'
-                }`} />
-            ))}
-          </div>
-        )}
       </div>
 
       <style>{`@keyframes slideProgress { from { width: 0% } to { width: 100% } }`}</style>
