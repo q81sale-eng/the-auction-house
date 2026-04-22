@@ -27,6 +27,7 @@ import { PavePage } from './pages/PavePage';
 import { PaveRegentPage } from './pages/PaveRegentPage';
 import { PaveArtisanaPage } from './pages/PaveArtisanaPage';
 import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
 import { useAuthStore } from './store/authStore';
 import { fetchProfile } from './api/auth';
 
@@ -142,6 +143,7 @@ function App() {
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/pave" element={<PavePage />} />
             <Route path="/pave/regent" element={<PaveRegentPage />} />
             <Route path="/pave/artisana" element={<PaveArtisanaPage />} />
