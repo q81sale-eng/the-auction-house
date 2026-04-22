@@ -108,28 +108,25 @@ export const PromoSlider: React.FC = () => {
             <div className="absolute bottom-5 start-6 w-5 h-5 border-b border-s border-gold-500/25" />
             <div className="absolute bottom-5 end-6 w-5 h-5 border-b border-e border-gold-500/25" />
 
-            {/* Text overlay — only when showOverlay is true */}
+            {/* Text overlay — only when showOverlay is true; no background dim */}
             {slide.showOverlay && (
-              <>
-                {slide.imageUrl && <div className="absolute inset-0 bg-obsidian-950/55" />}
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <div className="text-center px-10 sm:px-24 max-w-2xl">
-                    {slide.eyebrow && (
-                      <p className="text-gold-500 text-[10px] sm:text-xs uppercase tracking-[0.4em] mb-2 sm:mb-3">
-                        {slide.eyebrow}
-                      </p>
-                    )}
-                    <h2 className="font-serif text-xl sm:text-3xl text-white leading-tight">
-                      {slide.title}
-                    </h2>
-                    {slide.subtitle && (
-                      <p className="text-obsidian-300 text-xs sm:text-sm leading-relaxed mt-2">
-                        {slide.subtitle}
-                      </p>
-                    )}
-                  </div>
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="text-center px-10 sm:px-24 max-w-2xl">
+                  {slide.eyebrow && (
+                    <p className="text-gold-500 text-[10px] sm:text-xs uppercase tracking-[0.4em] mb-2 sm:mb-3">
+                      {slide.eyebrow}
+                    </p>
+                  )}
+                  <h2 className="font-serif text-xl sm:text-3xl text-white leading-tight drop-shadow-lg">
+                    {slide.title}
+                  </h2>
+                  {slide.subtitle && (
+                    <p className="text-obsidian-300 text-xs sm:text-sm leading-relaxed mt-2 drop-shadow">
+                      {slide.subtitle}
+                    </p>
+                  )}
                 </div>
-              </>
+              </div>
             )}
           </div>
         ))}
@@ -146,6 +143,18 @@ export const PromoSlider: React.FC = () => {
               <svg className="w-4 h-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" /></svg>
             </button>
           </>
+        )}
+
+        {/* CTA button — bottom-centre of image, transparent background */}
+        {active.cta && (
+          <div className="absolute bottom-8 inset-x-0 flex justify-center z-20">
+            <Link
+              to={active.href}
+              className="border border-gold-500 text-gold-500 bg-transparent hover:bg-gold-500/15 text-[10px] sm:text-xs uppercase tracking-[0.3em] px-8 py-3 transition-colors duration-200 whitespace-nowrap"
+            >
+              {active.cta}
+            </Link>
+          </div>
         )}
 
         {/* Progress bar */}
@@ -170,27 +179,17 @@ export const PromoSlider: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-5 shrink-0">
-          {/* Dot indicators */}
-          {total > 1 && (
-            <div className="flex gap-2">
-              {Array.from({ length: total }).map((_, i) => (
-                <button key={i} onClick={() => go(i)}
-                  className={`transition-all duration-300 ${
-                    i === current ? 'w-6 h-1.5 bg-gold-500' : 'w-1.5 h-1.5 rounded-full bg-obsidian-700 hover:bg-obsidian-500'
-                  }`} />
-              ))}
-            </div>
-          )}
-          {active.cta && (
-            <Link
-              to={active.href}
-              className="border border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-[10px] sm:text-xs uppercase tracking-[0.25em] px-6 py-2.5 transition-colors duration-200 whitespace-nowrap"
-            >
-              {active.cta}
-            </Link>
-          )}
-        </div>
+        {/* Dot indicators */}
+        {total > 1 && (
+          <div className="flex gap-2 shrink-0">
+            {Array.from({ length: total }).map((_, i) => (
+              <button key={i} onClick={() => go(i)}
+                className={`transition-all duration-300 ${
+                  i === current ? 'w-6 h-1.5 bg-gold-500' : 'w-1.5 h-1.5 rounded-full bg-obsidian-700 hover:bg-obsidian-500'
+                }`} />
+            ))}
+          </div>
+        )}
       </div>
 
       <style>{`@keyframes slideProgress { from { width: 0% } to { width: 100% } }`}</style>
