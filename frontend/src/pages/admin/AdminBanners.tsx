@@ -6,7 +6,7 @@ import {
 } from '../../api/admin';
 
 const blank = {
-  eyebrow: '', title: '', subtitle: '', cta_text: '', cta_url: '/', active: true,
+  eyebrow: '', title: '', subtitle: '', cta_text: '', cta_url: '/', active: true, show_overlay: true,
 };
 
 type BannerForm = typeof blank;
@@ -83,7 +83,7 @@ export const AdminBanners: React.FC = () => {
   // ── Edit ────────────────────────────────────────────────────────────────────
   const openEdit = (b: any) => {
     setEditId(b.id);
-    setEditForm({ eyebrow: b.eyebrow ?? '', title: b.title ?? '', subtitle: b.subtitle ?? '', cta_text: b.cta_text ?? '', cta_url: b.cta_url ?? '/', active: b.active });
+    setEditForm({ eyebrow: b.eyebrow ?? '', title: b.title ?? '', subtitle: b.subtitle ?? '', cta_text: b.cta_text ?? '', cta_url: b.cta_url ?? '/', active: b.active, show_overlay: b.show_overlay ?? true });
     setEditImgFile(null);
     setEditImgPreview(b.image_url ?? '');
   };
@@ -187,6 +187,21 @@ export const AdminBanners: React.FC = () => {
             </div>
           </div>
 
+          {/* show_overlay toggle */}
+          <div className="flex items-center justify-between border border-obsidian-800 p-3">
+            <div>
+              <p className="text-white text-sm">إظهار النص على الصورة</p>
+              <p className="text-obsidian-500 text-xs mt-0.5">العنوان والوصف يظهران فوق الصورة داخل البنر</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(p => ({ ...p, show_overlay: !p.show_overlay }))}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ${form.show_overlay ? 'bg-gold-500' : 'bg-obsidian-700'}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${form.show_overlay ? 'translate-x-4' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
           {createError && <p className="text-red-400 text-sm">{createError}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={saving} className="btn-gold">{saving ? 'جارٍ الحفظ...' : 'نشر البنر'}</button>
@@ -255,6 +270,21 @@ export const AdminBanners: React.FC = () => {
                       <input type="text" {...ef('cta_url')} />
                     </div>
                   </div>
+                  {/* show_overlay toggle */}
+                  <div className="flex items-center justify-between border border-obsidian-800 p-3">
+                    <div>
+                      <p className="text-white text-sm">إظهار النص على الصورة</p>
+                      <p className="text-obsidian-500 text-xs mt-0.5">العنوان والوصف يظهران فوق الصورة داخل البنر</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditForm(p => ({ ...p, show_overlay: !p.show_overlay }))}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ${editForm.show_overlay ? 'bg-gold-500' : 'bg-obsidian-700'}`}
+                    >
+                      <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${editForm.show_overlay ? 'translate-x-4' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+
                   <div className="flex gap-3">
                     <button onClick={handleSaveEdit} disabled={editSaving} className="btn-gold text-sm py-2 px-5">
                       {editSaving ? 'جارٍ...' : 'حفظ'}
