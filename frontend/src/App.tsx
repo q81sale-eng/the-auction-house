@@ -26,6 +26,7 @@ import { AdminBanners } from './pages/admin/AdminBanners';
 import { PavePage } from './pages/PavePage';
 import { PaveRegentPage } from './pages/PaveRegentPage';
 import { PaveArtisanaPage } from './pages/PaveArtisanaPage';
+import { AboutPage } from './pages/AboutPage';
 import { useAuthStore } from './store/authStore';
 import { fetchProfile } from './api/auth';
 
@@ -140,6 +141,7 @@ function App() {
             <Route path="/auctions/:slug" element={<AuctionDetailPage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/pave" element={<PavePage />} />
             <Route path="/pave/regent" element={<PaveRegentPage />} />
             <Route path="/pave/artisana" element={<PaveArtisanaPage />} />
