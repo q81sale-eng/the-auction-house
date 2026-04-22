@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
+import { useT } from '../i18n/useLanguage';
 
 const services = [
   { icon: '⟡', text: 'مزادات متخصصة للساعات الفاخرة' },
@@ -11,8 +13,13 @@ const services = [
 ];
 
 export const AboutPage: React.FC = () => {
+  const { lang } = useT();
   return (
     <Layout>
+      <Breadcrumb items={[
+        { label: lang === 'ar' ? 'الرئيسية' : 'Home', href: '/' },
+        { label: lang === 'ar' ? 'من نحن' : 'About Us' },
+      ]} />
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section className="relative bg-obsidian-950 overflow-hidden py-32 px-4 flex items-center justify-center text-center">

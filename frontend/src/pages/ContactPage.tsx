@@ -1,5 +1,6 @@
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useT } from '../i18n/useLanguage';
 
 const contacts = [
@@ -71,6 +72,10 @@ export const ContactPage: React.FC = () => {
 
   return (
     <Layout>
+      <Breadcrumb items={[
+        { label: lang === 'ar' ? 'الرئيسية' : 'Home', href: '/' },
+        { label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us' },
+      ]} />
 
       {/* ── Hero ───────────────────────────────────────────────────────────────── */}
       <section className="relative bg-obsidian-950 overflow-hidden py-28 px-4 flex items-center justify-center text-center">

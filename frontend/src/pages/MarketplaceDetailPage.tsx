@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useQuery } from '@tanstack/react-query';
 import { getListing } from '../api/marketplace';
 import { Layout } from '../components/layout/Layout';
@@ -78,16 +79,11 @@ export const MarketplaceDetailPage: React.FC = () => {
 
   return (
     <Layout>
+      <Breadcrumb items={[
+        { label: t.title, href: '/marketplace' },
+        { label: listing.title },
+      ]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Back */}
-        <div className="flex items-center gap-3 mb-8">
-          <Link to="/marketplace" className="inline-flex items-center gap-2 text-obsidian-400 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
-            {t.back}
-          </Link>
-          <span className="text-obsidian-700 hidden sm:inline">›</span>
-          <span className="text-obsidian-400 text-sm truncate hidden sm:inline">{listing.title}</span>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
           {/* Images */}

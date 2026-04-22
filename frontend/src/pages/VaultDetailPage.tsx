@@ -7,6 +7,7 @@ import {
 } from '../api/vault';
 import { requestValuation, getWatchValuationRequest } from '../api/valuations';
 import { Layout } from '../components/layout/Layout';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 import WatchGallery from '../components/vault/WatchGallery';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
@@ -198,12 +199,11 @@ export const VaultDetailPage: React.FC = () => {
 
   return (
     <Layout>
+      <Breadcrumb items={[
+        { label: tr.nav.vault, href: '/vault' },
+        { label: watch.brand ? `${watch.brand} ${watch.model}` : watch.model },
+      ]} />
       <div className="max-w-6xl mx-auto px-4 py-12">
-
-        {/* Breadcrumb */}
-        <Link to="/vault" className="text-obsidian-400 hover:text-gold-500 text-sm transition-colors mb-8 inline-block">
-          {td.backToVault}
-        </Link>
 
         {/* Edit form */}
         {editing && (

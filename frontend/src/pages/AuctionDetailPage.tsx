@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAuction, placeBid, buyNow } from '../api/auctions';
 import { CountdownTimer } from '../components/ui/CountdownTimer';
@@ -124,12 +125,11 @@ export const AuctionDetailPage: React.FC = () => {
 
   return (
     <Layout>
+      <Breadcrumb items={[
+        { label: tr.nav.auctions, href: '/auctions' },
+        { label: auction.title },
+      ]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <Link to="/auctions" className="inline-flex items-center gap-2 text-obsidian-400 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors mb-8">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
-          {t.back}
-        </Link>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
           {/* Images */}
           <div>
