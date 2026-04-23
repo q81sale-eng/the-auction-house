@@ -19,7 +19,7 @@ const en = {
   },
   home: {
     hero: {
-      eyebrow: 'Est. 2024 · London',
+      eyebrow: 'Est. 2018 · Kuwait',
       line1: 'Where Collectors Meet',
       line2: 'Extraordinary Timepieces',
       subtitle:

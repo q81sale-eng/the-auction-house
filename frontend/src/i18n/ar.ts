@@ -21,7 +21,7 @@ const ar: Strings = {
   },
   home: {
     hero: {
-      eyebrow: 'تأسست 2024 · لندن',
+      eyebrow: 'تأسست 2018 · الكويت',
       line1: 'حيث يلتقي الهواة',
       line2: 'بالساعات الاستثنائية',
       subtitle:
