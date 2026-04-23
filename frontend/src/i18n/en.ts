@@ -99,7 +99,7 @@ const en = {
       allBrands: 'All Brands',
       minPrice: 'Min Price',
       maxPrice: 'Max Price',
-      minPlaceholder: '£0',
+      minPlaceholder: '0',
       maxPlaceholder: 'Any',
       statuses: { '': 'All', live: 'Live', upcoming: 'Upcoming', ended: 'Ended' },
     },

@@ -101,7 +101,7 @@ const ar: Strings = {
       allBrands: 'جميع الماركات',
       minPrice: 'أدنى سعر',
       maxPrice: 'أعلى سعر',
-      minPlaceholder: '£0',
+      minPlaceholder: '0',
       maxPlaceholder: 'أي',
       statuses: { '': 'الكل', live: 'مباشر', upcoming: 'قادم', ended: 'منتهي' },
     },
