@@ -106,40 +106,48 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: 'Georgia', serif; background: #fff; color: #111; padding: 40px; }
-          .inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #D4AF37; padding-bottom: 20px; margin-bottom: 24px; }
-          .inv-brand  { font-size: 22px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
-          .inv-sub    { font-size: 11px; color: #888; margin-top: 4px; letter-spacing: 1px; }
-          .inv-meta p { margin-bottom: 4px; font-size: 13px; }
-          .inv-section { margin-bottom: 24px; }
+          .inv-top { text-align: center; border-bottom: 2px solid #D4AF37; padding-bottom: 18px; margin-bottom: 20px; }
+          .inv-brand { font-size: 28px; font-weight: bold; letter-spacing: 4px; text-transform: uppercase; color: #111; }
+          .inv-tagline { font-size: 11px; color: #888; letter-spacing: 2px; margin-top: 4px; text-transform: uppercase; }
+          .inv-contact { font-size: 11px; color: #666; margin-top: 8px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+          .inv-contact span { display: flex; align-items: center; gap: 4px; }
+          .inv-meta-row { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 14px; }
+          .inv-meta-row strong { color: #b8960c; }
+          .inv-section { margin-bottom: 20px; }
           .inv-section h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #999; border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 10px; }
-          .inv-row    { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+          .inv-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
           .inv-row span:first-child { color: #666; }
-          .inv-total  { display: flex; justify-content: space-between; align-items: center; background: #f9f6ef; border: 1px solid #D4AF37; padding: 16px 20px; margin-top: 24px; }
-          .inv-footer { margin-top: 32px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #eee; padding-top: 16px; }
+          .inv-total { display: flex; justify-content: space-between; align-items: center; background: #f9f6ef; border: 1px solid #D4AF37; padding: 16px 20px; margin-top: 20px; }
+          .inv-footer { margin-top: 28px; text-align: center; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 14px; line-height: 1.8; }
           @media print { body { padding: 20px; } }
         </style>
       </head>
       <body>
-        <div class="inv-header">
-          <div>
-            <p class="inv-brand">The Auction House</p>
-            <p class="inv-sub">الكويت · تأسست 2018</p>
+        <div class="inv-top">
+          <p class="inv-brand">The Auction House</p>
+          <p class="inv-tagline">شركة دار المزادات لتنظيم المزادات العلنية</p>
+          <div class="inv-contact">
+            <span>📞 98933393</span>
+            <span>📷 saadalkaaldy_1@</span>
+            <span>📍 العاصمة · القبلة · ق002 · قسيمة 000004 · شارع مبارك الكبير</span>
           </div>
-          <div class="inv-meta" style="text-align:left">
-            <p>رقم الفاتورة: <strong style="color:#b8960c">${invNum}</strong></p>
-            <p>التاريخ: <strong>${today}</strong></p>
-            <p>نوع البيع: <strong>${typeAr}</strong></p>
-          </div>
+        </div>
+        <div class="inv-meta-row">
+          <span>رقم الفاتورة: <strong>${invNum}</strong></span>
+          <span>التاريخ: <strong style="color:#333">${today}</strong></span>
+          <span>نوع البيع: <strong style="color:#333">${typeAr}</strong></span>
+          <span>رقم الترخيص: <strong style="color:#333">2019/22418</strong></span>
         </div>
         ${buyerRows ? `<div class="inv-section"><h3>بيانات المشتري</h3>${buyerRows}</div>` : ''}
         <div class="inv-section"><h3>تفاصيل السلعة</h3>${itemRows}</div>
         <div class="inv-total">
-          <span style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#888">إجمالي المبلغ</span>
+          <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888">إجمالي المبلغ</span>
           <strong style="font-size:26px">${price.toLocaleString('ar-KW', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${cur}</strong>
         </div>
         <div class="inv-footer">
           <p>شكراً لتعاملكم مع The Auction House</p>
-          <p style="margin-top:4px">هذه الفاتورة مُصدَرة إلكترونياً ولا تحتاج إلى توقيع</p>
+          <p>هذه الفاتورة مُصدَرة إلكترونياً ولا تحتاج إلى توقيع</p>
+          <p style="margin-top:6px;color:#ccc">رقم السجل التجاري: 412370 &nbsp;|&nbsp; رقم الترخيص: 2019/22418</p>
         </div>
       </body></html>
     `;
@@ -180,19 +188,25 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
         {/* Invoice preview */}
         <div className="p-8 bg-white text-gray-900 flex-1" dir="rtl">
 
-          {/* Header */}
-          <div className="flex justify-between items-start border-b-2 border-yellow-500 pb-5 mb-6">
-            <div>
-              <p className="text-2xl font-bold tracking-widest uppercase" style={{ fontFamily: 'Georgia, serif' }}>
-                The Auction House
-              </p>
-              <p className="text-xs text-gray-400 mt-1 tracking-widest uppercase">الكويت · تأسست 2018</p>
+          {/* Header — centered brand */}
+          <div className="text-center border-b-2 border-yellow-500 pb-5 mb-5">
+            <p className="text-3xl font-bold tracking-[0.2em] uppercase text-gray-900" style={{ fontFamily: 'Georgia, serif' }}>
+              The Auction House
+            </p>
+            <p className="text-xs text-gray-400 mt-1 tracking-widest uppercase">شركة دار المزادات لتنظيم المزادات العلنية</p>
+            <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs text-gray-500">
+              <span>📞 98933393</span>
+              <span>📷 saadalkaaldy_1@</span>
+              <span>📍 العاصمة · القبلة · ق002 · قسيمة 000004 · شارع مبارك الكبير</span>
             </div>
-            <div className="text-left text-sm space-y-1">
-              <p className="text-gray-500">رقم الفاتورة: <strong className="text-yellow-600">{invNum}</strong></p>
-              <p className="text-gray-500">التاريخ: <strong className="text-gray-800">{today}</strong></p>
-              <p className="text-gray-500">نوع البيع: <strong className="text-gray-800">{typeAr}</strong></p>
-            </div>
+          </div>
+
+          {/* Invoice meta */}
+          <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500 border-b border-gray-100 pb-4 mb-5">
+            <span>رقم الفاتورة: <strong className="text-yellow-600">{invNum}</strong></span>
+            <span>التاريخ: <strong className="text-gray-800">{today}</strong></span>
+            <span>نوع البيع: <strong className="text-gray-800">{typeAr}</strong></span>
+            <span>رقم الترخيص: <strong className="text-gray-800">2019/22418</strong></span>
           </div>
 
           {/* Buyer section */}
@@ -255,9 +269,10 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
           </div>
 
           {/* Footer */}
-          <div className="mt-8 pt-5 border-t border-gray-100 text-center text-xs text-gray-400">
+          <div className="mt-8 pt-5 border-t border-gray-100 text-center text-xs text-gray-400 space-y-1">
             <p>شكراً لتعاملكم مع The Auction House</p>
-            <p className="mt-1">هذه الفاتورة مُصدَرة إلكترونياً ولا تحتاج إلى توقيع</p>
+            <p>هذه الفاتورة مُصدَرة إلكترونياً ولا تحتاج إلى توقيع</p>
+            <p className="text-gray-300">رقم السجل التجاري: 412370 &nbsp;|&nbsp; رقم الترخيص: 2019/22418</p>
           </div>
         </div>
       </div>
