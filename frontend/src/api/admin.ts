@@ -97,8 +97,11 @@ export const updateAuctionStatus = async (id: string, status: string) =>
   updateAuction(id, { status });
 
 export const deleteAuction = async (id: string) => {
+  // Delete related records first to avoid FK constraint errors
+  await supabase.from('bids').delete().eq('auction_id', id);
+  await supabase.from('auction_images').delete().eq('auction_id', id);
   const { error } = await supabase.from('auctions').delete().eq('id', id);
-  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+  if (error) throw new Error(error.message);
 };
 
 export const uploadAuctionImages = async (files: File[]): Promise<string[]> => {
