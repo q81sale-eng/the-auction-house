@@ -138,16 +138,16 @@ export const AuctionDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
           {/* Images */}
           <div>
-            <div className="aspect-square bg-obsidian-900 border border-obsidian-800 overflow-hidden mb-4">
+            <div className="bg-obsidian-900 border border-obsidian-800 overflow-hidden mb-4">
               {currentImage ? (
                 <img
                   src={currentImage.path.startsWith('http') ? currentImage.path : `http://localhost:8000/storage/${currentImage.path}`}
                   alt={currentImage.alt_text}
-                  className="w-full h-full object-contain"
+                  className="w-full object-contain max-h-[600px]"
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/d4af37?text=Watch'; }}
                 />
               ) : (
-                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full h-full object-contain" />
+                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full object-contain max-h-[600px]" />
               )}
             </div>
             {images.length > 1 && (
