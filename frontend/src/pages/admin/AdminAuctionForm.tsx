@@ -24,6 +24,7 @@ const blank = {
   bid_increment: '100', deposit_required: '0',
   starts_at: '', ends_at: '',
   buy_now_active: false as boolean,
+  has_box: false as boolean, has_papers: false as boolean,
 };
 
 export const AdminAuctionForm: React.FC = () => {
@@ -64,6 +65,8 @@ export const AdminAuctionForm: React.FC = () => {
       deposit_required: existing.deposit_required != null ? String(existing.deposit_required)  : '0',
       starts_at:        existing.starts_at ? existing.starts_at.slice(0, 16) : '',
       ends_at:          existing.ends_at   ? existing.ends_at.slice(0, 16)   : '',
+      has_box:          existing.has_box    ?? false,
+      has_papers:       existing.has_papers ?? false,
     });
 
     // Load existing images
@@ -137,6 +140,8 @@ export const AdminAuctionForm: React.FC = () => {
         deposit_required: parseFloat(form.deposit_required || '0'),
         ends_at:          new Date(form.ends_at).toISOString(),
         image_url:        orderedUrls[0] ?? null,
+        has_box:          form.has_box,
+        has_papers:       form.has_papers,
       };
       if (form.current_bid)                          payload.current_bid   = parseFloat(form.current_bid);
       if (form.buy_now_active && form.buy_now_price) payload.buy_now_price = parseFloat(form.buy_now_price);
@@ -229,6 +234,16 @@ export const AdminAuctionForm: React.FC = () => {
               <select value={form.status} onChange={set('status')} className="input-field">
                 {STATUSES.map(s => <option key={s} value={s}>{t.status[s]}</option>)}
               </select>
+            </div>
+            <div className="col-span-2 flex gap-6 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.has_box} onChange={e => setForm(p => ({ ...p, has_box: e.target.checked }))} className="accent-gold-500 w-4 h-4" />
+                <span className="text-obsidian-300 text-sm">مع الصندوق</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.has_papers} onChange={e => setForm(p => ({ ...p, has_papers: e.target.checked }))} className="accent-gold-500 w-4 h-4" />
+                <span className="text-obsidian-300 text-sm">مع الأوراق</span>
+              </label>
             </div>
           </div>
         </div>

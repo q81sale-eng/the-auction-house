@@ -21,6 +21,8 @@ function shapeAuction(a: any, auctionImages?: { image_url: string; sort_order: n
       model: a.title,
       reference_number: a.reference,
       condition: a.condition,
+      has_box: a.has_box ?? false,
+      has_papers: a.has_papers ?? false,
       primary_image: images[0] ?? undefined,
       images,
     },
