@@ -5,10 +5,13 @@ export const applyWatermark = (file: File): Promise<Blob> =>
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        canvas.width  = img.naturalWidth  || img.width;
-        canvas.height = img.naturalHeight || img.height;
+        const w = img.naturalWidth  || img.width;
+        const h2 = img.naturalHeight || img.height;
+        if (!w || !h2) { console.warn('[WM] image has no dimensions'); resolve(file); return; }
+        canvas.width  = w;
+        canvas.height = h2;
         const ctx = canvas.getContext('2d');
-        if (!ctx) { resolve(file); return; }
+        if (!ctx) { console.warn('[WM] no canvas context'); resolve(file); return; }
 
         ctx.drawImage(img, 0, 0);
 
@@ -32,16 +35,21 @@ export const applyWatermark = (file: File): Promise<Blob> =>
         ctx.fillText('The Auction House', canvas.width / 2, y + h / 2);
 
         canvas.toBlob(
-          blob => resolve(blob ?? file),
+          blob => {
+            if (!blob) { console.warn('[WM] toBlob returned null'); resolve(file); return; }
+            console.log('[WM] watermark applied, blob size:', blob.size);
+            resolve(blob);
+          },
           'image/jpeg',
           0.93,
         );
-      } catch {
+      } catch (err) {
+        console.warn('[WM] error:', err);
         resolve(file);
       }
     };
 
-    img.onerror = () => resolve(file);
+    img.onerror = (e) => { console.warn('[WM] img load error', e); resolve(file); };
 
     const reader = new FileReader();
     reader.onload = e => { img.src = e.target?.result as string; };
