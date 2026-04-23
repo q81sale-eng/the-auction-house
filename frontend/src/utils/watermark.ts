@@ -1,58 +1,64 @@
+const dataUrlToBlob = (dataUrl: string): Blob => {
+  const [header, data] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)![1];
+  const binary = atob(data);
+  const arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+};
+
 export const applyWatermark = (file: File): Promise<Blob> =>
   new Promise((resolve) => {
-    const img = new Image();
+    const reader = new FileReader();
 
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const w = img.naturalWidth  || img.width;
-        const h2 = img.naturalHeight || img.height;
-        if (!w || !h2) { console.warn('[WM] image has no dimensions'); resolve(file); return; }
-        canvas.width  = w;
-        canvas.height = h2;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { console.warn('[WM] no canvas context'); resolve(file); return; }
+    reader.onload = (ev) => {
+      const img = new Image();
 
-        ctx.drawImage(img, 0, 0);
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.naturalWidth  || 800;
+          canvas.height = img.naturalHeight || 600;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(file); return; }
 
-        const h      = Math.max(canvas.height * 0.07, 36);
-        const fs     = Math.round(h * 0.48);
-        const y      = canvas.height - h;
+          // Draw original image
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // white strip
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.fillRect(0, y, canvas.width, h);
+          // Watermark strip at bottom
+          const stripH = Math.max(Math.round(canvas.height * 0.07), 36);
+          const fontSize = Math.round(stripH * 0.50);
+          const y = canvas.height - stripH;
 
-        // gold top border
-        ctx.fillStyle = '#D4AF37';
-        ctx.fillRect(0, y, canvas.width, 2);
+          // White semi-transparent background
+          ctx.fillStyle = 'rgba(255,255,255,0.88)';
+          ctx.fillRect(0, y, canvas.width, stripH);
 
-        // text
-        ctx.font         = `italic ${fs}px Georgia, "Times New Roman", serif`;
-        ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle    = '#1a1005';
-        ctx.fillText('The Auction House', canvas.width / 2, y + h / 2);
+          // Gold top line
+          ctx.fillStyle = '#D4AF37';
+          ctx.fillRect(0, y, canvas.width, 2);
 
-        canvas.toBlob(
-          blob => {
-            if (!blob) { console.warn('[WM] toBlob returned null'); resolve(file); return; }
-            console.log('[WM] watermark applied, blob size:', blob.size);
-            resolve(blob);
-          },
-          'image/jpeg',
-          0.93,
-        );
-      } catch (err) {
-        console.warn('[WM] error:', err);
-        resolve(file);
-      }
+          // Text
+          ctx.font         = `italic ${fontSize}px Georgia, serif`;
+          ctx.textAlign    = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle    = '#1a1005';
+          ctx.fillText('The Auction House', canvas.width / 2, y + stripH / 2);
+
+          // Use toDataURL (works in all browsers including Safari)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.93);
+          resolve(dataUrlToBlob(dataUrl));
+
+        } catch (err) {
+          console.warn('[WM] error:', err);
+          resolve(file);
+        }
+      };
+
+      img.onerror = () => resolve(file);
+      img.src = ev.target?.result as string;
     };
 
-    img.onerror = (e) => { console.warn('[WM] img load error', e); resolve(file); };
-
-    const reader = new FileReader();
-    reader.onload = e => { img.src = e.target?.result as string; };
     reader.onerror = () => resolve(file);
     reader.readAsDataURL(file);
   });
