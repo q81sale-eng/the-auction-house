@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './AdminLayout';
-import { createCatalogWatch, uploadCatalogImage } from '../../api/admin';
+import { createCatalogWatch } from '../../api/admin';
 import { supabase } from '../../lib/supabase';
 
 const slugify = (s: string) =>
@@ -44,38 +44,40 @@ export const AdminCatalogImport: React.FC = () => {
   const [running, setRunning] = useState(false);
   const [done,    setDone]    = useState(0);
 
-  // ── Parse Excel ────────────────────────────────────────────────────────────
+  // ── Parse CSV ─────────────────────────────────────────────────────────────
   const handleExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const wb   = XLSX.read(ev.target?.result, { type: 'binary' });
-      const ws   = wb.Sheets[wb.SheetNames[0]];
-      const raw  = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: '' });
-      if (!raw.length) return;
 
-      // Normalise column names
-      const parsed: WatchRow[] = raw.map(r => {
-        const norm: Record<string, string> = {};
-        for (const [k, v] of Object.entries(r)) {
-          const key = COL_MAP[k.trim()] ?? COL_MAP[k.trim().toLowerCase()];
-          if (key) norm[key] = String(v).trim();
-        }
-        return {
-          brand:             norm.brand             ?? '',
-          model:             norm.model             ?? '',
-          reference_number:  norm.reference_number  ?? '',
-          case_diameter:     norm.case_diameter     ?? '',
-          bracelet_material: norm.bracelet_material ?? '',
-          retail_price:      norm.retail_price      ?? '',
-          status: 'pending' as const,
-        };
-      }).filter(r => r.brand && r.model);
+    Papa.parse<Record<string, any>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const raw = results.data;
+        if (!raw.length) return;
 
-      setRows(parsed);
-    };
-    reader.readAsBinaryString(file);
+        // Normalise column names
+        const parsed: WatchRow[] = raw.map(r => {
+          const norm: Record<string, string> = {};
+          for (const [k, v] of Object.entries(r)) {
+            const key = COL_MAP[k.trim()] ?? COL_MAP[k.trim().toLowerCase()];
+            if (key) norm[key] = String(v).trim();
+          }
+          return {
+            brand:             norm.brand             ?? '',
+            model:             norm.model             ?? '',
+            reference_number:  norm.reference_number  ?? '',
+            case_diameter:     norm.case_diameter     ?? '',
+            bracelet_material: norm.bracelet_material ?? '',
+            retail_price:      norm.retail_price      ?? '',
+            status: 'pending' as const,
+          };
+        }).filter(r => r.brand && r.model);
+
+        setRows(parsed);
+      },
+    });
+
     e.target.value = '';
   };
 
@@ -166,19 +168,20 @@ export const AdminCatalogImport: React.FC = () => {
     <AdminLayout>
       <div className="max-w-3xl">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-serif text-3xl text-white">استيراد جملة — الكاتالوج</h1>
+          <h1 className="font-serif text-3xl text-white">استيراد جملة — CSV</h1>
         </div>
 
-        {/* Step 1 — Excel */}
+        {/* Step 1 — CSV */}
         <div className="bg-obsidian-900 border border-obsidian-800 p-6 mb-6">
-          <h2 className="font-serif text-white text-lg mb-1">١. ملف Excel</h2>
+          <h2 className="font-serif text-white text-lg mb-1">١. ملف CSV</h2>
           <p className="text-obsidian-500 text-xs mb-4">
             أعمدة مطلوبة: <span className="text-obsidian-300">الماركة · الموديل</span> | اختيارية: الرقم المرجعي · قطر العلبة · نوع السوار · السعر
+            <br />احفظ ملف Excel بصيغة CSV من قائمة "حفظ باسم"
           </p>
           <button onClick={() => xlsxRef.current?.click()} className="btn-outline text-sm px-5 py-2">
-            {total ? `✓ تم تحميل ${total} ساعة` : 'رفع ملف Excel'}
+            {total ? `✓ تم تحميل ${total} ساعة` : 'رفع ملف CSV'}
           </button>
-          <input ref={xlsxRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleExcel} className="hidden" />
+          <input ref={xlsxRef} type="file" accept=".csv" onChange={handleExcel} className="hidden" />
         </div>
 
         {/* Step 2 — Images */}
