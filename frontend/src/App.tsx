@@ -25,6 +25,7 @@ import { AdminListingForm } from './pages/admin/AdminListingForm';
 import { AdminBanners } from './pages/admin/AdminBanners';
 import { AdminCatalog } from './pages/admin/AdminCatalog';
 import { AdminCatalogForm } from './pages/admin/AdminCatalogForm';
+import { AdminCatalogImport } from './pages/admin/AdminCatalogImport';
 import { CatalogPage } from './pages/CatalogPage';
 import { CatalogDetailPage } from './pages/CatalogDetailPage';
 import { PavePage } from './pages/PavePage';
@@ -177,6 +178,7 @@ function App() {
             <Route path="/admin/listings/:id/edit" element={<AdminListingForm />} />
             <Route path="/admin/banners" element={<AdminBanners />} />
             <Route path="/admin/catalog" element={<AdminCatalog />} />
+            <Route path="/admin/catalog/import" element={<AdminCatalogImport />} />
             <Route path="/admin/catalog/new" element={<AdminCatalogForm />} />
             <Route path="/admin/catalog/:id/edit" element={<AdminCatalogForm />} />
 
