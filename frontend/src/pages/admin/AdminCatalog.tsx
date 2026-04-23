@@ -37,15 +37,18 @@ export const AdminCatalog: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="font-serif text-3xl text-white mb-1">أسعار الساعات لدى الوكيل</h1>
-          <p className="text-obsidian-400 text-sm">{watches.length} قطعة · {brands.length} ماركة</p>
+      <div className="mb-8">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <h1 className="font-serif text-3xl text-white mb-1">أسعار الساعات لدى الوكيل</h1>
+            <p className="text-obsidian-400 text-sm">{watches.length} قطعة · {brands.length} ماركة</p>
+          </div>
+          <Link to="/admin/catalog/new" className="btn-gold flex-shrink-0">+ إضافة ساعة</Link>
         </div>
-        <div className="flex gap-2">
-          <Link to="/admin/catalog/import" className="btn-outline text-sm px-4">↑ استيراد Excel</Link>
-          <Link to="/admin/catalog/new" className="btn-gold">+ إضافة ساعة</Link>
-        </div>
+        <Link to="/admin/catalog/import" className="inline-flex items-center gap-2 border border-obsidian-700 text-obsidian-300 hover:border-gold-500/50 hover:text-gold-400 text-sm px-4 py-2 transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+          استيراد جملة من Excel
+        </Link>
       </div>
 
       {/* Search */}
