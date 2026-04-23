@@ -22,30 +22,32 @@ export const applyWatermark = (file: File): Promise<Blob> =>
           const ctx = canvas.getContext('2d');
           if (!ctx) { resolve(file); return; }
 
-          // Draw original image
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-          // Watermark strip at bottom
-          const stripH = Math.max(Math.round(canvas.height * 0.07), 36);
-          const fontSize = Math.round(stripH * 0.50);
-          const y = canvas.height - stripH;
+          const w = canvas.width;
+          const h = canvas.height;
 
-          // White semi-transparent background
-          ctx.fillStyle = 'rgba(255,255,255,0.88)';
-          ctx.fillRect(0, y, canvas.width, stripH);
+          // Diagonal watermark across the center — always visible regardless of crop
+          ctx.save();
+          ctx.translate(w / 2, h / 2);
+          ctx.rotate(-Math.PI / 6); // -30 degrees
 
-          // Gold top line
-          ctx.fillStyle = '#D4AF37';
-          ctx.fillRect(0, y, canvas.width, 2);
-
-          // Text
-          ctx.font         = `italic ${fontSize}px Georgia, serif`;
+          const fontSize = Math.round(Math.min(w, h) * 0.09);
+          ctx.font = `italic bold ${fontSize}px Georgia, serif`;
           ctx.textAlign    = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle    = '#1a1005';
-          ctx.fillText('The Auction House', canvas.width / 2, y + stripH / 2);
 
-          // Use toDataURL (works in all browsers including Safari)
+          // Shadow for readability on any background
+          ctx.shadowColor   = 'rgba(0,0,0,0.55)';
+          ctx.shadowBlur    = 6;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+
+          ctx.fillStyle = 'rgba(212,175,55,0.45)';
+          ctx.fillText('The Auction House', 0, 0);
+
+          ctx.restore();
+
           const dataUrl = canvas.toDataURL('image/jpeg', 0.93);
           resolve(dataUrlToBlob(dataUrl));
 
