@@ -50,9 +50,14 @@ export const MarketplaceDetailPage: React.FC = () => {
     excellent: tr.vault.conditions.excellent,
     good: tr.vault.conditions.good,
     fair: tr.vault.conditions.fair,
+    unworn: tr.vault.conditions.unworn,
+    used: tr.vault.conditions.used,
+    used_marks: tr.vault.conditions.used_marks,
+    unworn_storage: tr.vault.conditions.unworn_storage,
   };
   const conditionColor: Record<string, string> = {
     new: 'text-green-400', excellent: 'text-blue-400', good: 'text-yellow-400', fair: 'text-orange-400',
+    unworn: 'text-green-400', used: 'text-blue-400', used_marks: 'text-yellow-400', unworn_storage: 'text-obsidian-400',
   };
 
   const boxPapers = [

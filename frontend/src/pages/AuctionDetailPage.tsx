@@ -109,6 +109,10 @@ export const AuctionDetailPage: React.FC = () => {
     excellent: tr.vault.conditions.excellent,
     good: tr.vault.conditions.good,
     fair: tr.vault.conditions.fair,
+    unworn: tr.vault.conditions.unworn,
+    used: tr.vault.conditions.used,
+    used_marks: tr.vault.conditions.used_marks,
+    unworn_storage: tr.vault.conditions.unworn_storage,
   };
 
   const specs: [string, string | null | undefined][] = [

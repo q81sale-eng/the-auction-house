@@ -286,7 +286,11 @@ const ar: Strings = {
       notes: 'ملاحظات',
       serialNumber: 'الرقم التسلسلي',
     },
-    conditions: { new: 'جديد', excellent: 'ممتاز', good: 'جيد', fair: 'مقبول' },
+    conditions: {
+      new: 'جديد', excellent: 'ممتاز', good: 'جيد', fair: 'مقبول',
+      unworn: 'لم تستخدم', used: 'مستخدم',
+      used_marks: 'مستخدم يوجد آثار', unworn_storage: 'لم تستخدم آثار سوء تخزين',
+    },
     sources: {
       auction: 'مزاد',
       marketplace: 'السوق',

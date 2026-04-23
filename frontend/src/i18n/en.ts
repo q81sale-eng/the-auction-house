@@ -284,7 +284,11 @@ const en = {
       notes: 'Notes',
       serialNumber: 'Serial Number',
     },
-    conditions: { new: 'New', excellent: 'Excellent', good: 'Good', fair: 'Fair' },
+    conditions: {
+      new: 'New', excellent: 'Excellent', good: 'Good', fair: 'Fair',
+      unworn: 'Unworn', used: 'Used',
+      used_marks: 'Used — visible marks', unworn_storage: 'Unworn — storage marks',
+    },
     sources: {
       auction: 'Auction',
       marketplace: 'Marketplace',
