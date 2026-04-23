@@ -6,6 +6,7 @@ import { getAdminAuctions, deleteAuction, updateAuctionStatus } from '../../api/
 import { useT } from '../../i18n/useLanguage';
 import { formatCurrency, formatDateTime } from '../../utils/format';
 import { useCurrencyStore, convertFromGBP } from '../../store/currencyStore';
+import { InvoiceModal } from '../../components/admin/InvoiceModal';
 
 const STATUS_COLORS: Record<string, string> = {
   live:      'bg-red-500/20 text-red-400',
@@ -22,6 +23,7 @@ export const AdminAuctions: React.FC = () => {
   const { currency } = useCurrencyStore();
   const fmt = (v: number) => formatCurrency(convertFromGBP(v, currency), currency);
   const [page, setPage] = useState(1);
+  const [invoiceItem, setInvoiceItem] = useState<any | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'auctions', page],
@@ -41,6 +43,21 @@ export const AdminAuctions: React.FC = () => {
 
   return (
     <AdminLayout>
+      {invoiceItem && (
+        <InvoiceModal
+          item={{
+            id:               invoiceItem.id,
+            brand:            invoiceItem.brand ?? '',
+            model:            invoiceItem.title ?? '',
+            reference_number: invoiceItem.reference ?? null,
+            condition:        invoiceItem.condition ?? null,
+            price:            invoiceItem.current_bid ?? invoiceItem.starting_price ?? 0,
+            currency:         'د.ك',
+            type:             'auction',
+          }}
+          onClose={() => setInvoiceItem(null)}
+        />
+      )}
       <div className="flex items-start justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl text-white mb-1">{t.auctions}</h1>
@@ -119,6 +136,13 @@ export const AdminAuctions: React.FC = () => {
                           disabled={statusMutation.isPending}
                           className="text-obsidian-400 hover:text-orange-400 text-xs transition-colors disabled:opacity-50">
                           End
+                        </button>
+                      )}
+                      {(a.status === 'sold' || a.status === 'ended') && (
+                        <button
+                          onClick={() => setInvoiceItem(a)}
+                          className="text-gold-500 hover:text-gold-400 text-xs transition-colors border border-gold-500/30 px-2 py-0.5">
+                          فاتورة
                         </button>
                       )}
                       <button

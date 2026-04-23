@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
 import { getAdminListings, deleteListing } from '../../api/admin';
 import { formatCurrency } from '../../utils/format';
+import { InvoiceModal } from '../../components/admin/InvoiceModal';
 
 const STATUS_COLORS: Record<string, string> = {
   active:   'text-green-400 bg-green-400/10',
@@ -15,6 +16,7 @@ const STATUS_COLORS: Record<string, string> = {
 export const AdminListings: React.FC = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [invoiceItem, setInvoiceItem] = useState<any | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'listings', page],
@@ -28,6 +30,21 @@ export const AdminListings: React.FC = () => {
 
   return (
     <AdminLayout>
+      {invoiceItem && (
+        <InvoiceModal
+          item={{
+            id:               invoiceItem.id,
+            brand:            invoiceItem.brand ?? '',
+            model:            invoiceItem.model ?? invoiceItem.title ?? '',
+            reference_number: invoiceItem.reference_number ?? null,
+            condition:        invoiceItem.condition ?? null,
+            price:            invoiceItem.price ?? 0,
+            currency:         'د.ك',
+            type:             'listing',
+          }}
+          onClose={() => setInvoiceItem(null)}
+        />
+      )}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-serif text-3xl text-white mb-1">السوق</h1>
@@ -78,6 +95,14 @@ export const AdminListings: React.FC = () => {
                         <Link to={`/admin/listings/${l.id}/edit`} className="text-obsidian-400 hover:text-gold-500 text-xs transition-colors">
                           تعديل
                         </Link>
+                        {l.status === 'sold' && (
+                          <button
+                            onClick={() => setInvoiceItem(l)}
+                            className="text-gold-500 hover:text-gold-400 text-xs transition-colors border border-gold-500/30 px-2 py-0.5"
+                          >
+                            فاتورة
+                          </button>
+                        )}
                         <button
                           onClick={() => { if (window.confirm('حذف هذا الإعلان؟')) deleteMutation.mutate(l.id); }}
                           className="text-obsidian-400 hover:text-red-400 text-xs transition-colors"
