@@ -1,4 +1,5 @@
 import { supabase, supabaseUrl } from '../lib/supabase';
+import { applyWatermark } from '../utils/watermark';
 
 const PER_PAGE = 20;
 
@@ -103,11 +104,12 @@ export const deleteAuction = async (id: string) => {
 export const uploadAuctionImages = async (files: File[]): Promise<string[]> => {
   const urls: string[] = [];
   for (const file of files) {
+    const watermarked = await applyWatermark(file);
     const ext  = file.name.split('.').pop() ?? 'jpg';
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage
       .from('auction-images')
-      .upload(path, file, { cacheControl: '3600', upsert: false });
+      .upload(path, watermarked, { cacheControl: '3600', upsert: false, contentType: file.type });
     if (error) throw new Error(`Image upload failed: ${error.message}`);
     const { data: { publicUrl } } = supabase.storage.from('auction-images').getPublicUrl(path);
     urls.push(publicUrl);
@@ -301,9 +303,10 @@ export const deleteCatalogWatch = async (id: string) => {
 };
 
 export const uploadCatalogImage = async (file: File): Promise<string> => {
+  const watermarked = await applyWatermark(file);
   const ext  = file.name.split('.').pop();
   const path = `catalog/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await supabase.storage.from('auction-images').upload(path, file, { upsert: true });
+  const { error } = await supabase.storage.from('auction-images').upload(path, watermarked, { upsert: true, contentType: file.type });
   if (error) throw new Error(error.message);
   const { data: { publicUrl } } = supabase.storage.from('auction-images').getPublicUrl(path);
   return publicUrl;
