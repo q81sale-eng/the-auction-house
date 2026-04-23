@@ -44,7 +44,7 @@ export const applyWatermark = (file: File): Promise<Blob> => {
         );
       };
 
-      logo.src = '/watermark-logo.png';
+      logo.src = '/watermark-logo.png.jpeg';
     };
 
     img.onerror = reject;
