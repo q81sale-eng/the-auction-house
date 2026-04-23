@@ -14,7 +14,7 @@ export const HomePage: React.FC = () => {
     queryFn: () => getAuctions({ status: 'live', per_page: 4 }),
   });
 
-  const statsValues = ['500+', '£2M+', '100%'];
+  const statsValues = ['+500', '+2M د.ك', '100%'];
 
   return (
     <Layout>
