@@ -33,6 +33,8 @@ import { PaveRegentPage } from './pages/PaveRegentPage';
 import { PaveArtisanaPage } from './pages/PaveArtisanaPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
+import { HowItWorksPage } from './pages/HowItWorksPage';
+import { AuthenticationPage } from './pages/AuthenticationPage';
 import { ScrollToTop } from './components/ui/ScrollToTop';
 import { useAuthStore } from './store/authStore';
 import { fetchProfile } from './api/auth';
@@ -151,6 +153,8 @@ function App() {
             <Route path="/marketplace/:slug" element={<MarketplaceDetailPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
+            <Route path="/authentication" element={<AuthenticationPage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/catalog/:slug" element={<CatalogDetailPage />} />
             <Route path="/pave" element={<PavePage />} />
