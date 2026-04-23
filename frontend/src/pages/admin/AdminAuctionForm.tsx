@@ -10,7 +10,7 @@ import { useT } from '../../i18n/useLanguage';
 import { applyWatermark } from '../../utils/watermark';
 
 const STATUSES   = ['upcoming', 'live', 'ended', 'sold', 'cancelled'] as const;
-const CONDITIONS = ['new', 'excellent', 'good', 'fair'] as const;
+const CONDITIONS = ['unworn', 'used', 'used_marks', 'unworn_storage'] as const;
 const MAX_IMAGES = 10;
 
 type ImageItem =
@@ -19,7 +19,7 @@ type ImageItem =
 
 const blank = {
   title: '', brand: '', reference: '', description: '',
-  condition: 'excellent', status: 'upcoming',
+  condition: 'unworn', status: 'upcoming',
   starting_price: '', current_bid: '', buy_now_price: '', retail_price: '',
   bid_increment: '100', deposit_required: '0',
   starts_at: '', ends_at: '',

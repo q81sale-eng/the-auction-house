@@ -494,10 +494,12 @@ const ar: Strings = {
       cancelled: 'ملغي',
     },
     condition: {
-      new: 'جديد / غير مستخدم',
-      excellent: 'ممتاز',
-      good: 'جيد',
-      fair: 'مقبول',
+      unworn:         'لم تستخدم',
+      used:           'مستخدم',
+      used_marks:     'مستخدم يوجد آثار',
+      unworn_storage: 'لم تستخدم آثار سوء تخزين',
+      // legacy values
+      new: 'لم تستخدم', excellent: 'مستخدم', good: 'مستخدم يوجد آثار', fair: 'مقبول',
     },
   },
   pave: {

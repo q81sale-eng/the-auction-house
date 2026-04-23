@@ -6,13 +6,16 @@ import { AdminLayout } from './AdminLayout';
 import { createListing, updateListing, uploadAuctionImages } from '../../api/admin';
 import { supabase } from '../../lib/supabase';
 
-const CONDITIONS = ['new', 'excellent', 'good', 'fair'] as const;
+const CONDITIONS = ['unworn', 'used', 'used_marks', 'unworn_storage'] as const;
 const STATUSES   = ['active', 'reserved', 'sold', 'hidden'] as const;
 const STATUS_LABELS: Record<string, string> = {
   active: 'نشط', reserved: 'محجوز', sold: 'مُباع', hidden: 'مخفي',
 };
 const CONDITION_LABELS: Record<string, string> = {
-  new: 'جديد', excellent: 'ممتاز', good: 'جيد', fair: 'مقبول',
+  unworn:         'لم تستخدم',
+  used:           'مستخدم',
+  used_marks:     'مستخدم يوجد آثار',
+  unworn_storage: 'لم تستخدم آثار سوء تخزين',
 };
 
 function slugify(text: string) {
@@ -21,7 +24,7 @@ function slugify(text: string) {
 
 const blank = {
   title: '', brand: '', model: '', reference_number: '', year: '',
-  condition: 'excellent' as string, status: 'active' as string,
+  condition: 'unworn' as string, status: 'active' as string,
   price: '', retail_price: '', negotiable: false as boolean,
   description: '',
   movement: '', case_material: '', bracelet_material: '',

@@ -492,10 +492,12 @@ const en = {
       cancelled: 'Cancelled',
     },
     condition: {
-      new: 'New / Unworn',
-      excellent: 'Excellent',
-      good: 'Good',
-      fair: 'Fair',
+      unworn:         'Unworn',
+      used:           'Used',
+      used_marks:     'Used — visible marks',
+      unworn_storage: 'Unworn — storage marks',
+      // legacy values
+      new: 'Unworn', excellent: 'Used', good: 'Used — visible marks', fair: 'Fair',
     },
   },
   pave: {
