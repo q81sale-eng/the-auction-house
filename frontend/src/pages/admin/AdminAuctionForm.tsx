@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
@@ -7,6 +7,7 @@ import {
   uploadAuctionImages, insertAuctionImages, deleteAllAuctionImages, getAuctionImages,
 } from '../../api/admin';
 import { useT } from '../../i18n/useLanguage';
+import { applyWatermark } from '../../utils/watermark';
 
 const STATUSES   = ['upcoming', 'live', 'ended', 'sold', 'cancelled'] as const;
 const CONDITIONS = ['new', 'excellent', 'good', 'fair'] as const;
@@ -77,19 +78,19 @@ export const AdminAuctionForm: React.FC = () => {
   }, [existing]);
 
   // ── File input handler ──────────────────────────────────────────────────────
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
     const remaining = MAX_IMAGES - images.length;
     const toAdd = files.slice(0, remaining);
-    const newItems: ImageItem[] = toAdd.map(file => ({
-      type:    'new',
-      file,
-      preview: URL.createObjectURL(file),
+    const newItems: ImageItem[] = await Promise.all(toAdd.map(async file => {
+      const watermarked = await applyWatermark(file);
+      const watermarkedFile = new File([watermarked], file.name, { type: watermarked.type });
+      return { type: 'new' as const, file: watermarkedFile, preview: URL.createObjectURL(watermarked) };
     }));
     setImages(prev => [...prev, ...newItems]);
-    e.target.value = ''; // reset so same file can be re-selected
-  };
+    e.target.value = '';
+  }, [images.length]);
 
   const removeImage = (idx: number) => {
     setImages(prev => {

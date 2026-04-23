@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { applyWatermark } from '../../utils/watermark';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AdminLayout } from './AdminLayout';
 import {
@@ -49,11 +50,13 @@ export const AdminCatalogForm: React.FC = () => {
     });
   }, [id, isEdit]);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
     if (imgPreview && !imgPreview.startsWith('http')) URL.revokeObjectURL(imgPreview);
-    setImgFile(f);
-    setImgPreview(URL.createObjectURL(f));
+    const watermarked = await applyWatermark(f);
+    const watermarkedFile = new File([watermarked], f.name, { type: watermarked.type });
+    setImgFile(watermarkedFile);
+    setImgPreview(URL.createObjectURL(watermarked));
     e.target.value = '';
   };
 

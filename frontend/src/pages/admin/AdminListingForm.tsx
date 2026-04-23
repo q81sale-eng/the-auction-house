@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { applyWatermark } from '../../utils/watermark';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
@@ -84,11 +85,13 @@ export const AdminListingForm: React.FC = () => {
     if (existing.image_url) setImgPreview(existing.image_url);
   }, [existing]);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImgFile(file);
-    setImgPreview(URL.createObjectURL(file));
+    const watermarked = await applyWatermark(file);
+    const watermarkedFile = new File([watermarked], file.name, { type: watermarked.type });
+    setImgFile(watermarkedFile);
+    setImgPreview(URL.createObjectURL(watermarked));
     e.target.value = '';
   };
 

@@ -5,6 +5,7 @@ import { AdminLayout } from './AdminLayout';
 import { getAdminAuctions, deleteAuction, updateAuctionStatus } from '../../api/admin';
 import { useT } from '../../i18n/useLanguage';
 import { formatCurrency, formatDateTime } from '../../utils/format';
+import { useCurrencyStore, convertFromGBP } from '../../store/currencyStore';
 
 const STATUS_COLORS: Record<string, string> = {
   live:      'bg-red-500/20 text-red-400',
@@ -18,6 +19,8 @@ export const AdminAuctions: React.FC = () => {
   const queryClient = useQueryClient();
   const { tr } = useT();
   const t = tr.admin;
+  const { currency } = useCurrencyStore();
+  const fmt = (v: number) => formatCurrency(convertFromGBP(v, currency), currency);
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
@@ -89,7 +92,7 @@ export const AdminAuctions: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-white whitespace-nowrap">
-                    {formatCurrency(parseFloat(a.current_bid ?? a.starting_price ?? 0))}
+                    {fmt(parseFloat(a.current_bid ?? a.starting_price ?? 0))}
                   </td>
                   <td className="px-4 py-3 text-obsidian-300 whitespace-nowrap text-xs">
                     {a.ends_at ? formatDateTime(a.ends_at) : '—'}
