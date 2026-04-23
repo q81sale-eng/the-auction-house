@@ -50,6 +50,7 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
 
   const [buyer, setBuyer]         = useState<Buyer>({ name: '', email: '', phone: '' });
   const [loadingBuyer, setLoading] = useState(item.type === 'auction');
+  const [notes, setNotes]          = useState('');
 
   // For auctions: fetch the top bidder's profile
   useEffect(() => {
@@ -106,11 +107,11 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: 'Georgia', serif; background: #fff; color: #111; padding: 40px; }
-          .inv-top { text-align: center; border-bottom: 2px solid #D4AF37; padding-bottom: 18px; margin-bottom: 20px; }
-          .inv-brand { font-size: 28px; font-weight: bold; letter-spacing: 4px; text-transform: uppercase; color: #111; }
-          .inv-tagline { font-size: 11px; color: #888; letter-spacing: 2px; margin-top: 4px; text-transform: uppercase; }
-          .inv-contact { font-size: 11px; color: #666; margin-top: 8px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
-          .inv-contact span { display: flex; align-items: center; gap: 4px; }
+          .inv-top { border-bottom: 2px solid #D4AF37; padding-bottom: 14px; margin-bottom: 20px; }
+          .inv-top-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+          .inv-brand { font-size: 18px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; color: #111; }
+          .inv-tagline { font-size: 10px; color: #888; letter-spacing: 1px; }
+          .inv-contact { font-size: 10px; color: #666; display: flex; gap: 14px; flex-wrap: wrap; }
           .inv-meta-row { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 14px; }
           .inv-meta-row strong { color: #b8960c; }
           .inv-section { margin-bottom: 20px; }
@@ -124,12 +125,16 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
       </head>
       <body>
         <div class="inv-top">
-          <p class="inv-brand">The Auction House</p>
-          <p class="inv-tagline">شركة دار المزادات لتنظيم المزادات العلنية</p>
-          <div class="inv-contact">
-            <span>📞 98933393</span>
-            <span>📷 saadalkaaldy_1@</span>
-            <span>📍 العاصمة · القبلة · ق002 · قسيمة 000004 · شارع مبارك الكبير</span>
+          <div class="inv-top-row">
+            <div>
+              <p class="inv-brand">The Auction House</p>
+              <p class="inv-tagline">شركة دار المزادات لتنظيم المزادات العلنية</p>
+            </div>
+            <div class="inv-contact">
+              <span>📞 98933393</span>
+              <span>📷 saadalkaaldy_1@</span>
+              <span>📍 العاصمة · القبلة · ق002 · قسيمة 000004 · شارع مبارك الكبير</span>
+            </div>
           </div>
         </div>
         <div class="inv-meta-row">
@@ -144,6 +149,7 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
           <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888">إجمالي المبلغ</span>
           <strong style="font-size:26px">${price.toLocaleString('ar-KW', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${cur}</strong>
         </div>
+        ${notes ? `<div class="inv-section" style="margin-top:20px"><h3>ملاحظات</h3><p style="font-size:13px;color:#444;line-height:1.7;padding:8px 0">${notes}</p></div>` : ''}
         <div class="inv-footer">
           <p>شكراً لتعاملكم مع The Auction House</p>
           <p>هذه الفاتورة مُصدَرة إلكترونياً ولا تحتاج إلى توقيع</p>
@@ -188,16 +194,18 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
         {/* Invoice preview */}
         <div className="p-8 bg-white text-gray-900 flex-1" dir="rtl">
 
-          {/* Header — centered brand */}
-          <div className="text-center border-b-2 border-yellow-500 pb-5 mb-5">
-            <p className="text-3xl font-bold tracking-[0.2em] uppercase text-gray-900" style={{ fontFamily: 'Georgia, serif' }}>
-              The Auction House
-            </p>
-            <p className="text-xs text-gray-400 mt-1 tracking-widest uppercase">شركة دار المزادات لتنظيم المزادات العلنية</p>
-            <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs text-gray-500">
+          {/* Header — one line */}
+          <div className="flex items-center justify-between flex-wrap gap-3 border-b-2 border-yellow-500 pb-4 mb-5">
+            <div>
+              <p className="text-lg font-bold tracking-[0.18em] uppercase text-gray-900" style={{ fontFamily: 'Georgia, serif' }}>
+                The Auction House
+              </p>
+              <p className="text-[10px] text-gray-400 tracking-wider">شركة دار المزادات لتنظيم المزادات العلنية</p>
+            </div>
+            <div className="flex flex-wrap gap-3 text-[10px] text-gray-500">
               <span>📞 98933393</span>
               <span>📷 saadalkaaldy_1@</span>
-              <span>📍 العاصمة · القبلة · ق002 · قسيمة 000004 · شارع مبارك الكبير</span>
+              <span>📍 العاصمة · القبلة · ق002 · قسيمة 000004</span>
             </div>
           </div>
 
@@ -268,8 +276,20 @@ export const InvoiceModal: React.FC<Props> = ({ item, onClose }) => {
             </p>
           </div>
 
+          {/* Notes */}
+          <div className="mt-5">
+            <h3 className="text-xs uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2 mb-2">ملاحظات</h3>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="اكتب أي ملاحظات إضافية هنا..."
+              rows={3}
+              className="w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 outline-none focus:border-yellow-400 p-3 resize-none transition-colors placeholder-gray-300"
+            />
+          </div>
+
           {/* Footer */}
-          <div className="mt-8 pt-5 border-t border-gray-100 text-center text-xs text-gray-400 space-y-1">
+          <div className="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-gray-400 space-y-1">
             <p>شكراً لتعاملكم مع The Auction House</p>
             <p>هذه الفاتورة مُصدَرة إلكترونياً ولا تحتاج إلى توقيع</p>
             <p className="text-gray-300">رقم السجل التجاري: 412370 &nbsp;|&nbsp; رقم الترخيص: 2019/22418</p>
