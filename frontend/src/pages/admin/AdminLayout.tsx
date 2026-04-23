@@ -180,6 +180,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/admin/listings',           label: t.listings ?? 'السوق',         icon: Ic.listings },
     { path: '/admin/banners',            label: t.banners  ?? 'البنرات',       icon: Ic.banners  },
     { path: '/admin/catalog',            label: 'أسعار الوكيل',                 icon: Ic.catalog  },
+    { path: '/admin/catalog/import',    label: 'استيراد Excel',                icon: Ic.plus,    sub: true },
   ];
 
   const mobileSidebarStyle: React.CSSProperties = {
