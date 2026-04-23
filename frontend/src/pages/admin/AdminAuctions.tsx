@@ -31,6 +31,7 @@ export const AdminAuctions: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: deleteAuction,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] }),
+    onError: (err: any) => alert('خطأ في الحذف: ' + err.message),
   });
 
   const statusMutation = useMutation({
