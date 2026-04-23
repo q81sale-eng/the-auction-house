@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { fetchProfile } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import { useT } from '../i18n/useLanguage';
+import api from '../api/client';
 
 type CountryCode =
   | 'kw' | 'sa' | 'ae' | 'qa' | 'bh' | 'om'
@@ -30,7 +31,6 @@ const COUNTRIES: Country[] = [
   { code: 'other', dial: '',     flag: '🌐', pattern: /^\d{6,15}$/,     maxLen: 15, hint: '1234567890'  },
 ];
 
-// ── 6-box OTP Input ──────────────────────────────────────────────────────────
 const OtpInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
   const refs = [
     useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
@@ -72,7 +72,6 @@ const OtpInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ 
   );
 };
 
-// ── RegisterPage ─────────────────────────────────────────────────────────────
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const setAuth  = useAuthStore(s => s.setAuth);
@@ -124,7 +123,11 @@ export const RegisterPage: React.FC = () => {
   const clearErr = (...keys: string[]) =>
     setErrors(prev => { const n = { ...prev }; keys.forEach(k => delete n[k]); return n; });
 
-  // ── Step 1 ───────────────────────────────────────────────────────────────
+  const buildFullPhone = () => {
+    const local = localPhone.trim();
+    return selected.dial ? `${selected.dial}${local.replace(/^0/, '')}` : local;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -140,59 +143,88 @@ export const RegisterPage: React.FC = () => {
       setErrors({ password: 'كلمة المرور 8 أحرف على الأقل' }); return;
     }
 
-    const phone = selected.dial
-      ? `${selected.dial}${local.replace(/^0/, '')}`
-      : local;
-
+    const phone = buildFullPhone();
     setLoading(true);
     try {
-      const { data: auth, error: signUpErr } = await supabase.auth.signUp({
-        email: form.email, password: form.password,
-        options: { data: { name: form.name, phone, country: t.countries[countryCode as keyof typeof t.countries] } },
-      });
-      if (signUpErr) throw new Error(signUpErr.message);
-      if (!auth.user) throw new Error('فشل إنشاء الحساب');
-
-      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone });
-      if (otpErr) throw new Error(otpErr.message);
-
+      await api.post('/auth/send-whatsapp-otp', { phone });
       setFullPhone(phone);
       setResendTimer(60);
       setStep('otp');
     } catch (err: any) {
-      const msg = (err.message ?? '').toLowerCase();
-      if (msg.includes('already registered') || msg.includes('already exists')) {
-        setErrors({ email: 'هذا البريد الإلكتروني مسجل مسبقاً' });
-      } else if (msg.includes('phone') || msg.includes('sms')) {
-        setErrors({ phone: 'تعذّر إرسال رمز التحقق — تحقق من رقم الهاتف' });
+      const status = err.response?.status;
+      const msg    = err.response?.data?.message ?? '';
+      if (status === 429) {
+        setResendTimer(err.response?.data?.retry_after ?? 60);
+        setFullPhone(phone);
+        setStep('otp');
       } else {
-        setErrors({ general: err.message || t.generalError });
+        setErrors({ general: msg || t.generalError });
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Step 2 ───────────────────────────────────────────────────────────────
   const handleVerifyOtp = async () => {
     const code = otp.replace(/\s/g, '');
     if (code.length < 6) { setErrors({ otp: 'أدخل الرمز المكوّن من 6 أرقام' }); return; }
     setLoading(true);
     setErrors({});
     try {
-      const { data, error } = await supabase.auth.verifyOtp({ phone: fullPhone, token: code, type: 'sms' });
-      if (error) throw error;
-      const user    = data.user!;
-      const m       = user.user_metadata ?? {};
-      const profile = await fetchProfile(user.id, user.email ?? undefined);
+      await api.post('/auth/verify-whatsapp-otp', { phone: fullPhone, otp: code });
+
+      const { data: auth, error: signUpErr } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            name:    form.name,
+            phone:   fullPhone,
+            country: t.countries[countryCode as keyof typeof t.countries],
+          },
+        },
+      });
+
+      if (signUpErr) {
+        const m = signUpErr.message.toLowerCase();
+        if (m.includes('already registered') || m.includes('already exists')) {
+          const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+            email: form.email, password: form.password,
+          });
+          if (loginErr) throw new Error('هذا البريد الإلكتروني مسجل مسبقاً بكلمة مرور مختلفة');
+          const u = loginData.user!;
+          const m2 = u.user_metadata ?? {};
+          const profile = await fetchProfile(u.id, u.email ?? undefined);
+          setAuth({
+            id: u.id, name: m2.name || u.email || '', email: u.email || '',
+            is_admin: profile.is_admin, is_verified: true,
+            deposit_balance: profile.deposit_balance, phone: m2.phone, country: m2.country,
+          }, loginData.session?.access_token ?? '');
+          navigate('/');
+          return;
+        }
+        throw signUpErr;
+      }
+
+      if (!auth.user) throw new Error('فشل إنشاء الحساب');
+
+      const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+        email: form.email, password: form.password,
+      });
+      if (loginErr) throw loginErr;
+
+      const u       = loginData.user!;
+      const m       = u.user_metadata ?? {};
+      const profile = await fetchProfile(u.id, u.email ?? undefined);
       setAuth({
-        id: user.id, name: m.name || user.email || '', email: user.email || '',
+        id: u.id, name: m.name || u.email || '', email: u.email || '',
         is_admin: profile.is_admin, is_verified: true,
         deposit_balance: profile.deposit_balance, phone: m.phone, country: m.country,
-      }, data.session?.access_token ?? '');
+      }, loginData.session?.access_token ?? '');
       navigate('/');
-    } catch {
-      setErrors({ otp: 'رمز التحقق غير صحيح أو منتهي الصلاحية' });
+    } catch (err: any) {
+      const msg = err.response?.data?.message ?? err.message ?? '';
+      setErrors({ otp: msg || 'رمز التحقق غير صحيح أو منتهي الصلاحية' });
     } finally {
       setLoading(false);
     }
@@ -201,9 +233,17 @@ export const RegisterPage: React.FC = () => {
   const handleResend = async () => {
     if (resendTimer > 0) return;
     setOtp(''); setErrors({});
-    const { error } = await supabase.auth.signInWithOtp({ phone: fullPhone });
-    if (error) { setErrors({ otp: 'تعذّر إعادة الإرسال' }); return; }
-    setResendTimer(60);
+    try {
+      await api.post('/auth/send-whatsapp-otp', { phone: fullPhone });
+      setResendTimer(60);
+    } catch (err: any) {
+      const status = err.response?.status;
+      if (status === 429) {
+        setResendTimer(err.response?.data?.retry_after ?? 60);
+      } else {
+        setErrors({ otp: 'تعذّر إعادة الإرسال' });
+      }
+    }
   };
 
   return (
@@ -215,16 +255,17 @@ export const RegisterPage: React.FC = () => {
             The Auction House
           </Link>
           <h2 className="text-white text-xl mt-4 font-serif">
-            {step === 'form' ? t.title : 'التحقق من الهاتف'}
+            {step === 'form' ? t.title : 'التحقق عبر واتساب'}
           </h2>
           <p className="text-obsidian-400 text-sm mt-1">
-            {step === 'form' ? t.subtitle : `تم إرسال رمز مكوّن من 6 أرقام إلى ${fullPhone}`}
+            {step === 'form'
+              ? t.subtitle
+              : `تم إرسال رمز مكوّن من 6 أرقام إلى واتساب ${fullPhone}`}
           </p>
         </div>
 
-        {/* Step indicator */}
         <div className="flex items-center mb-6">
-          {(['بيانات التسجيل', 'التحقق من الهاتف'] as const).map((label, i) => {
+          {(['بيانات التسجيل', 'التحقق عبر واتساب'] as const).map((label, i) => {
             const active = (step === 'form' && i === 0) || (step === 'otp' && i === 1);
             const done   = step === 'otp' && i === 0;
             return (
@@ -249,7 +290,6 @@ export const RegisterPage: React.FC = () => {
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 mb-6">{errors.general}</div>
           )}
 
-          {/* ── Form ── */}
           {step === 'form' && (
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
@@ -284,6 +324,7 @@ export const RegisterPage: React.FC = () => {
                     className="flex-1 min-w-0 bg-transparent text-white text-sm px-4 py-3 outline-none placeholder-obsidian-600" />
                 </div>
                 {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
+                <p className="text-obsidian-500 text-xs mt-1.5">سيتم إرسال رمز التحقق على واتساب</p>
               </div>
 
               <div>
@@ -301,18 +342,17 @@ export const RegisterPage: React.FC = () => {
               </div>
 
               <button type="submit" disabled={loading} className="btn-gold w-full mt-6">
-                {loading ? 'جارٍ الإرسال…' : 'إرسال رمز التحقق'}
+                {loading ? 'جارٍ الإرسال…' : 'إرسال رمز واتساب'}
               </button>
             </form>
           )}
 
-          {/* ── OTP ── */}
           {step === 'otp' && (
             <div className="space-y-6">
               <div className="text-center">
                 <div className="w-14 h-14 bg-gold-500/10 border border-gold-500/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  <svg className="w-7 h-7 text-gold-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
                 </div>
                 <p className="text-obsidian-400 text-sm">أدخل الرمز المكوّن من 6 أرقام</p>

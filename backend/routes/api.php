@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AuctionController;
 use App\Http\Controllers\Api\MarketplaceController;
+use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\VaultController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\FavoriteController;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/send-whatsapp-otp',   [OtpController::class, 'send']);
+    Route::post('/verify-whatsapp-otp', [OtpController::class, 'verify']);
 });
 
 // Public auction browse
