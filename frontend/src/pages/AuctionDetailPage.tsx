@@ -139,11 +139,11 @@ export const AuctionDetailPage: React.FC = () => {
                 <img
                   src={currentImage.path.startsWith('http') ? currentImage.path : `http://localhost:8000/storage/${currentImage.path}`}
                   alt={currentImage.alt_text}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/d4af37?text=Watch'; }}
                 />
               ) : (
-                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full h-full object-cover" />
+                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full h-full object-contain" />
               )}
             </div>
             {images.length > 1 && (

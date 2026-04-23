@@ -27,27 +27,25 @@ export const applyWatermark = (file: File): Promise<Blob> =>
           const w = canvas.width;
           const h = canvas.height;
 
-          // Center of image — always visible regardless of object-cover cropping
-          ctx.save();
-          ctx.translate(w / 2, h / 2);
-          ctx.rotate(-Math.PI / 12); // -15 degrees, subtle tilt
+          // Bottom strip watermark
+          const stripH   = Math.max(Math.round(h * 0.07), 32);
+          const fontSize  = Math.round(stripH * 0.52);
+          const y         = h - stripH;
 
-          const fontSize = Math.round(Math.min(w, h) * 0.055);
+          // Semi-transparent white background strip
+          ctx.fillStyle = 'rgba(255,255,255,0.82)';
+          ctx.fillRect(0, y, w, stripH);
+
+          // Gold top border line
+          ctx.fillStyle = '#D4AF37';
+          ctx.fillRect(0, y, w, 2);
+
+          // Text
           ctx.font         = `italic bold ${fontSize}px Georgia, serif`;
           ctx.textAlign    = 'center';
           ctx.textBaseline = 'middle';
-
-          // Dark outline for visibility on both light and dark backgrounds
-          ctx.shadowColor   = 'rgba(0,0,0,0.6)';
-          ctx.shadowBlur    = 8;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-
-          // Semi-transparent gold — visible but not distracting
-          ctx.fillStyle = 'rgba(212,175,55,0.30)';
-          ctx.fillText('The Auction House', 0, 0);
-
-          ctx.restore();
+          ctx.fillStyle    = '#1a1005';
+          ctx.fillText('The Auction House', w / 2, y + stripH / 2);
 
           const dataUrl = canvas.toDataURL('image/jpeg', 0.93);
           resolve(dataUrlToBlob(dataUrl));
