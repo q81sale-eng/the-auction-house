@@ -89,25 +89,25 @@ export const MarketplaceDetailPage: React.FC = () => {
         { label: t.title, href: '/marketplace' },
         { label: listing.title },
       ]} />
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto lg:px-4 py-0 lg:py-12">
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-12 mb-12">
           {/* Images */}
           <div>
-            <div className="bg-obsidian-900 border border-obsidian-800 overflow-hidden mb-4">
+            <div className="bg-obsidian-900 lg:border lg:border-obsidian-800 overflow-hidden mb-2 lg:mb-4">
               {currentImage ? (
                 <img
                   src={currentImage.path.startsWith('http') ? currentImage.path : `http://localhost:8000/storage/${currentImage.path}`}
                   alt={currentImage.alt_text}
-                  className="w-full object-contain max-h-[600px]"
+                  className="w-full object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/d4af37?text=Watch'; }}
                 />
               ) : (
-                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full object-contain max-h-[600px]" />
+                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full object-contain" />
               )}
             </div>
             {images.length > 1 && (
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap px-4 lg:px-0">
                 {images.map((img: any, i: number) => (
                   <button key={i} onClick={() => setActiveImage(i)}
                     className={`w-16 h-16 bg-obsidian-800 border overflow-hidden transition-colors ${i === activeImage ? 'border-gold-500' : 'border-obsidian-700'}`}>
@@ -120,7 +120,7 @@ export const MarketplaceDetailPage: React.FC = () => {
           </div>
 
           {/* Details */}
-          <div>
+          <div className="px-4 lg:px-0 pt-4 lg:pt-0">
             <p className="text-gold-500 text-xs uppercase tracking-widest mb-2">{listing.watch?.brand}</p>
             <h1 className="font-serif text-3xl text-white mb-2">{listing.title}</h1>
 

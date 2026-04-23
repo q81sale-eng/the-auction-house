@@ -134,24 +134,24 @@ export const AuctionDetailPage: React.FC = () => {
         { label: tr.nav.auctions, href: '/auctions' },
         { label: auction.title },
       ]} />
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+      <div className="max-w-7xl mx-auto lg:px-4 py-0 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-12 mb-12">
           {/* Images */}
           <div>
-            <div className="bg-obsidian-900 border border-obsidian-800 overflow-hidden mb-4">
+            <div className="bg-obsidian-900 lg:border lg:border-obsidian-800 overflow-hidden mb-2 lg:mb-4">
               {currentImage ? (
                 <img
                   src={currentImage.path.startsWith('http') ? currentImage.path : `http://localhost:8000/storage/${currentImage.path}`}
                   alt={currentImage.alt_text}
-                  className="w-full object-contain max-h-[600px]"
+                  className="w-full object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/d4af37?text=Watch'; }}
                 />
               ) : (
-                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full object-contain max-h-[600px]" />
+                <img src="https://placehold.co/600x600/1a1a1a/d4af37?text=Watch" alt="Watch" className="w-full object-contain" />
               )}
             </div>
             {images.length > 1 && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 px-4 lg:px-0">
                 {images.map((img: any, i: number) => (
                   <button key={i} onClick={() => setActiveImage(i)}
                     className={`w-16 h-16 bg-obsidian-800 border overflow-hidden transition-colors ${i === activeImage ? 'border-gold-500' : 'border-obsidian-700'}`}>
@@ -163,7 +163,7 @@ export const AuctionDetailPage: React.FC = () => {
           </div>
 
           {/* Info */}
-          <div>
+          <div className="px-4 lg:px-0 pt-4 lg:pt-0">
             <div className="flex items-center gap-3 mb-4">
               {auction.status === 'live'     && <span className="badge-live"><span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />{tc.live}</span>}
               {auction.status === 'upcoming' && <span className="badge-upcoming">{tc.upcoming}</span>}
