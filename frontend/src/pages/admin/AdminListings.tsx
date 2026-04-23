@@ -13,6 +13,10 @@ const STATUS_COLORS: Record<string, string> = {
   hidden:   'text-obsidian-500 bg-obsidian-800',
 };
 
+const STATUS_AR: Record<string, string> = {
+  active: 'نشط', sold: 'مباع', reserved: 'محجوز', hidden: 'مخفي',
+};
+
 export const AdminListings: React.FC = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -45,6 +49,7 @@ export const AdminListings: React.FC = () => {
           onClose={() => setInvoiceItem(null)}
         />
       )}
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-serif text-3xl text-white mb-1">السوق</h1>
@@ -53,8 +58,9 @@ export const AdminListings: React.FC = () => {
         <Link to="/admin/listings/new" className="btn-gold">+ إضافة ساعة</Link>
       </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
+      {/* Desktop table */}
+      <div className="hidden md:block bg-obsidian-900 border border-obsidian-800 overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-obsidian-800 border-b border-obsidian-700">
             <tr>
               {['الصورة', 'الماركة / الموديل', 'السعر', 'الحالة', 'الحالة الوظيفية', 'إجراءات'].map(h => (
@@ -66,11 +72,11 @@ export const AdminListings: React.FC = () => {
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}><td colSpan={6} className="px-4 py-4">
-                    <div className="h-4 bg-obsidian-800 rounded animate-pulse" />
+                    <div className="h-4 bg-obsidian-800 animate-pulse" />
                   </td></tr>
                 ))
               : (data?.data ?? []).map((l: any) => (
-                  <tr key={l.id} className="hover:bg-obsidian-900/50">
+                  <tr key={l.id} className="hover:bg-obsidian-800/30">
                     <td className="px-4 py-3">
                       {l.image_url
                         ? <img src={l.image_url} alt="" className="w-10 h-10 object-cover border border-obsidian-700" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/40x40/1a1a1a/d4af37?text=?'; }} />
@@ -80,33 +86,21 @@ export const AdminListings: React.FC = () => {
                       <p className="text-gold-500 font-medium">{l.brand}</p>
                       <p className="text-white text-xs">{l.model || l.title}</p>
                     </td>
-                    <td className="px-4 py-3 text-white font-semibold">
+                    <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">
                       {formatCurrency(l.price, 'KWD')}
                       {l.negotiable && <span className="text-gold-500 text-xs ms-1">(قابل)</span>}
                     </td>
-                    <td className="px-4 py-3 text-obsidian-300 capitalize text-xs">{l.condition}</td>
+                    <td className="px-4 py-3 text-obsidian-300 text-xs">{l.condition}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-sm ${STATUS_COLORS[l.status] ?? 'text-obsidian-400'}`}>
-                        {l.status}
+                      <span className={`text-xs px-2 py-1 ${STATUS_COLORS[l.status] ?? 'text-obsidian-400'}`}>
+                        {STATUS_AR[l.status] ?? l.status}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <Link to={`/admin/listings/${l.id}/edit`} className="text-obsidian-400 hover:text-gold-500 text-xs transition-colors">
-                          تعديل
-                        </Link>
-                        <button
-                          onClick={() => setInvoiceItem(l)}
-                          className="text-gold-500 hover:text-gold-400 text-xs transition-colors border border-gold-500/30 px-2 py-0.5"
-                        >
-                          فاتورة
-                        </button>
-                        <button
-                          onClick={() => { if (window.confirm('حذف هذا الإعلان؟')) deleteMutation.mutate(l.id); }}
-                          className="text-obsidian-400 hover:text-red-400 text-xs transition-colors"
-                        >
-                          حذف
-                        </button>
+                        <Link to={`/admin/listings/${l.id}/edit`} className="text-obsidian-400 hover:text-gold-500 text-xs transition-colors">تعديل</Link>
+                        <button onClick={() => setInvoiceItem(l)} className="text-gold-500 hover:text-gold-400 text-xs border border-gold-500/30 px-2 py-0.5 transition-colors">فاتورة</button>
+                        <button onClick={() => { if (window.confirm('حذف هذا الإعلان؟')) deleteMutation.mutate(l.id); }} className="text-obsidian-400 hover:text-red-400 text-xs transition-colors">حذف</button>
                       </div>
                     </td>
                   </tr>
@@ -114,18 +108,47 @@ export const AdminListings: React.FC = () => {
             }
           </tbody>
         </table>
-
-        {(data?.last_page ?? 0) > 1 && (
-          <div className="flex gap-2 p-4">
-            {Array.from({ length: data!.last_page }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => setPage(p)}
-                className={`w-8 h-8 text-xs transition-colors ${p === page ? 'bg-gold-500 text-obsidian-950' : 'border border-obsidian-700 text-obsidian-400 hover:border-gold-500'}`}>
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {isLoading
+          ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-24 bg-obsidian-800 animate-pulse" />)
+          : (data?.data ?? []).map((l: any) => (
+              <div key={l.id} className="bg-obsidian-900 border border-obsidian-800 p-4">
+                <div className="flex gap-3 mb-3">
+                  {l.image_url
+                    ? <img src={l.image_url} alt="" className="w-14 h-14 object-cover border border-obsidian-700 flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/56x56/1a1a1a/d4af37?text=?'; }} />
+                    : <div className="w-14 h-14 bg-obsidian-800 border border-obsidian-700 flex-shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gold-500 font-medium text-sm">{l.brand}</p>
+                    <p className="text-white text-sm truncate">{l.model || l.title}</p>
+                    <p className="text-white font-semibold text-sm mt-0.5">{formatCurrency(l.price, 'KWD')}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-1 h-fit flex-shrink-0 ${STATUS_COLORS[l.status] ?? 'text-obsidian-400'}`}>
+                    {STATUS_AR[l.status] ?? l.status}
+                  </span>
+                </div>
+                <div className="flex gap-3 pt-3 border-t border-obsidian-800">
+                  <Link to={`/admin/listings/${l.id}/edit`} className="flex-1 text-center text-obsidian-400 hover:text-gold-500 text-xs py-2 border border-obsidian-700 hover:border-gold-500/30 transition-colors">تعديل</Link>
+                  <button onClick={() => setInvoiceItem(l)} className="flex-1 text-center text-gold-500 hover:text-gold-400 text-xs py-2 border border-gold-500/40 hover:border-gold-500 transition-colors">فاتورة</button>
+                  <button onClick={() => { if (window.confirm('حذف هذا الإعلان؟')) deleteMutation.mutate(l.id); }} className="flex-1 text-center text-obsidian-400 hover:text-red-400 text-xs py-2 border border-obsidian-700 hover:border-red-500/30 transition-colors">حذف</button>
+                </div>
+              </div>
+            ))
+        }
+      </div>
+
+      {(data?.last_page ?? 0) > 1 && (
+        <div className="flex gap-2 mt-4">
+          {Array.from({ length: data!.last_page }, (_, i) => i + 1).map(p => (
+            <button key={p} onClick={() => setPage(p)}
+              className={`w-8 h-8 text-xs transition-colors ${p === page ? 'bg-gold-500 text-obsidian-950' : 'border border-obsidian-700 text-obsidian-400 hover:border-gold-500'}`}>
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
     </AdminLayout>
   );
 };
