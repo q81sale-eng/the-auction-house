@@ -95,14 +95,12 @@ export const AdminListings: React.FC = () => {
                         <Link to={`/admin/listings/${l.id}/edit`} className="text-obsidian-400 hover:text-gold-500 text-xs transition-colors">
                           تعديل
                         </Link>
-                        {l.status === 'sold' && (
-                          <button
-                            onClick={() => setInvoiceItem(l)}
-                            className="text-gold-500 hover:text-gold-400 text-xs transition-colors border border-gold-500/30 px-2 py-0.5"
-                          >
-                            فاتورة
-                          </button>
-                        )}
+                        <button
+                          onClick={() => setInvoiceItem(l)}
+                          className="text-gold-500 hover:text-gold-400 text-xs transition-colors border border-gold-500/30 px-2 py-0.5"
+                        >
+                          فاتورة
+                        </button>
                         <button
                           onClick={() => { if (window.confirm('حذف هذا الإعلان؟')) deleteMutation.mutate(l.id); }}
                           className="text-obsidian-400 hover:text-red-400 text-xs transition-colors"

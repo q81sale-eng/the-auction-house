@@ -138,13 +138,11 @@ export const AdminAuctions: React.FC = () => {
                           End
                         </button>
                       )}
-                      {(a.status === 'sold' || a.status === 'ended') && (
-                        <button
-                          onClick={() => setInvoiceItem(a)}
-                          className="text-gold-500 hover:text-gold-400 text-xs transition-colors border border-gold-500/30 px-2 py-0.5">
-                          فاتورة
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setInvoiceItem(a)}
+                        className="text-gold-500 hover:text-gold-400 text-xs transition-colors border border-gold-500/30 px-2 py-0.5">
+                        فاتورة
+                      </button>
                       <button
                         onClick={() => { if (window.confirm(t.actions.confirmDelete)) deleteMutation.mutate(a.id); }}
                         className="text-obsidian-400 hover:text-red-400 text-xs transition-colors">
