@@ -26,22 +26,28 @@ export const applyWatermark = (file: File): Promise<Blob> =>
 
           const w = canvas.width;
           const h = canvas.height;
-          const fontSize = Math.round(Math.min(w, h) * 0.045);
-          const padding  = Math.round(Math.min(w, h) * 0.03);
 
+          // Center of image — always visible regardless of object-cover cropping
+          ctx.save();
+          ctx.translate(w / 2, h / 2);
+          ctx.rotate(-Math.PI / 12); // -15 degrees, subtle tilt
+
+          const fontSize = Math.round(Math.min(w, h) * 0.055);
           ctx.font         = `italic bold ${fontSize}px Georgia, serif`;
-          ctx.textAlign    = 'right';
-          ctx.textBaseline = 'bottom';
+          ctx.textAlign    = 'center';
+          ctx.textBaseline = 'middle';
 
-          // Dark shadow for readability on light backgrounds
-          ctx.shadowColor   = 'rgba(0,0,0,0.7)';
-          ctx.shadowBlur    = 4;
-          ctx.shadowOffsetX = 1;
-          ctx.shadowOffsetY = 1;
+          // Dark outline for visibility on both light and dark backgrounds
+          ctx.shadowColor   = 'rgba(0,0,0,0.6)';
+          ctx.shadowBlur    = 8;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
 
-          // Gold text — bottom-right corner
-          ctx.fillStyle = 'rgba(212,175,55,0.80)';
-          ctx.fillText('The Auction House', w - padding, h - padding);
+          // Semi-transparent gold — visible but not distracting
+          ctx.fillStyle = 'rgba(212,175,55,0.30)';
+          ctx.fillText('The Auction House', 0, 0);
+
+          ctx.restore();
 
           const dataUrl = canvas.toDataURL('image/jpeg', 0.93);
           resolve(dataUrlToBlob(dataUrl));
