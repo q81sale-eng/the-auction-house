@@ -1,4 +1,5 @@
-import { supabase, ensureSession } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
@@ -47,14 +48,15 @@ function shapeWatch(row: any) {
 // ─── Vault list ───────────────────────────────────────────────────────────────
 
 export const getVault = async () => {
-  const session = await ensureSession();
-  const user = session?.user;
-  if (!user) throw new Error('Not authenticated');
+  // Get user from Zustand store directly — avoids depending on Supabase session state
+  const storedUser = useAuthStore.getState().user;
+  const userId = storedUser?.id ? String(storedUser.id) : null;
+  if (!userId) throw new Error('Not authenticated');
 
   const { data, error } = await supabase
     .from('vault_watches')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
