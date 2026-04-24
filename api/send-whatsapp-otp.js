@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -43,8 +45,7 @@ module.exports = async function handler(req, res) {
 
   if (!insertResp.ok) {
     const insertErr = await insertResp.text();
-    console.error('Supabase insert error:', insertErr);
-    return res.status(500).json({ message: 'خطأ في قاعدة البيانات: ' + insertErr });
+    return res.status(500).json({ message: 'خطأ في قاعدة البيانات، تأكد من إنشاء الجدول في Supabase. التفاصيل: ' + insertErr });
   }
 
   // Send via Ultramsg
