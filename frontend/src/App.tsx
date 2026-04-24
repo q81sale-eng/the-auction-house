@@ -122,8 +122,32 @@ function App() {
     };
 
     // Restore any existing session on mount
+    // If Supabase has no session but Zustand has tokens, restore from stored tokens
     supabase.auth.getSession()
-      .then(({ data: { session } }) => { if (session?.user) hydrateUser(session); })
+      .then(async ({ data: { session } }) => {
+        if (session?.user) {
+          hydrateUser(session);
+        } else {
+          // Try to restore from persisted tokens
+          const stored = useAuthStore.getState();
+          if (stored.token && stored.refreshToken) {
+            try {
+              const { data: restored, error } = await supabase.auth.setSession({
+                access_token: stored.token,
+                refresh_token: stored.refreshToken,
+              });
+              if (restored.session?.user) {
+                hydrateUser(restored.session);
+              } else if (error) {
+                console.warn('[Auth] session restore failed:', error.message);
+                useAuthStore.getState().logout();
+              }
+            } catch (e) {
+              console.warn('[Auth] setSession error:', e);
+            }
+          }
+        }
+      })
       .catch((e) => console.warn('[Auth] getSession failed:', e));
 
     // Subscribe to future auth changes — only logout on explicit SIGNED_OUT
