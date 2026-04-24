@@ -466,6 +466,11 @@ const en = {
       deleting: 'Deleting...',
       confirmDelete: 'Delete this auction? This cannot be undone.',
       confirmDeleteUser: 'Delete this user account? This cannot be undone.',
+      renew: 'Renew',
+      renewAuction: 'Renew Auction',
+      renewEndsAt: 'New End Date',
+      renewConfirm: 'Renew Auction',
+      renewing: 'Renewing...',
     },
     form: {
       pricing: 'Pricing (KWD)',

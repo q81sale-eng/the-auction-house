@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from './AdminLayout';
-import { getAdminAuctions, deleteAuction, updateAuctionStatus } from '../../api/admin';
+import { getAdminAuctions, deleteAuction, updateAuctionStatus, renewAuction } from '../../api/admin';
 import { useT } from '../../i18n/useLanguage';
 import { formatCurrency, formatDateTime } from '../../utils/format';
 import { useCurrencyStore, convertFromGBP } from '../../store/currencyStore';
@@ -16,6 +16,52 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-orange-500/20 text-orange-400',
 };
 
+// Default new end date: 7 days from now, rounded to the hour
+function defaultEndsAt() {
+  const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  d.setMinutes(0, 0, 0);
+  return d.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+}
+
+interface RenewModalProps {
+  auction: any;
+  onClose: () => void;
+  onConfirm: (endsAt: string) => void;
+  isPending: boolean;
+  t: any;
+}
+
+const RenewModal: React.FC<RenewModalProps> = ({ auction, onClose, onConfirm, isPending, t }) => {
+  const [endsAt, setEndsAt] = useState(defaultEndsAt());
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-obsidian-900 border border-obsidian-700 w-full max-w-sm p-6">
+        <h2 className="font-serif text-xl text-white mb-1">{t.renewAuction}</h2>
+        <p className="text-obsidian-400 text-sm mb-6 truncate">{auction.title}</p>
+
+        <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.renewEndsAt}</label>
+        <input
+          type="datetime-local"
+          value={endsAt}
+          onChange={e => setEndsAt(e.target.value)}
+          className="input-field w-full mb-6"
+        />
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 btn-outline text-sm">{t.cancel}</button>
+          <button
+            onClick={() => onConfirm(new Date(endsAt).toISOString())}
+            disabled={isPending || !endsAt}
+            className="flex-1 btn-gold text-sm disabled:opacity-50"
+          >
+            {isPending ? t.renewing : t.renewConfirm}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AdminAuctions: React.FC = () => {
   const queryClient = useQueryClient();
   const { tr } = useT();
@@ -24,11 +70,31 @@ export const AdminAuctions: React.FC = () => {
   const fmt = (v: number) => formatCurrency(convertFromGBP(v, currency), currency);
   const [page, setPage] = useState(1);
   const [invoiceItem, setInvoiceItem] = useState<any | null>(null);
+  const [renewTarget, setRenewTarget] = useState<any | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'auctions', page],
     queryFn: () => getAdminAuctions({ page }),
+    refetchInterval: 60_000,
   });
+
+  // Auto-close auctions whose ends_at has passed
+  useEffect(() => {
+    const closeExpired = async () => {
+      const liveAuctions = (data?.data ?? []).filter(
+        (a: any) => a.status === 'live' && a.ends_at && new Date(a.ends_at) < new Date()
+      );
+      for (const a of liveAuctions) {
+        await updateAuctionStatus(a.id, 'ended');
+      }
+      if (liveAuctions.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] });
+      }
+    };
+    closeExpired();
+    const id = setInterval(closeExpired, 60_000);
+    return () => clearInterval(id);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const deleteMutation = useMutation({
     mutationFn: deleteAuction,
@@ -39,6 +105,15 @@ export const AdminAuctions: React.FC = () => {
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => updateAuctionStatus(id, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] }),
+  });
+
+  const renewMutation = useMutation({
+    mutationFn: ({ id, endsAt }: { id: string; endsAt: string }) => renewAuction(id, endsAt),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] });
+      setRenewTarget(null);
+    },
+    onError: (err: any) => alert('خطأ في التجديد: ' + err.message),
   });
 
   const auctions = data?.data ?? [];
@@ -58,6 +133,16 @@ export const AdminAuctions: React.FC = () => {
             type:             'auction',
           }}
           onClose={() => setInvoiceItem(null)}
+        />
+      )}
+
+      {renewTarget && (
+        <RenewModal
+          auction={renewTarget}
+          onClose={() => setRenewTarget(null)}
+          onConfirm={(endsAt) => renewMutation.mutate({ id: renewTarget.id, endsAt })}
+          isPending={renewMutation.isPending}
+          t={t.actions}
         />
       )}
 
@@ -116,6 +201,9 @@ export const AdminAuctions: React.FC = () => {
                       {a.status === 'live' && (
                         <button onClick={() => statusMutation.mutate({ id: a.id, status: 'ended' })} disabled={statusMutation.isPending} className="text-obsidian-400 hover:text-orange-400 text-xs transition-colors disabled:opacity-50">End</button>
                       )}
+                      {a.status === 'ended' && (
+                        <button onClick={() => setRenewTarget(a)} className="text-blue-400 hover:text-blue-300 text-xs transition-colors">{t.actions.renew}</button>
+                      )}
                       <button onClick={() => setInvoiceItem(a)} className="text-gold-500 hover:text-gold-400 text-xs border border-gold-500/30 px-2 py-0.5 transition-colors">فاتورة</button>
                       <button onClick={() => { if (window.confirm(t.actions.confirmDelete)) deleteMutation.mutate(a.id); }} className="text-obsidian-400 hover:text-red-400 text-xs transition-colors">
                         {deleteMutation.isPending ? t.actions.deleting : t.actions.delete}
@@ -160,13 +248,16 @@ export const AdminAuctions: React.FC = () => {
                     {t.status[a.status as keyof typeof t.status] ?? a.status}
                   </span>
                 </div>
-                <div className="flex gap-2 pt-3 border-t border-obsidian-800">
+                <div className="flex gap-2 pt-3 border-t border-obsidian-800 flex-wrap">
                   <Link to={`/admin/auctions/${a.id}/edit`} className="flex-1 text-center text-obsidian-400 hover:text-gold-500 text-xs py-2 border border-obsidian-700 hover:border-gold-500/30 transition-colors">{t.actions.edit}</Link>
                   {a.status === 'upcoming' && (
                     <button onClick={() => statusMutation.mutate({ id: a.id, status: 'live' })} className="flex-1 text-center text-green-500 text-xs py-2 border border-green-500/30 transition-colors">Go Live</button>
                   )}
                   {a.status === 'live' && (
                     <button onClick={() => statusMutation.mutate({ id: a.id, status: 'ended' })} className="flex-1 text-center text-obsidian-400 text-xs py-2 border border-obsidian-700 transition-colors">End</button>
+                  )}
+                  {a.status === 'ended' && (
+                    <button onClick={() => setRenewTarget(a)} className="flex-1 text-center text-blue-400 text-xs py-2 border border-blue-500/30 transition-colors">{t.actions.renew}</button>
                   )}
                   <button onClick={() => setInvoiceItem(a)} className="flex-1 text-center text-gold-500 hover:text-gold-400 text-xs py-2 border border-gold-500/40 hover:border-gold-500 transition-colors">فاتورة</button>
                   <button onClick={() => { if (window.confirm(t.actions.confirmDelete)) deleteMutation.mutate(a.id); }} className="flex-1 text-center text-obsidian-400 hover:text-red-400 text-xs py-2 border border-obsidian-700 hover:border-red-500/30 transition-colors">

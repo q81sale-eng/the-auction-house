@@ -468,6 +468,11 @@ const ar: Strings = {
       deleting: 'جارٍ الحذف...',
       confirmDelete: 'حذف هذا المزاد؟ لا يمكن التراجع عن هذا الإجراء.',
       confirmDeleteUser: 'حذف هذا الحساب؟ لا يمكن التراجع عن هذا الإجراء.',
+      renew: 'تجديد',
+      renewAuction: 'تجديد المزاد',
+      renewEndsAt: 'تاريخ انتهاء جديد',
+      renewConfirm: 'تجديد المزاد',
+      renewing: 'جارٍ التجديد...',
     },
     form: {
       pricing: 'الأسعار (د.ك)',

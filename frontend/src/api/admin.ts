@@ -96,6 +96,9 @@ export const updateAuction = async (id: string, payload: Record<string, any>) =>
 export const updateAuctionStatus = async (id: string, status: string) =>
   updateAuction(id, { status });
 
+export const renewAuction = async (id: string, endsAt: string) =>
+  updateAuction(id, { status: 'live', ends_at: endsAt });
+
 export const deleteAuction = async (id: string) => {
   const { error } = await supabase.rpc('admin_delete_auction', { p_auction_id: id });
   if (error) throw new Error(error.message);

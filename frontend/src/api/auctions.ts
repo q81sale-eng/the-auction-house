@@ -169,6 +169,15 @@ export const placeBid = async (auctionId: string, amount: number, userId?: strin
   return data;
 };
 
+export const closeAuctionIfExpired = async (auctionId: string, endsAt: string) => {
+  if (new Date(endsAt) > new Date()) return; // not expired yet
+  await supabase
+    .from('auctions')
+    .update({ status: 'ended', updated_at: new Date().toISOString() })
+    .eq('id', auctionId)
+    .eq('status', 'live'); // only update if still live
+};
+
 export const buyNow = async (auctionId: string) => {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;

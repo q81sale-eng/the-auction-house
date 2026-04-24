@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAuction, placeBid, buyNow } from '../api/auctions';
+import { getAuction, placeBid, buyNow, closeAuctionIfExpired } from '../api/auctions';
 import { CountdownTimer } from '../components/ui/CountdownTimer';
 import { Layout } from '../components/layout/Layout';
 import { useAuthStore } from '../store/authStore';
@@ -54,6 +54,20 @@ export const AuctionDetailPage: React.FC = () => {
       setMessage({ type: 'error', text: err.message || err.response?.data?.message || t.buyError });
     },
   });
+
+  // Auto-close this auction when its ends_at passes
+  useEffect(() => {
+    if (!auction?.id || !auction?.ends_at || auction?.status !== 'live') return;
+    const check = async () => {
+      await closeAuctionIfExpired(auction.id, auction.ends_at);
+      if (new Date(auction.ends_at) < new Date()) {
+        queryClient.invalidateQueries({ queryKey: ['auction', slug] });
+      }
+    };
+    check();
+    const id = setInterval(check, 30_000);
+    return () => clearInterval(id);
+  }, [auction?.id, auction?.ends_at, auction?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBid = (e: React.FormEvent) => {
     e.preventDefault();
