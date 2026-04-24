@@ -111,6 +111,7 @@ function App() {
             bio: m.bio,
           },
           session.access_token,
+          session.refresh_token,
         );
       } catch (e) {
         console.warn('[Auth] hydrateUser failed:', e);
@@ -122,12 +123,12 @@ function App() {
       .then(({ data: { session } }) => { if (session?.user) hydrateUser(session); })
       .catch((e) => console.warn('[Auth] getSession failed:', e));
 
-    // Subscribe to future auth changes
+    // Subscribe to future auth changes — only logout on explicit SIGNED_OUT
     try {
       const { data } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           hydrateUser(session);
-        } else {
+        } else if (_event === 'SIGNED_OUT') {
           logout();
         }
       });
