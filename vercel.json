@@ -5,8 +5,5 @@
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
-  ],
-  "functions": {
-    "api/*.js": { "runtime": "nodejs22.x" }
-  }
+  ]
 }
