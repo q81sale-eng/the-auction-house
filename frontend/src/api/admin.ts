@@ -88,7 +88,7 @@ export const updateAuction = async (id: string, payload: Record<string, any>) =>
     .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
   return data;
 };
