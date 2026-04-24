@@ -1,7 +1,11 @@
 {
   "buildCommand": "npm install && cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/build",
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
   "functions": {
     "api/*.js": { "runtime": "nodejs18.x" }
   }
