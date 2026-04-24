@@ -34,18 +34,15 @@ export async function fetchProfile(userId: string, email?: string): Promise<{ is
     .maybeSingle();
   depositBalance = profileData?.deposit_balance ?? 0;
 
-  // Use SECURITY DEFINER RPC to reliably check admin status (bypasses RLS)
+  // Use SECURITY DEFINER RPC — passes user ID directly, no session required
   let is_admin = false;
-  const { data: rpcResult, error: rpcError } = await supabase.rpc('check_is_admin');
+  const { data: rpcResult, error: rpcError } = await supabase.rpc('get_is_admin', { p_user_id: userId });
   if (!rpcError && typeof rpcResult === 'boolean') {
     is_admin = rpcResult;
   } else {
-    // Fallback: direct table queries
-    if (rpcError) console.warn('[Auth] check_is_admin rpc failed:', rpcError.message);
-    const { data: profileAdmin } = await supabase
-      .from('profiles').select('is_admin').eq('id', userId).maybeSingle();
+    if (rpcError) console.warn('[Auth] get_is_admin rpc failed:', rpcError.message);
     const adminByEmail = email ? await checkAdminByEmail(email) : false;
-    is_admin = profileAdmin?.is_admin || adminByEmail;
+    is_admin = adminByEmail;
   }
 
   console.info('[Auth] fetchProfile → is_admin:', is_admin, '| deposit_balance:', depositBalance);
