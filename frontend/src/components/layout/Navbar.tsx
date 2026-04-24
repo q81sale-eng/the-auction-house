@@ -15,16 +15,14 @@ export const Navbar: React.FC = () => {
   const { tr, lang, toggle } = useT();
   const { currency, setCurrency } = useCurrencyStore();
 
-  // Re-check admin status from the DB every time the Navbar mounts while authenticated.
-  // This overwrites any stale is_admin: false that localStorage may have cached from
-  // before the user's admin status was granted.
+  // Always re-fetch admin status on mount — overwrites any stale cached value.
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
     fetchProfile(String(user.id), user.email)
       .then(({ is_admin, deposit_balance }) => {
-        if (is_admin !== user.is_admin || deposit_balance !== user.deposit_balance) {
-          setUser({ ...user, is_admin, deposit_balance });
-        }
+        // Always update — don't skip even if values appear equal,
+        // so that a stale is_admin:false gets corrected.
+        setUser({ ...user, is_admin, deposit_balance });
       })
       .catch((err) => console.warn('[Navbar] profile refresh failed:', err?.message));
   }, [isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -51,27 +49,24 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="font-serif text-gold-500 text-xl tracking-widest uppercase">
+          <Link to="/" className="font-serif text-gold-500 text-lg tracking-widest uppercase shrink-0">
             The Auction House
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.auctions}</Link>
-            <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.marketplace}</Link>
-            <Link to="/pave" className="text-gold-500/70 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors font-serif italic">{tr.nav.pave}</Link>
-            <Link to="/catalog" className="flex items-center gap-1.5 border border-gold-500/40 text-gold-500 hover:bg-gold-500/10 text-xs uppercase tracking-wider px-3 py-1.5 transition-colors">
+          {/* Desktop nav — only on lg+ */}
+          <div className="hidden lg:flex items-center gap-5">
+            <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.auctions}</Link>
+            <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.marketplace}</Link>
+            <Link to="/pave" className="text-gold-500/70 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors font-serif italic">{tr.nav.pave}</Link>
+            <Link to="/catalog" className="flex items-center gap-1 border border-gold-500/40 text-gold-500 hover:bg-gold-500/10 text-xs uppercase tracking-wider px-2.5 py-1.5 transition-colors shrink-0">
               <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/></svg>
               {lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}
             </Link>
-            <Link to="/about" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
-            {isAuthenticated && (
-              <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
-            )}
+            <Link to="/about" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
           </div>
 
-          {/* Auth area */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Auth area — only on lg+ */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
             {/* Currency selector */}
             <select
               value={currency}
@@ -85,7 +80,7 @@ export const Navbar: React.FC = () => {
             {/* Language toggle */}
             <button
               onClick={toggle}
-              className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"
+              className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors shrink-0"
               aria-label="Switch language"
             >
               <span className={`px-2.5 py-1 text-xs uppercase tracking-widest transition-colors ${lang === 'en' ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500 hover:text-obsidian-300'}`}>EN</span>
@@ -95,16 +90,16 @@ export const Navbar: React.FC = () => {
 
             {isAuthenticated ? (
               <>
-                <div className="text-end">
-                  <p className="text-white text-sm font-medium">{user?.name}</p>
+                <div className="text-end shrink-0">
+                  <p className="text-white text-xs font-medium leading-tight">{user?.name}</p>
                   <p className="text-gold-500 text-xs">{formatCurrency(convertFromGBP(user?.deposit_balance || 0, currency), currency)} {tr.nav.balance}</p>
                 </div>
-                <Link to="/profile" className="text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider transition-colors">{tr.nav.profile}</Link>
+                <Link to="/profile" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors shrink-0">{tr.nav.profile}</Link>
                 {user?.is_admin && (
-                  <div className="relative" ref={adminRef}>
+                  <div className="relative shrink-0" ref={adminRef}>
                     <button
                       onClick={() => setAdminOpen(v => !v)}
-                      className="flex items-center gap-1 border border-gold-500/60 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 transition-colors"
+                      className="flex items-center gap-1 border border-gold-500/60 text-gold-500 hover:bg-gold-500 hover:text-obsidian-950 text-xs uppercase tracking-wider px-2.5 py-1.5 transition-colors"
                     >
                       {tr.nav.admin}
                       <svg className={`w-3 h-3 transition-transform ${adminOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,45 +108,27 @@ export const Navbar: React.FC = () => {
                     </button>
                     {adminOpen && (
                       <div className="absolute end-0 top-full mt-1 w-52 bg-obsidian-900 border border-obsidian-700 shadow-lg z-50">
-                        <Link
-                          to="/admin"
-                          onClick={() => setAdminOpen(false)}
-                          className="block px-4 py-2.5 text-xs uppercase tracking-wider text-gold-500 hover:bg-obsidian-800 border-b border-obsidian-800"
-                        >
-                          {tr.nav.admin}
-                        </Link>
-                        <Link
-                          to="/admin/valuation-requests"
-                          onClick={() => setAdminOpen(false)}
-                          className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800 border-b border-obsidian-800"
-                        >
-                          {tr.admin.valuationRequests}
-                        </Link>
-                        <Link
-                          to="/admin/auctions/new"
-                          onClick={() => setAdminOpen(false)}
-                          className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800"
-                        >
-                          {tr.admin.actions.createAuction}
-                        </Link>
+                        <Link to="/admin" onClick={() => setAdminOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-gold-500 hover:bg-obsidian-800 border-b border-obsidian-800">{tr.nav.admin}</Link>
+                        <Link to="/admin/valuation-requests" onClick={() => setAdminOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800 border-b border-obsidian-800">{tr.admin.valuationRequests}</Link>
+                        <Link to="/admin/auctions/new" onClick={() => setAdminOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800">{tr.admin.actions.createAuction}</Link>
                       </div>
                     )}
                   </div>
                 )}
-                <button onClick={handleLogout} className="text-obsidian-400 hover:text-white text-sm transition-colors">
+                <button onClick={handleLogout} className="text-obsidian-400 hover:text-white text-xs transition-colors shrink-0">
                   {tr.nav.signOut}
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-obsidian-300 hover:text-white text-sm uppercase tracking-wider transition-colors">{tr.nav.signIn}</Link>
-                <Link to="/register" className="btn-gold text-xs py-2 px-4">{tr.nav.joinNow}</Link>
+                <Link to="/login" className="text-obsidian-300 hover:text-white text-xs uppercase tracking-wider transition-colors">{tr.nav.signIn}</Link>
+                <Link to="/register" className="btn-gold text-xs py-1.5 px-3">{tr.nav.joinNow}</Link>
               </>
             )}
           </div>
 
-          {/* Mobile menu btn */}
-          <button className="md:hidden text-obsidian-300 hover:text-white p-2 -me-2 transition-colors" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+          {/* Mobile/tablet menu btn — shows below lg */}
+          <button className="lg:hidden text-obsidian-300 hover:text-white p-2 -me-2 transition-colors" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
@@ -159,9 +136,9 @@ export const Navbar: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile menu — full-width dropdown */}
+        {/* Mobile/tablet menu — full-width dropdown */}
         {menuOpen && (
-          <div className="md:hidden border-t border-obsidian-800 overflow-y-auto max-h-[calc(100vh-4rem)]">
+          <div className="lg:hidden border-t border-obsidian-800 overflow-y-auto max-h-[calc(100vh-4rem)]">
 
             {/* Explore */}
             <div className="px-2 pt-4 pb-3">
