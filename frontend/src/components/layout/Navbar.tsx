@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { logout, fetchProfile } from '../../api/auth';
+import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
 import { useCurrencyStore, CURRENCIES, CURRENCY_SYMBOLS, convertFromGBP, type Currency } from '../../store/currencyStore';
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, logout: logoutStore, setUser } = useAuthStore();
+  const { user, isAuthenticated, token, refreshToken, logout: logoutStore, setUser } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -15,16 +16,19 @@ export const Navbar: React.FC = () => {
   const { tr, lang, toggle } = useT();
   const { currency, setCurrency } = useCurrencyStore();
 
-  // Always re-fetch admin status on mount — overwrites any stale cached value.
+  // Always re-fetch admin status on mount — ensures stale is_admin:false gets corrected.
+  // Restores Supabase session first so RLS queries work even after a page refresh.
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
-    fetchProfile(String(user.id), user.email)
-      .then(({ is_admin, deposit_balance }) => {
-        // Always update — don't skip even if values appear equal,
-        // so that a stale is_admin:false gets corrected.
-        setUser({ ...user, is_admin, deposit_balance });
-      })
-      .catch((err) => console.warn('[Navbar] profile refresh failed:', err?.message));
+    const check = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session && token && refreshToken) {
+        await supabase.auth.setSession({ access_token: token, refresh_token: refreshToken });
+      }
+      const { is_admin, deposit_balance } = await fetchProfile(String(user.id), user.email);
+      setUser({ ...user, is_admin, deposit_balance });
+    };
+    check().catch((err) => console.warn('[Navbar] profile refresh failed:', err?.message));
   }, [isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close admin dropdown when clicking outside
@@ -63,6 +67,9 @@ export const Navbar: React.FC = () => {
               {lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}
             </Link>
             <Link to="/about" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
+            {isAuthenticated && (
+              <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
+            )}
           </div>
 
           {/* Auth area — only on lg+ */}
