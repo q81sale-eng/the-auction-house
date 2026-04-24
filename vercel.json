@@ -7,6 +7,6 @@
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "functions": {
-    "api/*.js": { "runtime": "nodejs18.x" }
+    "api/*.js": { "runtime": "nodejs22.x" }
   }
 }
