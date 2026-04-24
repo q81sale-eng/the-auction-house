@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     { headers }
   );
   const existing = await checkResp.json();
-  if (existing.length > 0) {
+  if (Array.isArray(existing) && existing.length > 0) {
     const secondsAgo = (Date.now() - new Date(existing[0].created_at).getTime()) / 1000;
     if (secondsAgo < 60) {
       return res.status(429).json({ message: 'يرجى الانتظار قبل طلب رمز جديد', retry_after: Math.ceil(60 - secondsAgo) });
@@ -35,11 +35,17 @@ export default async function handler(req, res) {
   const otp = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
   const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-  await fetch(`${SUPABASE_URL}/rest/v1/phone_otps`, {
+  const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/phone_otps`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
     body: JSON.stringify({ phone, otp, expires_at }),
   });
+
+  if (!insertResp.ok) {
+    const insertErr = await insertResp.text();
+    console.error('Supabase insert error:', insertErr);
+    return res.status(500).json({ message: 'خطأ في قاعدة البيانات: ' + insertErr });
+  }
 
   // Send via Ultramsg
   const message = `رمز التحقق الخاص بك في *The Auction House*:\n\n*${otp}*\n\nصالح لمدة 10 دقائق.\nلا تشارك هذا الرمز مع أحد.`;
@@ -57,4 +63,4 @@ export default async function handler(req, res) {
   }
 
   return res.status(200).json({ message: 'تم إرسال رمز التحقق عبر واتساب', expires_in: 600 });
-}
+};

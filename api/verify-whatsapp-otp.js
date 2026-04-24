@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   );
   const records = await resp.json();
 
-  if (!records.length) {
+  if (!Array.isArray(records) || !records.length) {
     return res.status(422).json({ message: 'الرمز منتهي الصلاحية، يرجى طلب رمز جديد' });
   }
 
@@ -46,4 +46,4 @@ export default async function handler(req, res) {
   });
 
   return res.status(200).json({ verified: true, phone });
-}
+};
