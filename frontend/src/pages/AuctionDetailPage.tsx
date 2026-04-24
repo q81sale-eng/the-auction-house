@@ -58,6 +58,7 @@ export const AuctionDetailPage: React.FC = () => {
   const handleBid = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bidAmount) return;
+    console.log('[handleBid] authUser:', authUser, '| isAuthenticated:', isAuthenticated, '| amount:', bidAmount);
     bidMutation.mutate(parseFloat(bidAmount));
   };
 

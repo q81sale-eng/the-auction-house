@@ -114,7 +114,17 @@ export const getBidHistory = async (auctionId: string, params?: Record<string, a
 
 export const placeBid = async (auctionId: string, amount: number, userId?: string) => {
   const { data: { session } } = await supabase.auth.getSession();
-  const uid = userId || session?.user?.id;
+  let uid: string | undefined = userId || session?.user?.id;
+
+  console.log('[placeBid] userId param:', userId, '| session uid:', session?.user?.id, '| final uid:', uid);
+
+  // Fallback: if still no uid, try getUser() (network request to Supabase)
+  if (!uid) {
+    const { data: { user } } = await supabase.auth.getUser();
+    uid = user?.id;
+    console.log('[placeBid] getUser() fallback uid:', uid);
+  }
+
   if (!uid) throw new Error('You must be signed in to bid');
 
   const { data: auction } = await supabase
