@@ -5,7 +5,21 @@ import { supabase } from '../lib/supabase';
 import { fetchProfile } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import { useT } from '../i18n/useLanguage';
-import api from '../api/client';
+// OTP calls go to Vercel serverless functions — no separate backend needed
+async function otpFetch(path: string, body: object) {
+  const r = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const err: any = new Error(data.message || 'Request failed');
+    err.response = { status: r.status, data };
+    throw err;
+  }
+  return data;
+}
 
 type CountryCode =
   | 'kw' | 'sa' | 'ae' | 'qa' | 'bh' | 'om'
@@ -146,7 +160,7 @@ export const RegisterPage: React.FC = () => {
     const phone = buildFullPhone();
     setLoading(true);
     try {
-      await api.post('/auth/send-whatsapp-otp', { phone });
+      await otpFetch('/api/send-whatsapp-otp', { phone });
       setFullPhone(phone);
       setResendTimer(60);
       setStep('otp');
@@ -171,7 +185,7 @@ export const RegisterPage: React.FC = () => {
     setLoading(true);
     setErrors({});
     try {
-      await api.post('/auth/verify-whatsapp-otp', { phone: fullPhone, otp: code });
+      await otpFetch('/api/verify-whatsapp-otp', { phone: fullPhone, otp: code });
 
       const { data: auth, error: signUpErr } = await supabase.auth.signUp({
         email: form.email,
@@ -234,7 +248,7 @@ export const RegisterPage: React.FC = () => {
     if (resendTimer > 0) return;
     setOtp(''); setErrors({});
     try {
-      await api.post('/auth/send-whatsapp-otp', { phone: fullPhone });
+      await otpFetch('/api/send-whatsapp-otp', { phone: fullPhone });
       setResendTimer(60);
     } catch (err: any) {
       const status = err.response?.status;
