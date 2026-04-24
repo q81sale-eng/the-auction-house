@@ -116,6 +116,7 @@ export const login = async (email: string, password: string) => {
       country: m.country,
     } as AuthUser,
     token: auth.session.access_token,
+    refreshToken: auth.session.refresh_token,
   };
 };
 

@@ -13,7 +13,7 @@ import { WhatsAppShare } from '../components/ui/WhatsAppShare';
 
 export const AuctionDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { isAuthenticated, user: authUser } = useAuthStore();
+  const { isAuthenticated, user: authUser, refreshToken } = useAuthStore();
   const queryClient = useQueryClient();
   const { currency } = useCurrencyStore();
   const { tr, lang } = useT();
@@ -33,7 +33,7 @@ export const AuctionDetailPage: React.FC = () => {
   });
 
   const bidMutation = useMutation({
-    mutationFn: (amount: number) => placeBid(auction.id, amount, authUser?.id as string),
+    mutationFn: (amount: number) => placeBid(auction.id, amount, authUser?.id as string, refreshToken ?? undefined),
     onSuccess: () => {
       setMessage({ type: 'success', text: t.bidSuccess });
       setBidAmount('');

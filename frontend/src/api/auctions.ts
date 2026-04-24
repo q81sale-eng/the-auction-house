@@ -112,17 +112,28 @@ export const getBidHistory = async (auctionId: string, params?: Record<string, a
   return { data: data ?? [] };
 };
 
-export const placeBid = async (auctionId: string, amount: number, userId?: string) => {
-  const { data: { session } } = await supabase.auth.getSession();
+export const placeBid = async (auctionId: string, amount: number, userId?: string, refreshToken?: string) => {
+  let { data: { session } } = await supabase.auth.getSession();
+
+  // If session missing but we have a refresh token, restore it
+  if (!session && refreshToken) {
+    const stored = localStorage.getItem('auth_token');
+    if (stored && refreshToken) {
+      const { data: refreshed } = await supabase.auth.setSession({
+        access_token: stored,
+        refresh_token: refreshToken,
+      });
+      session = refreshed.session;
+    }
+  }
+
   let uid: string | undefined = userId || session?.user?.id;
 
-  console.log('[placeBid] userId param:', userId, '| session uid:', session?.user?.id, '| final uid:', uid);
+  console.log('[placeBid] userId:', userId, '| session uid:', session?.user?.id, '| uid:', uid);
 
-  // Fallback: if still no uid, try getUser() (network request to Supabase)
   if (!uid) {
     const { data: { user } } = await supabase.auth.getUser();
     uid = user?.id;
-    console.log('[placeBid] getUser() fallback uid:', uid);
   }
 
   if (!uid) throw new Error('You must be signed in to bid');

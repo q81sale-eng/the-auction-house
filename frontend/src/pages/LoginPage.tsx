@@ -19,7 +19,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await login(form.email, form.password);
-      setAuth(data.user, data.token);
+      setAuth(data.user, data.token, data.refreshToken);
       navigate('/');
     } catch (err: any) {
       setError(err.message || t.error);

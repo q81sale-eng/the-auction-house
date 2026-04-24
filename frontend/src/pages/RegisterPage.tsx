@@ -213,7 +213,7 @@ export const RegisterPage: React.FC = () => {
             id: u.id, name: m2.name || u.email || '', email: u.email || '',
             is_admin: profile.is_admin, is_verified: true,
             deposit_balance: profile.deposit_balance, phone: m2.phone, country: m2.country,
-          }, loginData.session?.access_token ?? '');
+          }, loginData.session?.access_token ?? '', loginData.session?.refresh_token ?? '');
           navigate('/');
           return;
         }
@@ -234,7 +234,7 @@ export const RegisterPage: React.FC = () => {
         id: u.id, name: m.name || u.email || '', email: u.email || '',
         is_admin: profile.is_admin, is_verified: true,
         deposit_balance: profile.deposit_balance, phone: m.phone, country: m.country,
-      }, loginData.session?.access_token ?? '');
+      }, loginData.session?.access_token ?? '', loginData.session?.refresh_token ?? '');
       navigate('/');
     } catch (err: any) {
       const msg = err.response?.data?.message ?? err.message ?? '';
