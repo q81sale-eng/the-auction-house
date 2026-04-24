@@ -113,8 +113,9 @@ export const getBidHistory = async (auctionId: string, params?: Record<string, a
 };
 
 export const placeBid = async (auctionId: string, amount: number) => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) throw new Error('You must be signed in to bid');
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user) throw new Error('You must be signed in to bid');
 
   const { data: auction } = await supabase
     .from('auctions')
@@ -148,8 +149,9 @@ export const placeBid = async (auctionId: string, amount: number) => {
 };
 
 export const buyNow = async (auctionId: string) => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) throw new Error('You must be signed in to purchase');
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user) throw new Error('You must be signed in to purchase');
 
   const { data, error } = await supabase
     .from('auctions')
