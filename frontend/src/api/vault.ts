@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, ensureSession } from '../lib/supabase';
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
@@ -47,8 +47,9 @@ function shapeWatch(row: any) {
 // ─── Vault list ───────────────────────────────────────────────────────────────
 
 export const getVault = async () => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) throw new Error('Not authenticated');
+  const session = await ensureSession();
+  const user = session?.user;
+  if (!user) throw new Error('Not authenticated');
 
   const { data, error } = await supabase
     .from('vault_watches')
