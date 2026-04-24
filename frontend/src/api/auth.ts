@@ -24,27 +24,31 @@ async function checkAdminByEmail(email: string): Promise<boolean> {
 }
 
 export async function fetchProfile(userId: string, email?: string): Promise<{ is_admin: boolean; deposit_balance: number }> {
-  let profileAdmin = false;
   let depositBalance = 0;
 
-  const { data: profileData, error: profileError } = await supabase
+  // Get deposit_balance from profiles (may fail on RLS — that's ok)
+  const { data: profileData } = await supabase
     .from('profiles')
-    .select('is_admin,deposit_balance')
+    .select('deposit_balance')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
+  depositBalance = profileData?.deposit_balance ?? 0;
 
-  if (profileError) {
-    console.warn('[Auth] profiles query failed:', profileError.message);
+  // Use SECURITY DEFINER RPC to reliably check admin status (bypasses RLS)
+  let is_admin = false;
+  const { data: rpcResult, error: rpcError } = await supabase.rpc('check_is_admin');
+  if (!rpcError && typeof rpcResult === 'boolean') {
+    is_admin = rpcResult;
   } else {
-    profileAdmin   = profileData?.is_admin   ?? false;
-    depositBalance = profileData?.deposit_balance ?? 0;
-    console.info('[Auth] profiles table → is_admin:', profileAdmin, '| deposit_balance:', depositBalance);
+    // Fallback: direct table queries
+    if (rpcError) console.warn('[Auth] check_is_admin rpc failed:', rpcError.message);
+    const { data: profileAdmin } = await supabase
+      .from('profiles').select('is_admin').eq('id', userId).maybeSingle();
+    const adminByEmail = email ? await checkAdminByEmail(email) : false;
+    is_admin = profileAdmin?.is_admin || adminByEmail;
   }
 
-  const adminTableResult = email ? await checkAdminByEmail(email) : false;
-
-  const is_admin = profileAdmin || adminTableResult;
-  console.info('[Auth] fetchProfile final → is_admin:', is_admin, '| source: profiles=', profileAdmin, 'admins_table=', adminTableResult);
+  console.info('[Auth] fetchProfile → is_admin:', is_admin, '| deposit_balance:', depositBalance);
   return { is_admin, deposit_balance: depositBalance };
 }
 
