@@ -1,6 +1,9 @@
--- Run this in Supabase Dashboard -> SQL Editor
+-- Run this in Supabase Dashboard -> SQL Editor (NEW empty tab)
+-- Step 1: Drop existing profiles table
+DROP TABLE IF EXISTS profiles CASCADE;
 
-CREATE TABLE IF NOT EXISTS profiles (
+-- Step 2: Recreate with all correct columns
+CREATE TABLE profiles (
   id              UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   name            TEXT,
   full_name       TEXT,
@@ -22,8 +25,10 @@ CREATE POLICY "profiles_select" ON profiles
 CREATE POLICY "profiles_update_own" ON profiles
   FOR UPDATE USING (auth.uid() = id);
 
+-- Step 3: Recreate trigger function
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
 BEGIN
   INSERT INTO profiles (id, name, email, phone, country)
   VALUES (
