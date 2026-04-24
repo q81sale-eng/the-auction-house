@@ -98,12 +98,15 @@ function App() {
         const u = session.user;
         const m = u?.user_metadata ?? {};
         const profile = await fetchProfile(u.id, u.email ?? undefined);
+        // Never downgrade is_admin from the already-stored value
+        const currentUser = useAuthStore.getState().user;
+        const is_admin = profile.is_admin || (currentUser?.is_admin ?? false);
         setAuth(
           {
             id: u.id,
             name: m.name || u.email || '',
             email: u.email || '',
-            is_admin: profile.is_admin,
+            is_admin,
             is_verified: !!u.email_confirmed_at,
             deposit_balance: profile.deposit_balance,
             phone: m.phone,

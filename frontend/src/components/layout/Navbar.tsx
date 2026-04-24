@@ -15,12 +15,17 @@ export const Navbar: React.FC = () => {
   const { tr, lang, toggle } = useT();
   const { currency, setCurrency } = useCurrencyStore();
 
-  // Re-fetch admin status after mount so stale is_admin:false in localStorage gets corrected.
+  // Re-fetch admin/balance on mount. Never downgrade is_admin true→false
+  // (fetchProfile may run before Supabase session is restored on page refresh).
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
     fetchProfile(String(user.id), user.email)
       .then(({ is_admin, deposit_balance }) => {
-        setUser({ ...user, is_admin, deposit_balance });
+        setUser({
+          ...user,
+          is_admin: user.is_admin || is_admin, // only upgrade, never downgrade
+          deposit_balance,
+        });
       })
       .catch((err) => console.warn('[Navbar] profile refresh failed:', err?.message));
   }, [isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
