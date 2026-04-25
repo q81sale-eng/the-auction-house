@@ -27,6 +27,8 @@ const Ic = {
 
   catalog: <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
 
+  watchReqs: <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>,
+
   globe: <svg className="w-[16px] h-[16px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>,
 
   menu: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>,
@@ -177,6 +179,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/admin/users',              label: t.users,                 icon: Ic.users },
     { path: '/admin/bids',               label: t.bids,                  icon: Ic.bids },
     { path: '/admin/valuation-requests', label: t.valuationRequests,     icon: Ic.valuations },
+    { path: '/admin/watch-requests',     label: t.watchRequestsNav,      icon: Ic.watchReqs  },
     { path: '/admin/listings',           label: t.listings ?? 'السوق',         icon: Ic.listings },
     { path: '/admin/banners',            label: t.banners  ?? 'البنرات',       icon: Ic.banners  },
     { path: '/admin/catalog',            label: 'أسعار الوكيل',                 icon: Ic.catalog  },

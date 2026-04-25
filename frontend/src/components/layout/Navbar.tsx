@@ -5,12 +5,14 @@ import { logout, fetchProfile } from '../../api/auth';
 import { formatCurrency } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
 import { useCurrencyStore, CURRENCIES, CURRENCY_SYMBOLS, convertFromGBP, type Currency } from '../../store/currencyStore';
+import { WatchRequestModal } from '../WatchRequestModal';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout: logoutStore, setUser } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [watchRequestOpen, setWatchRequestOpen] = useState(false);
   const adminRef = useRef<HTMLDivElement>(null);
   const { tr, lang, toggle } = useT();
   const { currency, setCurrency } = useCurrencyStore();
@@ -48,6 +50,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
+    <>
     <nav className="bg-obsidian-950 border-b border-obsidian-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -69,6 +72,12 @@ export const Navbar: React.FC = () => {
             {isAuthenticated && (
               <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
             )}
+            <button
+              onClick={() => setWatchRequestOpen(true)}
+              className="flex items-center gap-1.5 bg-gold-500 hover:bg-gold-400 text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 font-semibold transition-colors shrink-0"
+            >
+              {tr.watchRequest.buttonLabel}
+            </button>
           </div>
 
           {/* Auth area — only on lg+ */}
@@ -149,6 +158,12 @@ export const Navbar: React.FC = () => {
             {/* Explore */}
             <div className="px-2 pt-4 pb-3">
               <p className="text-obsidian-600 text-xs uppercase tracking-widest mb-2 px-1">{tr.nav.explore}</p>
+              <button
+                onClick={() => { setMenuOpen(false); setWatchRequestOpen(true); }}
+                className="w-full text-start bg-gold-500 hover:bg-gold-400 text-obsidian-950 text-sm uppercase tracking-wider py-2.5 px-1 font-semibold transition-colors mb-2"
+              >
+                {tr.watchRequest.buttonLabel}
+              </button>
               <Link to="/" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.home}</Link>
               <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
               <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
@@ -222,5 +237,8 @@ export const Navbar: React.FC = () => {
         )}
       </div>
     </nav>
+
+    {watchRequestOpen && <WatchRequestModal onClose={() => setWatchRequestOpen(false)} />}
+  </>
   );
 };
