@@ -20,10 +20,10 @@ export const uploadWatchRequestImage = async (file: File): Promise<string> => {
   const ext = file.name.split('.').pop() ?? 'jpg';
   const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const { error } = await supabase.storage
-    .from('watch-requests')
-    .upload(path, file, { cacheControl: '3600', upsert: false });
+    .from('vault-watches')
+    .upload(`requests/${path}`, file, { cacheControl: '3600', upsert: false });
   if (error) throw new Error(`Image upload failed: ${error.message}`);
-  const { data: { publicUrl } } = supabase.storage.from('watch-requests').getPublicUrl(path);
+  const { data: { publicUrl } } = supabase.storage.from('vault-watches').getPublicUrl(`requests/${path}`);
   return publicUrl;
 };
 

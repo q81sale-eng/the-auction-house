@@ -15,6 +15,7 @@ export const AdminWatchRequests: React.FC = () => {
   const queryClient = useQueryClient();
   const { tr } = useT();
   const t = tr.admin.watchRequests;
+  const conditionLabels = tr.admin.condition;
 
   const [selected, setSelected] = useState<any | null>(null);
   const [newStatus, setNewStatus] = useState<WatchRequestStatus>('new');
@@ -95,7 +96,7 @@ export const AdminWatchRequests: React.FC = () => {
               {selected.condition && (
                 <div>
                   <span className="text-obsidian-400 text-xs uppercase tracking-wider">{t.condition}</span>
-                  <p className="text-white">{selected.condition}</p>
+                  <p className="text-white">{(conditionLabels as any)[selected.condition] ?? selected.condition}</p>
                 </div>
               )}
               {selected.year && (
