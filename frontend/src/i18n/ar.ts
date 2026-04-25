@@ -526,7 +526,7 @@ const ar: Strings = {
       saving: 'جارٍ الحفظ...',
       cancel: 'إلغاء',
       statusLabel: 'الحالة *',
-      valuationAmount: 'قيمة التقييم (£)',
+      valuationAmount: 'قيمة التقييم (د.ك)',
       notes: 'ملاحظات',
       notesPlaceholder: 'أحوال السوق، تقييم الحالة، مبيعات مشابهة...',
       condition: 'الحالة',

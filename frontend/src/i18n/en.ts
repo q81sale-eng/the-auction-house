@@ -524,7 +524,7 @@ const en = {
       saving: 'Saving...',
       cancel: 'Cancel',
       statusLabel: 'Status *',
-      valuationAmount: 'Valuation Amount (£)',
+      valuationAmount: 'Valuation Amount (KWD)',
       notes: 'Notes',
       notesPlaceholder: 'Market conditions, condition assessment, comparable sales...',
       condition: 'Condition',
