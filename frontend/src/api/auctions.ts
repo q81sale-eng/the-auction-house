@@ -84,7 +84,7 @@ export const getAuction = async (slug: string) => {
       .order('sort_order', { ascending: true }),
     supabase
       .from('bids')
-      .select('id, amount, created_at, user_id, profiles(name)')
+      .select('id, amount, created_at, user_id')
       .eq('auction_id', data.id)
       .order('amount', { ascending: false }),
   ]);
@@ -93,15 +93,29 @@ export const getAuction = async (slug: string) => {
   if (bidsResult.error)  console.warn('[getAuction] bids fetch error:',   bidsResult.error.message);
 
   const auctionImages = imagesResult.data ?? [];
-  // Mask bidder name: show first name + first letter of second word
-  const bidsData = (bidsResult.data ?? []).map((bid: any) => {
-    const fullName: string = bid.profiles?.name || '';
-    const parts = fullName.trim().split(/\s+/);
-    const masked = parts.length >= 2
-      ? `${parts[0]} ${parts[1].charAt(0)}.`
-      : parts[0] || '';
-    return { ...bid, user: { name: masked } };
-  });
+  const rawBids = bidsResult.data ?? [];
+
+  // Fetch names for unique bidders
+  const userIds = Array.from(new Set(rawBids.map((b: any) => b.user_id).filter(Boolean)));
+  let nameMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .in('id', userIds);
+    (profiles ?? []).forEach((p: any) => { nameMap[p.id] = p.name || ''; });
+  }
+
+  // Mask name: "سعد خ." format
+  const maskName = (full: string) => {
+    const parts = (full || '').trim().split(/\s+/);
+    return parts.length >= 2 ? `${parts[0]} ${parts[1].charAt(0)}.` : parts[0] || '';
+  };
+
+  const bidsData = rawBids.map((bid: any) => ({
+    ...bid,
+    user: { name: maskName(nameMap[bid.user_id] || '') },
+  }));
 
   return {
     ...shapeAuction(data, auctionImages),
