@@ -141,5 +141,14 @@ export const updateValuationRequest = async (
     .select()
     .single();
   if (error) throw new Error(error.message);
+
+  // When valuation is completed, sync current_value on the vault watch
+  if (updates.status === 'completed' && updates.valuation_amount != null && data?.watch_id) {
+    await supabase
+      .from('vault_watches')
+      .update({ current_value: updates.valuation_amount, updated_at: new Date().toISOString() })
+      .eq('id', data.watch_id);
+  }
+
   return data;
 };
