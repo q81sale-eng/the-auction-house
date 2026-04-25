@@ -92,7 +92,7 @@ export const Navbar: React.FC = () => {
             </div>
             <button
               onClick={() => setWatchRequestOpen(true)}
-              className="flex items-center bg-gold-500 hover:bg-gold-400 text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 font-semibold transition-colors shrink-0"
+              className="text-gold-500 hover:text-gold-400 text-xs uppercase tracking-wider font-semibold transition-colors shrink-0"
             >
               {tr.watchRequest.buttonLabel}
             </button>
