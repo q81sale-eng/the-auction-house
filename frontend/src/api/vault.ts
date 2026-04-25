@@ -61,7 +61,32 @@ export const getVault = async () => {
 
   if (error) throw new Error(error.message);
 
-  const all = (data ?? []).map(shapeWatch);
+  // Fetch latest completed valuation for each watch to use as current value
+  const watchIds = (data ?? []).map((w: any) => w.id);
+  let valuationMap: Record<number, number> = {};
+  if (watchIds.length > 0) {
+    const { data: valuations } = await supabase
+      .from('valuation_requests')
+      .select('watch_id, valuation_amount')
+      .eq('user_id', userId)
+      .eq('status', 'completed')
+      .not('valuation_amount', 'is', null)
+      .in('watch_id', watchIds)
+      .order('updated_at', { ascending: false });
+    // Keep only the latest per watch
+    (valuations ?? []).forEach((v: any) => {
+      if (valuationMap[v.watch_id] == null) valuationMap[v.watch_id] = Number(v.valuation_amount);
+    });
+  }
+
+  const all = (data ?? []).map((row: any) => {
+    // Override current_value with professional valuation if available
+    const valuedRow = valuationMap[row.id] != null
+      ? { ...row, current_value: valuationMap[row.id] }
+      : row;
+    return shapeWatch(valuedRow);
+  });
+
   const activeWatches = all.filter(w => w.status !== 'sold');
   const soldWatches   = all.filter(w => w.status === 'sold');
 
