@@ -72,12 +72,14 @@ export const AdminWatchRequests: React.FC = () => {
             {/* Image */}
             <div>
               {selected.image_url ? (
-                <img
-                  src={selected.image_url}
-                  alt=""
-                  className="w-full max-h-64 object-contain bg-obsidian-800 rounded"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
+                <div className="bg-obsidian-800 rounded flex items-center justify-center">
+                  <img
+                    src={selected.image_url}
+                    alt=""
+                    className="max-w-full max-h-64 object-contain rounded"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
               ) : (
                 <div className="w-full h-48 bg-obsidian-800 flex items-center justify-center text-obsidian-500 text-sm rounded">
                   لا توجد صورة
