@@ -1,17 +1,25 @@
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 
 export type ValuationStatus = 'pending' | 'in_review' | 'completed' | 'rejected';
+
+function getStoredUserId(): string {
+  const user = useAuthStore.getState().user;
+  const id = user?.id ? String(user.id) : null;
+  if (!id) throw new Error('Not authenticated');
+  return id;
+}
 
 // ── Vault Watches ─────────────────────────────────────────────────────────────
 
 export const getUserVaultWatches = async () => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) return [];
+  let userId: string;
+  try { userId = getStoredUserId(); } catch { return []; }
 
   const { data, error } = await supabase
     .from('vault_watches')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return data ?? [];
@@ -26,12 +34,11 @@ export const createVaultWatch = async (payload: {
   description?: string;
   image_url?: string;
 }) => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) throw new Error('Not authenticated');
+  const userId = getStoredUserId();
 
   const { data, error } = await supabase
     .from('vault_watches')
-    .insert({ ...payload, user_id: user.id })
+    .insert({ ...payload, user_id: userId })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -41,14 +48,13 @@ export const createVaultWatch = async (payload: {
 // ── Valuation Requests ────────────────────────────────────────────────────────
 
 export const requestValuation = async (watchId: number) => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) throw new Error('Not authenticated');
+  const userId = getStoredUserId();
 
   const { data: existing } = await supabase
     .from('valuation_requests')
     .select('id, status')
     .eq('watch_id', watchId)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .in('status', ['pending', 'in_review'])
     .maybeSingle();
 
@@ -56,7 +62,7 @@ export const requestValuation = async (watchId: number) => {
 
   const { data, error } = await supabase
     .from('valuation_requests')
-    .insert({ user_id: user.id, watch_id: watchId, status: 'pending' })
+    .insert({ user_id: userId, watch_id: watchId, status: 'pending' })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -64,14 +70,14 @@ export const requestValuation = async (watchId: number) => {
 };
 
 export const getWatchValuationRequest = async (watchId: number) => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) return null;
+  let userId: string;
+  try { userId = getStoredUserId(); } catch { return null; }
 
   const { data } = await supabase
     .from('valuation_requests')
     .select('*')
     .eq('watch_id', watchId)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -80,13 +86,13 @@ export const getWatchValuationRequest = async (watchId: number) => {
 };
 
 export const getUserValuationRequests = async () => {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) return [];
+  let userId: string;
+  try { userId = getStoredUserId(); } catch { return []; }
 
   const { data, error } = await supabase
     .from('valuation_requests')
     .select('*, vault_watches(brand, model, reference_number)')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return data ?? [];
