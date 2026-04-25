@@ -390,11 +390,19 @@ export const VaultDetailPage: React.FC = () => {
                   </div>
 
                   {/* Valuation notes */}
-                  {isValuationDone && valuationRequest.valuation_notes && (
+                  {isValuationDone && (
                     <div className="bg-obsidian-900 border border-gold-500/20 px-5 py-4">
-                      <p className="text-gold-500 text-xs uppercase tracking-widest mb-2">{tv.notes}</p>
-                      <p className="text-obsidian-200 text-sm leading-relaxed">{valuationRequest.valuation_notes}</p>
-                      <p className="text-obsidian-500 text-xs mt-2">
+                      {valuationRequest.valuation_notes && (
+                        <>
+                          <p className="text-gold-500 text-xs uppercase tracking-widest mb-2">{tv.notes}</p>
+                          <p className="text-obsidian-200 text-sm leading-relaxed">{valuationRequest.valuation_notes}</p>
+                          <div className="border-t border-obsidian-800 mt-3 pt-3" />
+                        </>
+                      )}
+                      <p className="text-obsidian-500 text-xs leading-relaxed">
+                        هذا التقييم استرشادي ويعكس القيمة السوقية الحالية، ولا يُعد عرضاً أو التزاماً ملزماً من الشركة
+                      </p>
+                      <p className="text-obsidian-600 text-xs mt-2">
                         {new Date(valuationRequest.updated_at ?? valuationRequest.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                     </div>
