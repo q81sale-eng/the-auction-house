@@ -279,7 +279,7 @@ const ar: Strings = {
       reference: 'الرقم المرجعي',
       year: 'السنة',
       condition: 'الحالة',
-      purchasePrice: 'سعر الشراء (£)',
+      purchasePrice: 'سعر الشراء (د.ك)',
       currentValue: 'القيمة السوقية الحالية (£)',
       purchaseDate: 'تاريخ الشراء',
       source: 'المصدر',

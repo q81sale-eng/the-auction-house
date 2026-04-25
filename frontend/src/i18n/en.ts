@@ -277,7 +277,7 @@ const en = {
       reference: 'Reference',
       year: 'Year',
       condition: 'Condition',
-      purchasePrice: 'Purchase Price (£)',
+      purchasePrice: 'Purchase Price (KWD)',
       currentValue: 'Current Market Value (£)',
       purchaseDate: 'Purchase Date',
       source: 'Source',
