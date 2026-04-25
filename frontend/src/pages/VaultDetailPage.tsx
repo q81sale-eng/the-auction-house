@@ -102,6 +102,7 @@ export const VaultDetailPage: React.FC = () => {
     queryKey: ['valuation-request', watchId],
     queryFn: () => getWatchValuationRequest(watchId),
     enabled: !!watchId,
+    refetchInterval: 30_000, // auto-refresh every 30s to pick up admin updates
   });
 
   const valuationMutation = useMutation({
@@ -388,27 +389,38 @@ export const VaultDetailPage: React.FC = () => {
 
             {/* Valuation status */}
             {valuationRequest && (
-              <div className="bg-obsidian-900 border border-obsidian-800 p-4">
-                <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-3">{tv.statusLabel}</p>
-                <div className="flex items-center gap-3 mb-2">
-                  <ValuationBadge status={valuationRequest.status} labels={tv} />
-                  <span className="text-obsidian-500 text-xs">
-                    {new Date(valuationRequest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
+              valuationRequest.status === 'completed' ? (
+                <div className="bg-obsidian-900 border border-gold-500/40 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="w-2 h-2 rounded-full bg-gold-500" />
+                    <p className="text-gold-500 text-xs uppercase tracking-widest font-semibold">{tv.statusLabel}</p>
+                  </div>
+                  {valuationRequest.valuation_amount && (
+                    <p className="text-white font-serif text-3xl mb-1">
+                      {fmtCurrency(Number(valuationRequest.valuation_amount))}
+                    </p>
+                  )}
+                  {valuationRequest.valuation_notes && (
+                    <div className="mt-3 pt-3 border-t border-obsidian-700">
+                      <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{tv.notes}</p>
+                      <p className="text-obsidian-200 text-sm leading-relaxed">{valuationRequest.valuation_notes}</p>
+                    </div>
+                  )}
+                  <p className="text-obsidian-500 text-xs mt-3">
+                    {new Date(valuationRequest.updated_at ?? valuationRequest.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
                 </div>
-                {valuationRequest.status === 'completed' && (
-                  <>
-                    {valuationRequest.valuation_amount && (
-                      <p className="text-gold-500 font-semibold text-lg mt-2">
-                        {tv.valuationAmount}: {fmtCurrency(Number(valuationRequest.valuation_amount))}
-                      </p>
-                    )}
-                    {valuationRequest.valuation_notes && (
-                      <p className="text-obsidian-300 text-sm mt-1">{valuationRequest.valuation_notes}</p>
-                    )}
-                  </>
-                )}
-              </div>
+              ) : (
+                <div className="bg-obsidian-900 border border-obsidian-800 p-4">
+                  <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-3">{tv.statusLabel}</p>
+                  <div className="flex items-center gap-3">
+                    <ValuationBadge status={valuationRequest.status} labels={tv} />
+                    <span className="text-obsidian-500 text-xs">
+                      {new Date(valuationRequest.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                </div>
+              )
             )}
 
             {/* Feedback message */}
