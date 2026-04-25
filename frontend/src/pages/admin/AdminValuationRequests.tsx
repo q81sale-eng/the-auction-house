@@ -7,8 +7,6 @@ import { useT } from '../../i18n/useLanguage';
 
 const fmt = (v: number) => formatCurrency(v, 'KWD');
 
-// Statuses available in the dropdown (completed is set automatically on Save)
-const MANUAL_STATUSES: ValuationStatus[] = ['in_review', 'rejected'];
 
 const STATUS_COLORS: Record<ValuationStatus, string> = {
   pending:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
