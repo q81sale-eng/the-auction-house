@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
 import { getAllValuationRequests, updateValuationRequest, type ValuationStatus } from '../../api/valuations';
 import { formatCurrency, formatDate } from '../../utils/format';
+const fmt = (v: number) => formatCurrency(v, 'KWD');
 import { useT } from '../../i18n/useLanguage';
 
 // Statuses available in the dropdown (completed is set automatically on Save)
@@ -119,13 +120,13 @@ export const AdminValuationRequests: React.FC = () => {
               {w?.purchase_price && (
                 <div>
                   <span className="text-obsidian-400 text-xs uppercase tracking-wider">سعر الشراء</span>
-                  <p className="text-white">{formatCurrency(Number(w.purchase_price))}</p>
+                  <p className="text-white">{fmt(Number(w.purchase_price))}</p>
                 </div>
               )}
               {w?.current_value && (
                 <div>
                   <span className="text-obsidian-400 text-xs uppercase tracking-wider">القيمة الحالية</span>
-                  <p className="text-white">{formatCurrency(Number(w.current_value))}</p>
+                  <p className="text-white">{fmt(Number(w.current_value))}</p>
                 </div>
               )}
               {w?.notes && (
@@ -235,7 +236,7 @@ export const AdminValuationRequests: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gold-500 text-xs font-semibold">
-                    {req.valuation_amount ? formatCurrency(Number(req.valuation_amount)) : '—'}
+                    {req.valuation_amount ? fmt(Number(req.valuation_amount)) : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <button
