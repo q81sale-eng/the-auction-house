@@ -352,27 +352,66 @@ export const VaultDetailPage: React.FC = () => {
             </div>
 
             {/* Financial cards */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-obsidian-900 border border-obsidian-800 p-4">
-                <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.cost}</p>
-                <p className="text-white font-semibold">{fmtCurrency(watch.purchase_price)}</p>
-              </div>
-              <div className="bg-obsidian-900 border border-obsidian-800 p-4">
-                <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.value}</p>
-                <p className="text-white font-semibold">{watch.current_value ? fmtCurrency(watch.current_value) : '—'}</p>
-              </div>
-              <div className="bg-obsidian-900 border border-obsidian-800 p-4">
-                <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.pl}</p>
-                <p className={`font-semibold ${plColor(watch.profit_loss)}`}>
-                  {watch.profit_loss != null ? `${watch.profit_loss > 0 ? '+' : ''}${fmtCurrency(watch.profit_loss)}` : '—'}
-                </p>
-                {watch.profit_loss_percent != null && (
-                  <p className={`text-xs ${plColor(watch.profit_loss_percent)}`}>
-                    {watch.profit_loss_percent > 0 ? '+' : ''}{Number(watch.profit_loss_percent).toFixed(1)}%
-                  </p>
-                )}
-              </div>
-            </div>
+            {(() => {
+              const isValuationDone = valuationRequest?.status === 'completed' && valuationRequest?.valuation_amount;
+              const valAmount = isValuationDone ? Number(valuationRequest.valuation_amount) : null;
+              const cost = Number(watch.purchase_price ?? 0);
+              const pl = valAmount != null ? valAmount - cost : watch.profit_loss;
+              const plPct = pl != null && cost > 0 ? (pl / cost) * 100 : watch.profit_loss_percent;
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-obsidian-900 border border-obsidian-800 p-4">
+                      <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.cost}</p>
+                      <p className="text-white font-semibold">{fmtCurrency(watch.purchase_price)}</p>
+                    </div>
+                    <div className={`bg-obsidian-900 border p-4 ${isValuationDone ? 'border-gold-500/40' : 'border-obsidian-800'}`}>
+                      <p className={`text-xs uppercase tracking-wider mb-1 ${isValuationDone ? 'text-gold-500' : 'text-obsidian-400'}`}>
+                        {tv.statusLabel}
+                      </p>
+                      <p className="text-white font-semibold">
+                        {valAmount != null ? fmtCurrency(valAmount) : '—'}
+                      </p>
+                      {!isValuationDone && valuationRequest && (
+                        <ValuationBadge status={valuationRequest.status} labels={tv} />
+                      )}
+                    </div>
+                    <div className="bg-obsidian-900 border border-obsidian-800 p-4">
+                      <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{t.table.pl}</p>
+                      <p className={`font-semibold ${plColor(pl ?? null)}`}>
+                        {pl != null ? `${pl > 0 ? '+' : ''}${fmtCurrency(pl)}` : '—'}
+                      </p>
+                      {plPct != null && (
+                        <p className={`text-xs ${plColor(plPct)}`}>
+                          {plPct > 0 ? '+' : ''}{Number(plPct).toFixed(1)}%
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Valuation notes */}
+                  {isValuationDone && valuationRequest.valuation_notes && (
+                    <div className="bg-obsidian-900 border border-gold-500/20 px-5 py-4">
+                      <p className="text-gold-500 text-xs uppercase tracking-widest mb-2">{tv.notes}</p>
+                      <p className="text-obsidian-200 text-sm leading-relaxed">{valuationRequest.valuation_notes}</p>
+                      <p className="text-obsidian-500 text-xs mt-2">
+                        {new Date(valuationRequest.updated_at ?? valuationRequest.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Pending/in-review banner */}
+                  {valuationRequest && valuationRequest.status !== 'completed' && (
+                    <div className="bg-obsidian-900 border border-obsidian-800 px-5 py-3 flex items-center gap-3">
+                      <ValuationBadge status={valuationRequest.status} labels={tv} />
+                      <span className="text-obsidian-500 text-xs">
+                        {new Date(valuationRequest.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {/* Watch details */}
             <div className="bg-obsidian-900 border border-obsidian-800 px-5 py-1">
@@ -386,42 +425,6 @@ export const VaultDetailPage: React.FC = () => {
               {field(t.fields.source, watch.purchase_source ? t.sources[watch.purchase_source as keyof typeof t.sources] : null)}
               {watch.notes && field(t.fields.notes, watch.notes)}
             </div>
-
-            {/* Valuation status */}
-            {valuationRequest && (
-              valuationRequest.status === 'completed' ? (
-                <div className="bg-obsidian-900 border border-gold-500/40 p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2 h-2 rounded-full bg-gold-500" />
-                    <p className="text-gold-500 text-xs uppercase tracking-widest font-semibold">{tv.statusLabel}</p>
-                  </div>
-                  {valuationRequest.valuation_amount && (
-                    <p className="text-white font-serif text-3xl mb-1">
-                      {fmtCurrency(Number(valuationRequest.valuation_amount))}
-                    </p>
-                  )}
-                  {valuationRequest.valuation_notes && (
-                    <div className="mt-3 pt-3 border-t border-obsidian-700">
-                      <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-1">{tv.notes}</p>
-                      <p className="text-obsidian-200 text-sm leading-relaxed">{valuationRequest.valuation_notes}</p>
-                    </div>
-                  )}
-                  <p className="text-obsidian-500 text-xs mt-3">
-                    {new Date(valuationRequest.updated_at ?? valuationRequest.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-obsidian-900 border border-obsidian-800 p-4">
-                  <p className="text-obsidian-400 text-xs uppercase tracking-wider mb-3">{tv.statusLabel}</p>
-                  <div className="flex items-center gap-3">
-                    <ValuationBadge status={valuationRequest.status} labels={tv} />
-                    <span className="text-obsidian-500 text-xs">
-                      {new Date(valuationRequest.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
-                </div>
-              )
-            )}
 
             {/* Feedback message */}
             {valuationMessage && (
