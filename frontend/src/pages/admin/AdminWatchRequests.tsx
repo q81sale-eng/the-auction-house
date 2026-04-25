@@ -162,13 +162,16 @@ export const AdminWatchRequests: React.FC = () => {
       )}
 
       {/* Table */}
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="card overflow-x-auto">
+        <table className="w-full text-sm min-w-[480px]">
           <thead className="bg-obsidian-800 border-b border-obsidian-700">
             <tr>
-              {[t.watch, t.name, t.phone, t.requested, t.status, t.action].map(h => (
-                <th key={h} className="text-start px-4 py-3 text-obsidian-400 text-xs uppercase tracking-wider">{h}</th>
-              ))}
+              <th className="text-start px-4 py-3 text-obsidian-400 text-xs uppercase tracking-wider">{t.watch}</th>
+              <th className="hidden md:table-cell text-start px-4 py-3 text-obsidian-400 text-xs uppercase tracking-wider">{t.name}</th>
+              <th className="hidden md:table-cell text-start px-4 py-3 text-obsidian-400 text-xs uppercase tracking-wider">{t.phone}</th>
+              <th className="hidden sm:table-cell text-start px-4 py-3 text-obsidian-400 text-xs uppercase tracking-wider">{t.requested}</th>
+              <th className="text-start px-4 py-3 text-obsidian-400 text-xs uppercase tracking-wider">{t.status}</th>
+              <th className="text-start px-4 py-3 text-obsidian-400 text-xs uppercase tracking-wider">{t.action}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-obsidian-800">
@@ -194,9 +197,9 @@ export const AdminWatchRequests: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-obsidian-300 text-xs">{req.name}</td>
-                  <td className="px-4 py-3 text-obsidian-300 text-xs">{req.phone}</td>
-                  <td className="px-4 py-3 text-obsidian-400 text-xs">{formatDate(req.created_at)}</td>
+                  <td className="hidden md:table-cell px-4 py-3 text-obsidian-300 text-xs">{req.name}</td>
+                  <td className="hidden md:table-cell px-4 py-3 text-obsidian-300 text-xs">{req.phone}</td>
+                  <td className="hidden sm:table-cell px-4 py-3 text-obsidian-400 text-xs">{formatDate(req.created_at)}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs uppercase tracking-wider px-2 py-1 border ${STATUS_COLORS[req.status as WatchRequestStatus] ?? 'text-obsidian-400'}`}>
                       {t.statuses[req.status as WatchRequestStatus] ?? req.status}
