@@ -84,7 +84,7 @@ export const getAuction = async (slug: string) => {
       .order('sort_order', { ascending: true }),
     supabase
       .from('bids')
-      .select('id, amount, created_at, user_id')
+      .select('id, amount, created_at, user_id, profiles(name)')
       .eq('auction_id', data.id)
       .order('amount', { ascending: false }),
   ]);
@@ -93,7 +93,15 @@ export const getAuction = async (slug: string) => {
   if (bidsResult.error)  console.warn('[getAuction] bids fetch error:',   bidsResult.error.message);
 
   const auctionImages = imagesResult.data ?? [];
-  const bidsData      = bidsResult.data   ?? [];
+  // Mask bidder name: show first name + first letter of second word
+  const bidsData = (bidsResult.data ?? []).map((bid: any) => {
+    const fullName: string = bid.profiles?.name || '';
+    const parts = fullName.trim().split(/\s+/);
+    const masked = parts.length >= 2
+      ? `${parts[0]} ${parts[1].charAt(0)}.`
+      : parts[0] || '';
+    return { ...bid, user: { name: masked } };
+  });
 
   return {
     ...shapeAuction(data, auctionImages),
