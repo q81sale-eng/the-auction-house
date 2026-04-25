@@ -101,15 +101,33 @@ export const getUserValuationRequests = async () => {
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 export const getAllValuationRequests = async () => {
+  // Fetch requests + watch info; avoid profiles join (no guaranteed FK/email col)
   const { data, error } = await supabase
     .from('valuation_requests')
-    .select('*, vault_watches(brand, model, reference_number), profiles(name, email)')
+    .select('*, vault_watches(brand, model, reference_number)')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('[getAllValuationRequests] error:', error.message);
     throw new Error(error.message);
   }
-  return data ?? [];
+
+  const rows = data ?? [];
+  if (rows.length === 0) return rows;
+
+  // Fetch names for unique users
+  const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean)));
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .in('id', userIds);
+
+  const nameMap: Record<string, string> = {};
+  (profiles ?? []).forEach((p: any) => { nameMap[p.id] = p.name || ''; });
+
+  return rows.map((r: any) => ({
+    ...r,
+    profiles: { name: nameMap[r.user_id] || '', email: '' },
+  }));
 };
 
 export const updateValuationRequest = async (
