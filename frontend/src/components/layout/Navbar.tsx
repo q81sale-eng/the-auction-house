@@ -60,29 +60,23 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Desktop nav — only on lg+ */}
-          <div className="hidden lg:flex items-center gap-5">
+          <div className="hidden lg:flex items-center gap-3">
             <Link to="/auctions" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.auctions}</Link>
             <Link to="/marketplace" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.marketplace}</Link>
             <Link to="/price-index" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.priceIndex.title}</Link>
-            <Link to="/pave" className="text-gold-500/70 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors font-serif italic">{tr.nav.pave}</Link>
-            <Link to="/catalog" className="flex items-center gap-1 border border-gold-500/40 text-gold-500 hover:bg-gold-500/10 text-xs uppercase tracking-wider px-2.5 py-1.5 transition-colors shrink-0">
-              <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/></svg>
-              {lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}
-            </Link>
-            <Link to="/about" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
             {isAuthenticated && (
               <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
             )}
             <button
               onClick={() => setWatchRequestOpen(true)}
-              className="flex items-center gap-1.5 bg-gold-500 hover:bg-gold-400 text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 font-semibold transition-colors shrink-0"
+              className="flex items-center bg-gold-500 hover:bg-gold-400 text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 font-semibold transition-colors shrink-0"
             >
               {tr.watchRequest.buttonLabel}
             </button>
           </div>
 
           {/* Auth area — only on lg+ */}
-          <div className="hidden lg:flex items-center gap-3 shrink-0">
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             {/* Currency selector */}
             <select
               value={currency}
@@ -106,11 +100,10 @@ export const Navbar: React.FC = () => {
 
             {isAuthenticated ? (
               <>
-                <div className="text-end shrink-0">
+                <Link to="/profile" className="text-end shrink-0 hover:opacity-80 transition-opacity">
                   <p className="text-white text-xs font-medium leading-tight">{user?.name}</p>
                   <p className="text-gold-500 text-xs">{formatCurrency(convertFromGBP(user?.deposit_balance || 0, currency), currency)} {tr.nav.balance}</p>
-                </div>
-                <Link to="/profile" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors shrink-0">{tr.nav.profile}</Link>
+                </Link>
                 {user?.is_admin && (
                   <div className="relative shrink-0" ref={adminRef}>
                     <button
