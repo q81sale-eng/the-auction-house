@@ -111,6 +111,8 @@ export const AdminAuctions: React.FC = () => {
     mutationFn: ({ id, endsAt }: { id: string; endsAt: string }) => renewAuction(id, endsAt),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'auctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auction'] });
       setRenewTarget(null);
     },
     onError: (err: any) => alert('خطأ في التجديد: ' + err.message),

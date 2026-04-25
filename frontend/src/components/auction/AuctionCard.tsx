@@ -52,7 +52,8 @@ export const AuctionCard: React.FC<AuctionCardProps> = ({ auction }) => {
             </span>
           )}
           {auction.status === 'upcoming' && <span className="badge-upcoming">{t.upcoming}</span>}
-          {auction.status === 'sold' && <span className="badge-sold">{t.sold}</span>}
+          {auction.status === 'sold'     && <span className="badge-sold">{t.sold}</span>}
+          {auction.status === 'ended'    && <span className="badge-sold">{t.ended ?? 'منتهي'}</span>}
         </div>
         {auction.buy_now_price && (
           <div className="absolute top-3 end-3 bg-gold-500/90 text-obsidian-950 text-xs font-bold px-2 py-1">
