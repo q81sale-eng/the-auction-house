@@ -215,10 +215,7 @@ export const VaultPage: React.FC = () => {
                   <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchasePrice} *</label>
                   <input type="number" className="input-field" value={form.purchase_price} onChange={e => setForm(p => ({ ...p, purchase_price: e.target.value }))} required min={0} />
                 </div>
-                <div>
-                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.currentValue}</label>
-                  <input type="number" className="input-field" value={form.current_value} onChange={e => setForm(p => ({ ...p, current_value: e.target.value }))} min={0} placeholder="اختياري" />
-                </div>
+
                 <div>
                   <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">{t.fields.purchaseDate} *</label>
                   <input type="date" className="input-field" value={form.purchased_at} onChange={e => setForm(p => ({ ...p, purchased_at: e.target.value }))} required />
