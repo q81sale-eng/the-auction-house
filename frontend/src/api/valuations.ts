@@ -104,7 +104,7 @@ export const getAllValuationRequests = async () => {
   // Fetch requests + watch info; avoid profiles join (no guaranteed FK/email col)
   const { data, error } = await supabase
     .from('valuation_requests')
-    .select('*, vault_watches(brand, model, reference_number)')
+    .select('*, vault_watches(brand, model, reference_number, image_url, condition, year, notes, purchase_price, current_value)')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('[getAllValuationRequests] error:', error.message);
