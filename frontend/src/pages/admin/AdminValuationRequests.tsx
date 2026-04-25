@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
 import { getAllValuationRequests, updateValuationRequest, type ValuationStatus } from '../../api/valuations';
 import { formatCurrency, formatDate } from '../../utils/format';
-const fmt = (v: number) => formatCurrency(v, 'KWD');
 import { useT } from '../../i18n/useLanguage';
+
+const fmt = (v: number) => formatCurrency(v, 'KWD');
 
 // Statuses available in the dropdown (completed is set automatically on Save)
 const MANUAL_STATUSES: ValuationStatus[] = ['in_review', 'rejected'];
