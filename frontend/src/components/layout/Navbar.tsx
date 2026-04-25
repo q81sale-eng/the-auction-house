@@ -12,8 +12,10 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [watchRequestOpen, setWatchRequestOpen] = useState(false);
   const adminRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
   const { tr, lang, toggle } = useT();
   const { currency, setCurrency } = useCurrencyStore();
 
@@ -32,12 +34,11 @@ export const Navbar: React.FC = () => {
       .catch((err) => console.warn('[Navbar] profile refresh failed:', err?.message));
   }, [isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Close admin dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (adminRef.current && !adminRef.current.contains(e.target as Node)) {
-        setAdminOpen(false);
-      }
+      if (adminRef.current && !adminRef.current.contains(e.target as Node)) setAdminOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -67,6 +68,28 @@ export const Navbar: React.FC = () => {
             {isAuthenticated && (
               <Link to="/vault" className="text-obsidian-300 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">{tr.nav.vault}</Link>
             )}
+            {/* More dropdown */}
+            <div className="relative" ref={moreRef}>
+              <button
+                onClick={() => setMoreOpen(v => !v)}
+                className="flex items-center gap-1 text-obsidian-400 hover:text-obsidian-200 text-xs uppercase tracking-wider transition-colors"
+              >
+                {lang === 'ar' ? 'المزيد' : 'More'}
+                <svg className={`w-3 h-3 transition-transform ${moreOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {moreOpen && (
+                <div className="absolute end-0 top-full mt-1 w-48 bg-obsidian-900 border border-obsidian-700 shadow-lg z-50">
+                  <Link to="/pave" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-gold-500/80 hover:text-gold-500 hover:bg-obsidian-800 font-serif italic">{tr.nav.pave}</Link>
+                  <Link to="/catalog" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800">{lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}</Link>
+                  <Link to="/about" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
+                  {isAuthenticated && (
+                    <Link to="/profile" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800 border-t border-obsidian-800">{tr.nav.profile}</Link>
+                  )}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setWatchRequestOpen(true)}
               className="flex items-center bg-gold-500 hover:bg-gold-400 text-obsidian-950 text-xs uppercase tracking-wider px-3 py-1.5 font-semibold transition-colors shrink-0"
