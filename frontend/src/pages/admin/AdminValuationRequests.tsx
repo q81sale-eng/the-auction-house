@@ -5,7 +5,8 @@ import { getAllValuationRequests, updateValuationRequest, type ValuationStatus }
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
 
-const STATUSES: ValuationStatus[] = ['pending', 'in_review', 'completed', 'rejected'];
+// Statuses available in the dropdown (completed is set automatically on Save)
+const MANUAL_STATUSES: ValuationStatus[] = ['in_review', 'rejected'];
 
 const STATUS_COLORS: Record<ValuationStatus, string> = {
   pending:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
@@ -21,7 +22,7 @@ export const AdminValuationRequests: React.FC = () => {
   const conditionLabels = tr.admin.condition;
 
   const [selected, setSelected] = useState<any | null>(null);
-  const [form, setForm] = useState({ status: 'pending' as ValuationStatus, valuation_amount: '', valuation_notes: '' });
+  const [form, setForm] = useState({ status: 'in_review' as ValuationStatus, valuation_amount: '', valuation_notes: '' });
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['admin', 'valuation-requests'],
@@ -29,11 +30,15 @@ export const AdminValuationRequests: React.FC = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: () => updateValuationRequest(selected.id, {
-      status: form.status,
-      valuation_amount: form.valuation_amount ? Number(form.valuation_amount) : null,
-      valuation_notes: form.valuation_notes || null,
-    }),
+    mutationFn: () => {
+      // Save always marks as completed; dropdown controls in_review/rejected only
+      const finalStatus: ValuationStatus = form.status === 'rejected' ? 'rejected' : 'completed';
+      return updateValuationRequest(selected.id, {
+        status: finalStatus,
+        valuation_amount: form.valuation_amount ? Number(form.valuation_amount) : null,
+        valuation_notes: form.valuation_notes || null,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'valuation-requests'] });
       setSelected(null);
@@ -42,8 +47,10 @@ export const AdminValuationRequests: React.FC = () => {
 
   const openRequest = (req: any) => {
     setSelected(req);
+    // Default to in_review when opening (pending → in_review automatically)
+    const initialStatus: ValuationStatus = req.status === 'rejected' ? 'rejected' : 'in_review';
     setForm({
-      status: req.status,
+      status: initialStatus,
       valuation_amount: req.valuation_amount ?? '',
       valuation_notes: req.valuation_notes ?? '',
     });
@@ -145,8 +152,9 @@ export const AdminValuationRequests: React.FC = () => {
                   className="input-field text-sm"
                   value={form.status}
                   onChange={e => setForm(p => ({ ...p, status: e.target.value as ValuationStatus }))}>
-                  {STATUSES.map(s => <option key={s} value={s}>{t.statuses[s]}</option>)}
+                  {MANUAL_STATUSES.map(s => <option key={s} value={s}>{t.statuses[s]}</option>)}
                 </select>
+                <p className="text-obsidian-500 text-xs mt-1">الحفظ يُكمل التقييم تلقائياً</p>
               </div>
               <div>
                 <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.valuationAmount}</label>
