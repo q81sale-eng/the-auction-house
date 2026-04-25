@@ -39,6 +39,7 @@ export const VaultPage: React.FC = () => {
     queryKey: ['vault'],
     queryFn: getVault,
     retry: 1,
+    staleTime: 0, // always fetch fresh data so valuation updates appear immediately
   });
 
   const addMutation = useMutation({
