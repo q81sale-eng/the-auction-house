@@ -32,15 +32,11 @@ export const AdminValuationRequests: React.FC = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: () => {
-      // Save always marks as completed; dropdown controls in_review/rejected only
-      const finalStatus: ValuationStatus = form.status === 'rejected' ? 'rejected' : 'completed';
-      return updateValuationRequest(selected.id, {
-        status: finalStatus,
-        valuation_amount: form.valuation_amount ? Number(form.valuation_amount) : null,
-        valuation_notes: form.valuation_notes || null,
-      });
-    },
+    mutationFn: () => updateValuationRequest(selected.id, {
+      status: form.status,
+      valuation_amount: form.status === 'completed' && form.valuation_amount ? Number(form.valuation_amount) : null,
+      valuation_notes: form.status === 'completed' ? (form.valuation_notes || null) : null,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'valuation-requests'] });
       setSelected(null);
@@ -49,10 +45,8 @@ export const AdminValuationRequests: React.FC = () => {
 
   const openRequest = (req: any) => {
     setSelected(req);
-    // Default to in_review when opening (pending → in_review automatically)
-    const initialStatus: ValuationStatus = req.status === 'rejected' ? 'rejected' : 'in_review';
     setForm({
-      status: initialStatus,
+      status: (req.status === 'completed' || req.status === 'rejected') ? req.status : 'in_review',
       valuation_amount: req.valuation_amount ?? '',
       valuation_notes: req.valuation_notes ?? '',
     });
@@ -147,37 +141,53 @@ export const AdminValuationRequests: React.FC = () => {
 
           {/* Edit form */}
           <div className="border-t border-obsidian-700 pt-5">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.statusLabel}</label>
-                <select
-                  className="input-field text-sm"
-                  value={form.status}
-                  onChange={e => setForm(p => ({ ...p, status: e.target.value as ValuationStatus }))}>
-                  {MANUAL_STATUSES.map(s => <option key={s} value={s}>{t.statuses[s]}</option>)}
-                </select>
-                <p className="text-obsidian-500 text-xs mt-1">الحفظ يُكمل التقييم تلقائياً</p>
-              </div>
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.valuationAmount}</label>
-                <input
-                  type="number"
-                  className="input-field text-sm"
-                  value={form.valuation_amount}
-                  onChange={e => setForm(p => ({ ...p, valuation_amount: e.target.value }))}
-                  placeholder="e.g. 12500"
-                />
-              </div>
-            </div>
+            {/* Status buttons */}
             <div className="mb-5">
-              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.notes}</label>
-              <textarea
-                className="input-field text-sm h-24 resize-none"
-                value={form.valuation_notes}
-                onChange={e => setForm(p => ({ ...p, valuation_notes: e.target.value }))}
-                placeholder={t.notesPlaceholder}
-              />
+              <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-3">{t.statusLabel}</label>
+              <div className="flex gap-3 flex-wrap">
+                {[
+                  { value: 'in_review', label: t.statuses.in_review, color: 'border-blue-500/50 text-blue-400 data-[active=true]:bg-blue-500/20' },
+                  { value: 'completed', label: t.statuses.completed, color: 'border-green-500/50 text-green-400 data-[active=true]:bg-green-500/20' },
+                  { value: 'rejected',  label: t.statuses.rejected,  color: 'border-red-500/50 text-red-400 data-[active=true]:bg-red-500/20' },
+                ].map(({ value, label, color }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    data-active={form.status === value}
+                    onClick={() => setForm(p => ({ ...p, status: value as ValuationStatus }))}
+                    className={`px-4 py-2 text-sm border transition-colors ${color} ${form.status === value ? 'ring-1 ring-current' : 'opacity-50 hover:opacity-80'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Valuation fields — only shown when completed */}
+            {form.status === 'completed' && (
+              <>
+                <div className="mb-4">
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.valuationAmount}</label>
+                  <input
+                    type="number"
+                    className="input-field text-sm"
+                    value={form.valuation_amount}
+                    onChange={e => setForm(p => ({ ...p, valuation_amount: e.target.value }))}
+                    placeholder="0.000"
+                  />
+                </div>
+                <div className="mb-5">
+                  <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.notes}</label>
+                  <textarea
+                    className="input-field text-sm h-24 resize-none"
+                    value={form.valuation_notes}
+                    onChange={e => setForm(p => ({ ...p, valuation_notes: e.target.value }))}
+                    placeholder={t.notesPlaceholder}
+                  />
+                </div>
+              </>
+            )}
+
             <div className="flex gap-3">
               <button
                 onClick={() => updateMutation.mutate()}
