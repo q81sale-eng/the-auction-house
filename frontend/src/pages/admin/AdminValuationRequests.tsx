@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
-import { getAllValuationRequests, updateValuationRequest, type ValuationStatus } from '../../api/valuations';
+import { getAllValuationRequests, updateValuationRequest, deleteValuationRequest, type ValuationStatus } from '../../api/valuations';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
 
@@ -39,6 +39,12 @@ export const AdminValuationRequests: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'valuation-requests'] });
       setSelected(null);
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteValuationRequest(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'valuation-requests'] }),
+    onError: (err: any) => alert('خطأ في الحذف: ' + err.message),
   });
 
   const openRequest = (req: any) => {
@@ -248,11 +254,18 @@ export const AdminValuationRequests: React.FC = () => {
                     {req.valuation_amount ? fmt(Number(req.valuation_amount)) : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => openRequest(req)}
-                      className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">
-                      {t.review}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => openRequest(req)}
+                        className="text-obsidian-400 hover:text-gold-500 text-xs uppercase tracking-wider transition-colors">
+                        {t.review}
+                      </button>
+                      <button
+                        onClick={() => { if (window.confirm('حذف هذا الطلب؟')) deleteMutation.mutate(req.id); }}
+                        className="text-obsidian-600 hover:text-red-400 text-xs transition-colors">
+                        حذف
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

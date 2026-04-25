@@ -154,3 +154,11 @@ export const updateValuationRequest = async (
 
   return data;
 };
+
+export const deleteValuationRequest = async (id: number) => {
+  const { error } = await supabase
+    .from('valuation_requests')
+    .delete()
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+};
