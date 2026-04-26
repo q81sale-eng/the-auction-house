@@ -31,6 +31,8 @@ const Ic = {
 
   priceIdx: <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>,
 
+  watchRef: <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/><circle cx="12" cy="12" r="3" strokeWidth="1.5"/></svg>,
+
   globe: <svg className="w-[16px] h-[16px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>,
 
   menu: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>,
@@ -182,6 +184,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/admin/bids',               label: t.bids,                  icon: Ic.bids },
     { path: '/admin/valuation-requests', label: t.valuationRequests,     icon: Ic.valuations },
     { path: '/admin/watch-requests',     label: t.watchRequestsNav,      icon: Ic.watchReqs  },
+    { path: '/admin/watch-reference',    label: t.watchRefNav,           icon: Ic.watchRef   },
     { path: '/admin/price-index',        label: t.priceIndexNav,         icon: Ic.priceIdx   },
     { path: '/admin/listings',           label: t.listings ?? 'السوق',         icon: Ic.listings },
     { path: '/admin/banners',            label: t.banners  ?? 'البنرات',       icon: Ic.banners  },

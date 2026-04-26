@@ -27,8 +27,10 @@ import { AdminCatalog } from './pages/admin/AdminCatalog';
 import { AdminCatalogForm } from './pages/admin/AdminCatalogForm';
 import { AdminCatalogImport } from './pages/admin/AdminCatalogImport';
 import { AdminWatchRequests } from './pages/admin/AdminWatchRequests';
+import { AdminWatchReference } from './pages/admin/AdminWatchReference';
 import { AdminPriceIndex } from './pages/admin/AdminPriceIndex';
 import { PriceIndexPage } from './pages/PriceIndexPage';
+import { WatchReferencePage } from './pages/WatchReferencePage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CatalogDetailPage } from './pages/CatalogDetailPage';
 import { PavePage } from './pages/PavePage';
@@ -163,6 +165,7 @@ function App() {
             <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/authentication" element={<AuthenticationPage />} />
             <Route path="/price-index" element={<PriceIndexPage />} />
+            <Route path="/watches" element={<WatchReferencePage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/catalog/:slug" element={<CatalogDetailPage />} />
             <Route path="/pave" element={<PavePage />} />
@@ -192,6 +195,7 @@ function App() {
             <Route path="/admin/catalog" element={<AdminCatalog />} />
             <Route path="/admin/catalog/import" element={<AdminCatalogImport />} />
             <Route path="/admin/watch-requests" element={<AdminWatchRequests />} />
+            <Route path="/admin/watch-reference" element={<AdminWatchReference />} />
             <Route path="/admin/price-index" element={<AdminPriceIndex />} />
             <Route path="/admin/catalog/new" element={<AdminCatalogForm />} />
             <Route path="/admin/catalog/:id/edit" element={<AdminCatalogForm />} />
