@@ -82,7 +82,6 @@ export const Navbar: React.FC = () => {
               {moreOpen && (
                 <div className="absolute end-0 top-full mt-1 w-48 bg-obsidian-900 border border-obsidian-700 shadow-lg z-50">
                   <Link to="/pave" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-gold-500/80 hover:text-gold-500 hover:bg-obsidian-800 font-serif italic">{tr.nav.pave}</Link>
-                  <Link to="/watches" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800">{tr.watchRef.title}</Link>
                   <Link to="/catalog" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800">{lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}</Link>
                   <Link to="/about" onClick={() => setMoreOpen(false)} className="block px-4 py-2.5 text-xs uppercase tracking-wider text-obsidian-300 hover:text-gold-500 hover:bg-obsidian-800">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
                   {isAuthenticated && (
@@ -186,7 +185,6 @@ export const Navbar: React.FC = () => {
               <Link to="/auctions" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.auctions}</Link>
               <Link to="/marketplace" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.nav.marketplace}</Link>
               <Link to="/price-index" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.priceIndex.title}</Link>
-              <Link to="/watches" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{tr.watchRef.title}</Link>
               <Link to="/pave" className="block text-gold-500/80 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900 font-serif italic" onClick={() => setMenuOpen(false)}>{tr.nav.pave}</Link>
               <Link to="/catalog" className="block text-gold-500 hover:text-gold-400 text-sm uppercase tracking-wider py-2.5 px-1 border-b border-obsidian-900" onClick={() => setMenuOpen(false)}>{lang === 'ar' ? 'أسعار الوكيل' : 'Dealer Prices'}</Link>
               <Link to="/about" className="block text-obsidian-300 hover:text-gold-500 text-sm uppercase tracking-wider py-2.5 px-1" onClick={() => setMenuOpen(false)}>{lang === 'ar' ? 'من نحن' : 'About'}</Link>
