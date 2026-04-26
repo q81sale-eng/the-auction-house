@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from './AdminLayout';
 import {
@@ -9,6 +9,11 @@ import {
   uploadPriceIndexImage,
   type PriceIndexEntry,
 } from '../../api/priceIndex';
+import {
+  getWatchBrands,
+  getWatchModels,
+  getWatchReferences,
+} from '../../api/watchReference';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
 
@@ -46,10 +51,52 @@ export const AdminPriceIndex: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // ── Cascading dropdown data ────────────────────────────────────────────────
+  const { data: brandOptions = [] } = useQuery({
+    queryKey: ['watch-ref-brands'],
+    queryFn: getWatchBrands,
+    staleTime: 60_000,
+  });
+
+  const brandSlugMap = useMemo(
+    () => Object.fromEntries(brandOptions.map(b => [b.brand, b.brand_slug])),
+    [brandOptions],
+  );
+  const selectedBrandSlug = brandSlugMap[form.brand] ?? '';
+
+  const { data: modelOptions = [] } = useQuery({
+    queryKey: ['watch-ref-models', selectedBrandSlug],
+    queryFn: () => getWatchModels(selectedBrandSlug),
+    enabled: !!selectedBrandSlug,
+    staleTime: 60_000,
+  });
+
+  const modelSlugMap = useMemo(
+    () => Object.fromEntries(modelOptions.map(m => [m.model, m.model_slug])),
+    [modelOptions],
+  );
+  const selectedModelSlug = modelSlugMap[form.model] ?? '';
+
+  const { data: refOptions = [] } = useQuery({
+    queryKey: ['watch-ref-entries', selectedBrandSlug, selectedModelSlug],
+    queryFn: () => getWatchReferences(selectedBrandSlug, selectedModelSlug),
+    enabled: !!selectedBrandSlug && !!selectedModelSlug,
+    staleTime: 60_000,
+  });
+
+  // ── Entries table ──────────────────────────────────────────────────────────
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['admin', 'price-index'],
     queryFn: getAllPriceIndex,
   });
+
+  const setField = (k: keyof FormState, v: string) =>
+    setForm(prev => {
+      const next = { ...prev, [k]: v };
+      if (k === 'brand') { next.model = ''; next.reference_number = ''; }
+      if (k === 'model') { next.reference_number = ''; }
+      return next;
+    });
 
   const openAdd = () => {
     setEditing(null);
@@ -126,9 +173,6 @@ export const AdminPriceIndex: React.FC = () => {
     onError: (err: any) => alert('خطأ في الحذف: ' + err.message),
   });
 
-  const f = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm(p => ({ ...p, [k]: e.target.value }));
-
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-8">
@@ -151,18 +195,108 @@ export const AdminPriceIndex: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left: image + price + date */}
+            {/* Left col: cascading selects + condition + price + date */}
             <div className="space-y-4">
-              {/* Image */}
+
+              {/* Brand */}
+              <div>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.brand} *</label>
+                <select
+                  className="input-field text-sm"
+                  value={form.brand}
+                  onChange={e => setField('brand', e.target.value)}
+                >
+                  <option value="">— {t.brand}</option>
+                  {brandOptions.map(b => (
+                    <option key={b.brand_slug} value={b.brand}>{b.brand}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Model — enabled only once brand is chosen */}
+              <div>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.model}</label>
+                <select
+                  className="input-field text-sm disabled:opacity-40"
+                  value={form.model}
+                  onChange={e => setField('model', e.target.value)}
+                  disabled={!selectedBrandSlug}
+                >
+                  <option value="">— {t.model}</option>
+                  {modelOptions.map(m => (
+                    <option key={m.model_slug} value={m.model}>{m.model}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Reference — enabled only once model is chosen */}
+              <div>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.reference}</label>
+                <select
+                  className="input-field text-sm font-mono disabled:opacity-40"
+                  value={form.reference_number}
+                  onChange={e => setField('reference_number', e.target.value)}
+                  disabled={!selectedModelSlug}
+                >
+                  <option value="">— {t.reference}</option>
+                  {refOptions.map(r => (
+                    <option key={r.id} value={r.reference}>{r.reference}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Condition */}
+              <div>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.condition}</label>
+                <select
+                  className="input-field text-sm"
+                  value={form.condition}
+                  onChange={e => setForm(p => ({ ...p, condition: e.target.value }))}
+                >
+                  <option value="">—</option>
+                  {CONDITIONS.map(c => (
+                    <option key={c} value={c}>{(conditionLabels as any)[c] ?? c}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sale Price */}
+              <div>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.salePrice}</label>
+                <input
+                  type="number" required className="input-field text-sm"
+                  value={form.sale_price}
+                  onChange={e => setForm(p => ({ ...p, sale_price: e.target.value }))}
+                  placeholder="0" min="0"
+                />
+              </div>
+
+              {/* Sale Date */}
+              <div>
+                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.saleDate}</label>
+                <input
+                  type="date" required className="input-field text-sm"
+                  value={form.sale_date}
+                  onChange={e => setForm(p => ({ ...p, sale_date: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Right col: image + notes */}
+            <div className="space-y-4">
               <div>
                 <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-2">Image</label>
                 <input ref={fileRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                 {imagePreview ? (
                   <div className="relative">
-                    <img src={imagePreview} alt="" className="w-full h-40 object-cover bg-obsidian-800 rounded" />
+                    <img src={imagePreview} alt="" className="w-full h-52 object-cover bg-obsidian-800 rounded" />
                     <button
                       type="button"
-                      onClick={() => { setImageFile(null); setImagePreview(null); setForm(p => ({ ...p, image_url: '' })); if (fileRef.current) fileRef.current.value = ''; }}
+                      onClick={() => {
+                        setImageFile(null); setImagePreview(null);
+                        setForm(p => ({ ...p, image_url: '' }));
+                        if (fileRef.current) fileRef.current.value = '';
+                      }}
                       className="absolute top-2 end-2 bg-black/60 hover:bg-black/80 text-white w-6 h-6 flex items-center justify-center text-sm"
                     >✕</button>
                   </div>
@@ -170,53 +304,23 @@ export const AdminPriceIndex: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="w-full h-36 border border-dashed border-obsidian-600 hover:border-gold-500/50 flex flex-col items-center justify-center gap-2 text-obsidian-500 hover:text-obsidian-300 transition-colors"
+                    className="w-full h-44 border border-dashed border-obsidian-600 hover:border-gold-500/50 flex flex-col items-center justify-center gap-2 text-obsidian-500 hover:text-obsidian-300 transition-colors"
                   >
-                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                     <span className="text-xs">{t.imageHint}</span>
                   </button>
                 )}
               </div>
 
-              {/* Sale Price */}
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.salePrice}</label>
-                <input type="number" required className="input-field text-sm" value={form.sale_price} onChange={f('sale_price')} placeholder="0" min="0" />
-              </div>
-
-              {/* Sale Date */}
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.saleDate}</label>
-                <input type="date" required className="input-field text-sm" value={form.sale_date} onChange={f('sale_date')} />
-              </div>
-            </div>
-
-            {/* Right: watch details */}
-            <div className="space-y-4">
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.brand} *</label>
-                <input type="text" required className="input-field text-sm" value={form.brand} onChange={f('brand')} placeholder="Rolex" />
-              </div>
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.model}</label>
-                <input type="text" className="input-field text-sm" value={form.model} onChange={f('model')} placeholder="Daytona" />
-              </div>
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.reference}</label>
-                <input type="text" className="input-field text-sm" value={form.reference_number} onChange={f('reference_number')} placeholder="116500LN" />
-              </div>
-              <div>
-                <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.condition}</label>
-                <select className="input-field text-sm" value={form.condition} onChange={f('condition')}>
-                  <option value="">—</option>
-                  {CONDITIONS.map(c => (
-                    <option key={c} value={c}>{(conditionLabels as any)[c] ?? c}</option>
-                  ))}
-                </select>
-              </div>
               <div>
                 <label className="text-obsidian-400 text-xs uppercase tracking-wider block mb-1">{t.notes}</label>
-                <textarea className="input-field text-sm h-16 resize-none" value={form.notes} onChange={f('notes')} />
+                <textarea
+                  className="input-field text-sm h-28 resize-none"
+                  value={form.notes}
+                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                />
               </div>
             </div>
           </div>
