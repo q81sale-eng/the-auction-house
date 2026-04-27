@@ -227,11 +227,19 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
         const nd   = d2(e.touches[0], e.touches[1]);
         const next = Math.max(1, Math.min(5, pinchRef.current.scale * (nd / pinchRef.current.dist)));
         const f    = next / pinchRef.current.scale;
-        // Zoom toward the recorded focal point; re-apply from saved ox/oy to avoid drift
+        // Current midpoint in canvas space
+        const rect = canvas.getBoundingClientRect();
+        const sx   = PREVIEW_PX / rect.width;
+        const sy   = PREVIEW_PX / rect.height;
+        const mx   = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * sx;
+        const my   = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  * sy;
+        // Midpoint movement (pan while pinching)
+        const dmx  = mx - pinchRef.current.fx;
+        const dmy  = my - pinchRef.current.fy;
         scaleRef.current  = next;
         offsetRef.current = clampOff(
-          f * pinchRef.current.ox + (1 - f) * (pinchRef.current.fx - PREVIEW_PX / 2),
-          f * pinchRef.current.oy + (1 - f) * (pinchRef.current.fy - PREVIEW_PX / 2),
+          f * pinchRef.current.ox + (1 - f) * (pinchRef.current.fx - PREVIEW_PX / 2) + dmx,
+          f * pinchRef.current.oy + (1 - f) * (pinchRef.current.fy - PREVIEW_PX / 2) + dmy,
           next,
         );
         paintRef.current();
@@ -248,7 +256,16 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
       }
     };
 
-    const onTouchEnd = () => { draggingRef.current = false; pinchRef.current = null; };
+    const onTouchEnd = (e: TouchEvent) => {
+      pinchRef.current = null;
+      if (e.touches.length === 1) {
+        // One finger still down — switch seamlessly to single-finger drag
+        draggingRef.current = true;
+        lastPosRef.current  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else {
+        draggingRef.current = false;
+      }
+    };
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
