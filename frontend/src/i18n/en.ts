@@ -618,6 +618,7 @@ const en = {
     searchPlaceholder: 'Search by brand, model or reference number...',
     search: 'Search',
     clear: 'Clear',
+    latest: 'Latest Sales',
     resultsFor: 'Results for',
     noResults: 'No results found',
     noResultsHint: 'Try a different brand name, model or reference number.',

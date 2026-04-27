@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
-import { searchPriceIndex, type PriceIndexEntry } from '../api/priceIndex';
+import { searchPriceIndex, getLatestPriceIndex, type PriceIndexEntry } from '../api/priceIndex';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
 
@@ -60,11 +60,18 @@ export const PriceIndexPage: React.FC = () => {
 
   useEffect(() => { setInputValue(qParam); }, [qParam]);
 
-  const { data: results = [], isLoading } = useQuery({
+  const { data: searchResults = [], isLoading: searchLoading } = useQuery({
     queryKey: ['price-index', 'search', qParam],
     queryFn: () => searchPriceIndex(qParam),
     enabled: !!qParam,
     staleTime: 30_000,
+  });
+
+  const { data: latestEntries = [], isLoading: latestLoading } = useQuery({
+    queryKey: ['price-index', 'latest'],
+    queryFn: () => getLatestPriceIndex(12),
+    enabled: !qParam,
+    staleTime: 60_000,
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -77,8 +84,11 @@ export const PriceIndexPage: React.FC = () => {
     setSearchParams({});
   };
 
-  const prices = results.map(r => Number(r.sale_price));
-  const stats = prices.length > 0 ? {
+  const displayEntries = qParam ? searchResults : latestEntries;
+  const isLoading = qParam ? searchLoading : latestLoading;
+
+  const prices = searchResults.map(r => Number(r.sale_price));
+  const stats = qParam && prices.length > 0 ? {
     count: prices.length,
     avg: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
     high: Math.max(...prices),
@@ -117,52 +127,60 @@ export const PriceIndexPage: React.FC = () => {
       </section>
 
       {/* Results */}
-      {qParam && (
-        <section className="max-w-7xl mx-auto px-4 py-10" dir={isRtl ? 'rtl' : 'ltr'}>
+      <section className="max-w-7xl mx-auto px-4 py-10" dir={isRtl ? 'rtl' : 'ltr'}>
+        {qParam ? (
           <p className="text-obsidian-400 text-sm mb-6">
             {t.resultsFor}: <span className="text-white font-medium">"{qParam}"</span>
           </p>
+        ) : (
+          <p className="text-obsidian-500 text-xs uppercase tracking-wider mb-6">{t.latest ?? 'أحدث المبيعات'}</p>
+        )}
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="card h-64 animate-pulse" />
-              ))}
-            </div>
-          ) : results.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="card h-64 animate-pulse" />
+            ))}
+          </div>
+        ) : displayEntries.length === 0 ? (
+          qParam ? (
             <div className="text-center py-20">
               <p className="font-serif text-white text-xl mb-2">{t.noResults}</p>
               <p className="text-obsidian-500 text-sm">{t.noResultsHint}</p>
             </div>
           ) : (
-            <>
-              {/* Stats bar */}
-              {stats && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-                  {([
-                    { label: t.stats.sales, value: String(stats.count), gold: false },
-                    { label: t.stats.avg,   value: fmt(stats.avg),      gold: true  },
-                    { label: t.stats.high,  value: fmt(stats.high),     gold: false },
-                    { label: t.stats.low,   value: fmt(stats.low),      gold: false },
-                  ] as const).map(({ label, value, gold }) => (
-                    <div key={label} className="card p-4 text-center">
-                      <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-1">{label}</p>
-                      <p className={`font-serif text-lg font-semibold ${gold ? 'text-gold-500' : 'text-white'}`}>{value}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {results.map(entry => (
-                  <PriceCard key={entry.id} entry={entry} conditionLabels={conditionLabels} t={t} />
+            <div className="text-center py-20">
+              <p className="text-obsidian-500 text-sm">{t.noResultsHint}</p>
+            </div>
+          )
+        ) : (
+          <>
+            {/* Stats bar — search only */}
+            {stats && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+                {([
+                  { label: t.stats.sales, value: String(stats.count), gold: false },
+                  { label: t.stats.avg,   value: fmt(stats.avg),      gold: true  },
+                  { label: t.stats.high,  value: fmt(stats.high),     gold: false },
+                  { label: t.stats.low,   value: fmt(stats.low),      gold: false },
+                ] as const).map(({ label, value, gold }) => (
+                  <div key={label} className="card p-4 text-center">
+                    <p className="text-obsidian-500 text-[10px] uppercase tracking-wider mb-1">{label}</p>
+                    <p className={`font-serif text-lg font-semibold ${gold ? 'text-gold-500' : 'text-white'}`}>{value}</p>
+                  </div>
                 ))}
               </div>
-            </>
-          )}
-        </section>
-      )}
+            )}
+
+            {/* Cards grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {displayEntries.map(entry => (
+                <PriceCard key={entry.id} entry={entry} conditionLabels={conditionLabels} t={t} />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
     </Layout>
   );
 };

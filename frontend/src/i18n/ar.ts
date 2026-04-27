@@ -621,6 +621,7 @@ const ar: Strings = {
     searchPlaceholder: 'ابحث بالعلامة التجارية، الموديل أو رقم الريفرنس...',
     search: 'بحث',
     clear: 'مسح',
+    latest: 'أحدث المبيعات',
     resultsFor: 'نتائج البحث عن',
     noResults: 'لا توجد نتائج',
     noResultsHint: 'جرّب اسم علامة تجارية أو موديل أو رقم ريفرنس مختلف.',
