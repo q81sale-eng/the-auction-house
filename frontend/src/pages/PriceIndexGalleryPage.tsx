@@ -150,12 +150,12 @@ export const PriceIndexGalleryPage: React.FC = () => {
                 <button
                   key={entry.id}
                   onClick={() => openLightbox(i)}
-                  className="group relative aspect-square overflow-hidden bg-obsidian-800 focus:outline-none"
+                  className="group relative aspect-square overflow-hidden bg-obsidian-950 focus:outline-none"
                 >
                   <img
                     src={entry.image_url!}
                     alt={`${entry.brand} ${entry.model ?? ''}`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
                   {/* Hover overlay */}
