@@ -150,7 +150,7 @@ export const PriceIndexGalleryPage: React.FC = () => {
                 <button
                   key={entry.id}
                   onClick={() => openLightbox(i)}
-                  className="group relative aspect-square overflow-hidden bg-obsidian-950 focus:outline-none"
+                  className="group relative aspect-square overflow-hidden bg-white focus:outline-none"
                 >
                   <img
                     src={entry.image_url!}

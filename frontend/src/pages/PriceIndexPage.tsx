@@ -11,7 +11,7 @@ const fmt = (v: number) => formatCurrency(v, 'KWD');
 function PriceCard({ entry, conditionLabels, t }: { entry: PriceIndexEntry; conditionLabels: any; t: any }) {
   return (
     <div className="card overflow-hidden flex flex-col hover:border-obsidian-600 transition-colors">
-      <div className="aspect-square bg-obsidian-950 flex items-center justify-center overflow-hidden flex-shrink-0 p-4">
+      <div className="aspect-square bg-white flex items-center justify-center overflow-hidden flex-shrink-0 p-4">
         {entry.image_url ? (
           <img
             src={entry.image_url}
