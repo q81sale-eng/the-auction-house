@@ -108,65 +108,52 @@ function bidStatus(bid: any, labels: any): { label: string; color: string } {
 const PREVIEW_PX = 256;
 const OUTPUT_PX  = 400;
 
-type Gesture =
-  | { type: 'none' }
-  | { type: 'pan';   lastX: number; lastY: number }
-  | { type: 'pinch'; d0: number; s0: number; ox0: number; oy0: number; fx: number; fy: number };
-
 function AvatarCropModal({ src, onConfirm, onCancel }: {
   src: string;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
-  const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const imgRef     = useRef<HTMLImageElement | null>(null);
-  const scaleRef   = useRef(1);
-  const offsetRef  = useRef({ x: 0, y: 0 });
-  const gestureRef = useRef<Gesture>({ type: 'none' });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef    = useRef<HTMLImageElement | null>(null);
+  // View state — mutated directly, never set via useState
+  const sRef  = useRef(1);   // scale
+  const oxRef = useRef(0);   // x offset
+  const oyRef = useRef(0);   // y offset
+  // Gesture state — null means idle
+  const panRef   = useRef<{ x: number; y: number } | null>(null);   // last canvas pos
+  const pinchRef = useRef<{ d0: number; s0: number; ox0: number; oy0: number } | null>(null);
   const [ready, setReady] = useState(false);
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-  const getSize = (s: number) => {
+  // ── Pure helpers (use only refs/constants → safe in stale closures) ──────────
+
+  const sizes = (s: number) => {
     const img = imgRef.current;
     if (!img) return { rw: PREVIEW_PX, rh: PREVIEW_PX };
-    const bs = PREVIEW_PX / Math.min(img.naturalWidth, img.naturalHeight);
-    return { rw: img.naturalWidth * bs * s, rh: img.naturalHeight * bs * s };
+    const b = PREVIEW_PX / Math.min(img.naturalWidth, img.naturalHeight);
+    return { rw: img.naturalWidth * b * s, rh: img.naturalHeight * b * s };
   };
 
-  const clamp = (ox: number, oy: number, s: number) => {
-    const { rw, rh } = getSize(s);
-    return {
-      x: Math.max(-(rw - PREVIEW_PX) / 2, Math.min((rw - PREVIEW_PX) / 2, ox)),
-      y: Math.max(-(rh - PREVIEW_PX) / 2, Math.min((rh - PREVIEW_PX) / 2, oy)),
-    };
-  };
+  const maxOx = (s: number) => Math.max(0, (sizes(s).rw - PREVIEW_PX) / 2);
+  const maxOy = (s: number) => Math.max(0, (sizes(s).rh - PREVIEW_PX) / 2);
 
-  // Convert a viewport (clientX/Y) to canvas-pixel coords
-  const toC = (clientX: number, clientY: number) => {
+  const cx = (v: number, m: number) => Math.max(-m, Math.min(m, v));  // clamp helper
+
+  const toCV = (clientX: number, clientY: number) => {
     const r = canvasRef.current!.getBoundingClientRect();
-    return {
-      x: (clientX - r.left) * (PREVIEW_PX / r.width),
-      y: (clientY - r.top)  * (PREVIEW_PX / r.height),
-    };
+    return { x: (clientX - r.left) * (PREVIEW_PX / r.width), y: (clientY - r.top) * (PREVIEW_PX / r.height) };
   };
-
-  // Touch distance
-  const dist = (a: Touch, b: Touch) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
 
   const paint = () => {
     const cv = canvasRef.current, img = imgRef.current;
     if (!cv || !img) return;
+    const { rw, rh } = sizes(sRef.current);
     const ctx = cv.getContext('2d')!;
     ctx.clearRect(0, 0, PREVIEW_PX, PREVIEW_PX);
     ctx.save();
     ctx.beginPath();
     ctx.arc(PREVIEW_PX / 2, PREVIEW_PX / 2, PREVIEW_PX / 2, 0, Math.PI * 2);
     ctx.clip();
-    const { rw, rh } = getSize(scaleRef.current);
-    ctx.drawImage(img,
-      (PREVIEW_PX - rw) / 2 + offsetRef.current.x,
-      (PREVIEW_PX - rh) / 2 + offsetRef.current.y,
-      rw, rh);
+    ctx.drawImage(img, (PREVIEW_PX - rw) / 2 + oxRef.current, (PREVIEW_PX - rh) / 2 + oyRef.current, rw, rh);
     ctx.restore();
   };
 
@@ -176,141 +163,105 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
   // ── Load image ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const img = new Image();
-    img.onload = () => {
-      imgRef.current = img;
-      scaleRef.current = 1;
-      offsetRef.current = { x: 0, y: 0 };
-      setReady(true);
-    };
+    img.onload = () => { imgRef.current = img; sRef.current = 1; oxRef.current = 0; oyRef.current = 0; setReady(true); };
     img.src = src;
   }, [src]); // eslint-disable-line react-hooks/exhaustive-deps
-
   useEffect(() => { if (ready) paintRef.current(); }, [ready]);
 
-  // ── Native touch + wheel listeners ────────────────────────────────────────────
+  // ── Native listeners ──────────────────────────────────────────────────────────
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
 
-    const onTouchStart = (e: TouchEvent) => {
+    const tdist = (a: Touch, b: Touch) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+
+    // ---- touch start ----
+    const onStart = (e: TouchEvent) => {
       e.preventDefault();
-      if (e.touches.length >= 2) {
-        const t0 = e.touches[0], t1 = e.touches[1];
-        const mid = {
-          x: (toC(t0.clientX, t0.clientY).x + toC(t1.clientX, t1.clientY).x) / 2,
-          y: (toC(t0.clientX, t0.clientY).y + toC(t1.clientX, t1.clientY).y) / 2,
-        };
-        gestureRef.current = {
-          type: 'pinch',
-          d0: dist(t0, t1),
-          s0: scaleRef.current,
-          ox0: offsetRef.current.x,
-          oy0: offsetRef.current.y,
-          fx: mid.x,
-          fy: mid.y,
-        };
-      } else {
-        const p = toC(e.touches[0].clientX, e.touches[0].clientY);
-        gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
-      }
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      const g = gestureRef.current;
-
-      if (e.touches.length >= 2 && g.type === 'pinch') {
-        const t0 = e.touches[0], t1 = e.touches[1];
-        const nd   = dist(t0, t1);
-        const next = Math.max(1, Math.min(5, g.s0 * (nd / g.d0)));
-        const f    = next / g.s0;
-        // Current midpoint in canvas-px
-        const mx = (toC(t0.clientX, t0.clientY).x + toC(t1.clientX, t1.clientY).x) / 2;
-        const my = (toC(t0.clientX, t0.clientY).y + toC(t1.clientX, t1.clientY).y) / 2;
-        // Zoom toward initial focal point + pan by midpoint delta
-        scaleRef.current  = next;
-        offsetRef.current = clamp(
-          f * g.ox0 + (1 - f) * (g.fx - PREVIEW_PX / 2) + (mx - g.fx),
-          f * g.oy0 + (1 - f) * (g.fy - PREVIEW_PX / 2) + (my - g.fy),
-          next,
-        );
-        paintRef.current();
-
-      } else if (e.touches.length === 1 && g.type === 'pan') {
-        const p  = toC(e.touches[0].clientX, e.touches[0].clientY);
-        const dx = p.x - g.lastX;
-        const dy = p.y - g.lastY;
-        gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
-        offsetRef.current  = clamp(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
-        paintRef.current();
-      }
-    };
-
-    const onTouchEnd = (e: TouchEvent) => {
       if (e.touches.length === 1) {
-        // Transition from pinch → pan with the remaining finger
-        const p = toC(e.touches[0].clientX, e.touches[0].clientY);
-        gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
-      } else if (e.touches.length === 0) {
-        gestureRef.current = { type: 'none' };
+        pinchRef.current = null;
+        panRef.current = toCV(e.touches[0].clientX, e.touches[0].clientY);
+      } else if (e.touches.length === 2) {
+        panRef.current = null;
+        pinchRef.current = { d0: tdist(e.touches[0], e.touches[1]), s0: sRef.current, ox0: oxRef.current, oy0: oyRef.current };
       }
     };
 
+    // ---- touch move ----
+    const onMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && panRef.current) {
+        const p  = toCV(e.touches[0].clientX, e.touches[0].clientY);
+        oxRef.current = cx(oxRef.current + p.x - panRef.current.x, maxOx(sRef.current));
+        oyRef.current = cx(oyRef.current + p.y - panRef.current.y, maxOy(sRef.current));
+        panRef.current = p;
+        paintRef.current();
+      } else if (e.touches.length >= 2 && pinchRef.current) {
+        const nd   = tdist(e.touches[0], e.touches[1]);
+        const next = Math.max(1, Math.min(5, pinchRef.current.s0 * (nd / pinchRef.current.d0)));
+        const f    = next / pinchRef.current.s0;
+        sRef.current  = next;
+        oxRef.current = cx(pinchRef.current.ox0 * f, maxOx(next));
+        oyRef.current = cx(pinchRef.current.oy0 * f, maxOy(next));
+        paintRef.current();
+      }
+    };
+
+    // ---- touch end ----
+    const onEnd = (e: TouchEvent) => {
+      pinchRef.current = null;
+      panRef.current   = e.touches.length === 1
+        ? toCV(e.touches[0].clientX, e.touches[0].clientY)
+        : null;
+    };
+
+    // ---- wheel ----
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const next = Math.max(1, Math.min(5, scaleRef.current - e.deltaY * 0.003));
-      const f    = next / scaleRef.current;
-      const fp   = toC(e.clientX, e.clientY);
-      scaleRef.current  = next;
-      offsetRef.current = clamp(
-        f * offsetRef.current.x + (1 - f) * (fp.x - PREVIEW_PX / 2),
-        f * offsetRef.current.y + (1 - f) * (fp.y - PREVIEW_PX / 2),
-        next,
-      );
+      const next = Math.max(1, Math.min(5, sRef.current - e.deltaY * 0.003));
+      const f    = next / sRef.current;
+      sRef.current  = next;
+      oxRef.current = cx(oxRef.current * f, maxOx(next));
+      oyRef.current = cx(oyRef.current * f, maxOy(next));
       paintRef.current();
     };
 
-    cv.addEventListener('touchstart', onTouchStart, { passive: false });
-    cv.addEventListener('touchmove',  onTouchMove,  { passive: false });
-    cv.addEventListener('touchend',   onTouchEnd);
-    cv.addEventListener('wheel',      onWheel,      { passive: false });
+    cv.addEventListener('touchstart', onStart, { passive: false });
+    cv.addEventListener('touchmove',  onMove,  { passive: false });
+    cv.addEventListener('touchend',   onEnd);
+    cv.addEventListener('wheel',      onWheel, { passive: false });
     return () => {
-      cv.removeEventListener('touchstart', onTouchStart);
-      cv.removeEventListener('touchmove',  onTouchMove);
-      cv.removeEventListener('touchend',   onTouchEnd);
+      cv.removeEventListener('touchstart', onStart);
+      cv.removeEventListener('touchmove',  onMove);
+      cv.removeEventListener('touchend',   onEnd);
       cv.removeEventListener('wheel',      onWheel);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mouse (desktop) ───────────────────────────────────────────────────────────
-  const onMouseDown = (e: React.MouseEvent) => {
-    const p = toC(e.clientX, e.clientY);
-    gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
-  };
+  const onMouseDown = (e: React.MouseEvent) => { panRef.current = toCV(e.clientX, e.clientY); };
   const onMouseMove = (e: React.MouseEvent) => {
-    const g = gestureRef.current;
-    if (g.type !== 'pan') return;
-    const p  = toC(e.clientX, e.clientY);
-    const dx = p.x - g.lastX;
-    const dy = p.y - g.lastY;
-    gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
-    offsetRef.current  = clamp(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
+    if (!panRef.current) return;
+    const p = toCV(e.clientX, e.clientY);
+    oxRef.current = cx(oxRef.current + p.x - panRef.current.x, maxOx(sRef.current));
+    oyRef.current = cx(oyRef.current + p.y - panRef.current.y, maxOy(sRef.current));
+    panRef.current = p;
     paintRef.current();
   };
-  const onMouseUp = () => { gestureRef.current = { type: 'none' }; };
+  const onMouseUp = () => { panRef.current = null; };
 
   // ── Export ────────────────────────────────────────────────────────────────────
   const handleConfirm = () => {
     const img = imgRef.current;
     if (!img) return;
-    const r   = OUTPUT_PX / PREVIEW_PX;
-    const cv  = document.createElement('canvas');
+    const ratio = OUTPUT_PX / PREVIEW_PX;
+    const { rw, rh } = sizes(sRef.current);
+    const cv = document.createElement('canvas');
     cv.width = OUTPUT_PX; cv.height = OUTPUT_PX;
-    const { rw, rh } = getSize(scaleRef.current);
     cv.getContext('2d')!.drawImage(img,
-      ((PREVIEW_PX - rw) / 2 + offsetRef.current.x) * r,
-      ((PREVIEW_PX - rh) / 2 + offsetRef.current.y) * r,
-      rw * r, rh * r);
+      ((PREVIEW_PX - rw) / 2 + oxRef.current) * ratio,
+      ((PREVIEW_PX - rh) / 2 + oyRef.current) * ratio,
+      rw * ratio, rh * ratio);
     cv.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
   };
 
@@ -319,11 +270,9 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
          onClick={e => { if (e.target === e.currentTarget) onCancel(); }}>
       <div className="bg-obsidian-900 border border-obsidian-700 p-6 w-full max-w-xs flex flex-col items-center gap-5">
         <h3 className="font-serif text-white text-lg">تعديل الصورة الشخصية</h3>
-
         <canvas
           ref={canvasRef}
-          width={PREVIEW_PX}
-          height={PREVIEW_PX}
+          width={PREVIEW_PX} height={PREVIEW_PX}
           className="rounded-full border-2 border-gold-500/50 cursor-move touch-none"
           style={{ width: PREVIEW_PX, height: PREVIEW_PX, display: 'block' }}
           onMouseDown={onMouseDown}
@@ -331,9 +280,7 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
         />
-
         <p className="text-obsidian-500 text-xs text-center">إصبع واحد للتحريك · إصبعان للتكبير</p>
-
         <div className="flex gap-3 w-full">
           <button onClick={handleConfirm} disabled={!ready} className="btn-gold flex-1 text-sm">حفظ</button>
           <button onClick={onCancel} className="btn-outline flex-1 text-sm">إلغاء</button>
