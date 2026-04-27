@@ -94,7 +94,7 @@ export const MarketplaceDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-12 mb-12">
           {/* Images */}
           <div>
-            <div className="bg-obsidian-900 lg:border lg:border-obsidian-800 overflow-hidden mb-2 lg:mb-4">
+            <div className="bg-white lg:border lg:border-obsidian-200 overflow-hidden mb-2 lg:mb-4 p-4">
               {currentImage ? (
                 <img
                   src={currentImage.path.startsWith('http') ? currentImage.path : `http://localhost:8000/storage/${currentImage.path}`}
@@ -110,9 +110,9 @@ export const MarketplaceDetailPage: React.FC = () => {
               <div className="flex gap-2 flex-wrap px-4 lg:px-0">
                 {images.map((img: any, i: number) => (
                   <button key={i} onClick={() => setActiveImage(i)}
-                    className={`w-16 h-16 bg-obsidian-800 border overflow-hidden transition-colors ${i === activeImage ? 'border-gold-500' : 'border-obsidian-700'}`}>
+                    className={`w-16 h-16 bg-white border overflow-hidden transition-colors ${i === activeImage ? 'border-gold-500' : 'border-obsidian-700'}`}>
                     <img src={img.path.startsWith('http') ? img.path : `http://localhost:8000/storage/${img.path}`}
-                      alt="" className="w-full h-full object-cover" />
+                      alt="" className="w-full h-full object-contain p-1" />
                   </button>
                 ))}
               </div>

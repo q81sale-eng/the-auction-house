@@ -37,11 +37,11 @@ export const AuctionCard: React.FC<AuctionCardProps> = ({ auction }) => {
 
   return (
     <Link to={`/auctions/${auction.slug}`} className="card group block hover:border-gold-500/50 transition-colors">
-      <div className="relative overflow-hidden aspect-square bg-obsidian-800">
+      <div className="relative overflow-hidden aspect-square bg-white">
         <img
           src={imgSrc.startsWith('http') ? imgSrc : `http://localhost:8000/storage/${imgSrc}`}
           alt={auction.watch.primary_image?.alt_text || auction.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-500"
           onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/1a1a1a/d4af37?text=Watch'; }}
         />
         <div className="absolute top-3 start-3">

@@ -26,12 +26,12 @@ function RefCard({ entry, t }: { entry: WatchRefEntry; t: any }) {
 
   return (
     <div className="border border-obsidian-800 hover:border-obsidian-600 bg-obsidian-900 overflow-hidden transition-colors flex flex-col">
-      <div className="h-48 bg-obsidian-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+      <div className="h-48 bg-white flex items-center justify-center overflow-hidden flex-shrink-0 p-3">
         {entry.image_url ? (
           <img
             src={entry.image_url}
             alt={entry.reference}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (

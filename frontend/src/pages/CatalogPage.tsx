@@ -126,7 +126,7 @@ export const CatalogPage: React.FC = () => {
                 className="card group flex flex-col hover:border-obsidian-700 transition-colors"
               >
                 {/* Image */}
-                <div className="aspect-square bg-obsidian-800 overflow-hidden relative">
+                <div className="aspect-square bg-white overflow-hidden relative">
                   {w.image_url
                     ? <img src={w.image_url} alt={w.model} className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500" />
                     : <div className="w-full h-full flex items-center justify-center">
