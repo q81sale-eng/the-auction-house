@@ -120,75 +120,94 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
   const [scale,  setScale]  = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  const dragging   = useRef(false);
-  const lastMouse  = useRef({ x: 0, y: 0 });
-  const pinchRef   = useRef<{ dist: number; scale: number } | null>(null);
+  const dragging = useRef(false);
+  const lastPos  = useRef({ x: 0, y: 0 });
+  const pinchRef = useRef<{ dist: number; scale: number; ox: number; oy: number } | null>(null);
 
   const baseScale = natural ? PREVIEW_PX / Math.min(natural.w, natural.h) : 1;
-  const renderedW = natural ? natural.w * baseScale * scale : PREVIEW_PX;
-  const renderedH = natural ? natural.h * baseScale * scale : PREVIEW_PX;
-  const imgLeft   = (PREVIEW_PX - renderedW) / 2 + offset.x;
-  const imgTop    = (PREVIEW_PX - renderedH) / 2 + offset.y;
+
+  // Rendered size at a given scale
+  const sizeAt = (s: number) => ({
+    rw: natural ? natural.w * baseScale * s : PREVIEW_PX,
+    rh: natural ? natural.h * baseScale * s : PREVIEW_PX,
+  });
+
+  // Clamp offset so image always covers the circle
+  const clamp = (ox: number, oy: number, rw: number, rh: number) => ({
+    x: Math.max(-Math.max(0, (rw - PREVIEW_PX) / 2), Math.min(Math.max(0, (rw - PREVIEW_PX) / 2), ox)),
+    y: Math.max(-Math.max(0, (rh - PREVIEW_PX) / 2), Math.min(Math.max(0, (rh - PREVIEW_PX) / 2), oy)),
+  });
+
+  const { rw: renderedW, rh: renderedH } = sizeAt(scale);
+  const imgLeft = (PREVIEW_PX - renderedW) / 2 + offset.x;
+  const imgTop  = (PREVIEW_PX - renderedH) / 2 + offset.y;
 
   // ── Mouse drag ─────────────────────────────────────────────────────────────
   const onMouseDown = (e: React.MouseEvent) => {
     dragging.current = true;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
+    lastPos.current = { x: e.clientX, y: e.clientY };
   };
   const onMouseMove = (e: React.MouseEvent) => {
     if (!dragging.current) return;
-    setOffset(prev => ({
-      x: prev.x + e.clientX - lastMouse.current.x,
-      y: prev.y + e.clientY - lastMouse.current.y,
-    }));
-    lastMouse.current = { x: e.clientX, y: e.clientY };
+    const dx = e.clientX - lastPos.current.x;
+    const dy = e.clientY - lastPos.current.y;
+    lastPos.current = { x: e.clientX, y: e.clientY };
+    setOffset(prev => clamp(prev.x + dx, prev.y + dy, renderedW, renderedH));
   };
   const onMouseUp = () => { dragging.current = false; };
 
-  // ── Scroll-wheel zoom (desktop) ────────────────────────────────────────────
+  // ── Scroll-wheel zoom ──────────────────────────────────────────────────────
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    setScale(prev => Math.max(1, Math.min(5, prev - e.deltaY * 0.003)));
+    const next = Math.max(1, Math.min(5, scale - e.deltaY * 0.003));
+    const { rw, rh } = sizeAt(next);
+    const factor = next / scale;
+    setScale(next);
+    setOffset(prev => clamp(prev.x * factor, prev.y * factor, rw, rh));
   };
 
-  // ── Touch: drag (1 finger) + pinch-zoom (2 fingers) ───────────────────────
+  // ── Touch: 1-finger drag + 2-finger pinch ──────────────────────────────────
   const onTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
     if (e.touches.length === 2) {
-      pinchRef.current = { dist: getDist(e.touches[0], e.touches[1]), scale };
+      pinchRef.current = {
+        dist: getDist(e.touches[0], e.touches[1]),
+        scale,
+        ox: offset.x,
+        oy: offset.y,
+      };
+      dragging.current = false;
     } else {
       dragging.current = true;
-      lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
   const onTouchMove = (e: React.TouchEvent) => {
     e.preventDefault();
     if (e.touches.length === 2 && pinchRef.current) {
       const newDist  = getDist(e.touches[0], e.touches[1]);
-      const newScale = Math.max(1, Math.min(5, pinchRef.current.scale * (newDist / pinchRef.current.dist)));
-      setScale(newScale);
+      const next     = Math.max(1, Math.min(5, pinchRef.current.scale * (newDist / pinchRef.current.dist)));
+      const factor   = next / pinchRef.current.scale;
+      const { rw, rh } = sizeAt(next);
+      setScale(next);
+      setOffset(clamp(pinchRef.current.ox * factor, pinchRef.current.oy * factor, rw, rh));
     } else if (e.touches.length === 1 && dragging.current) {
-      setOffset(prev => ({
-        x: prev.x + e.touches[0].clientX - lastMouse.current.x,
-        y: prev.y + e.touches[0].clientY - lastMouse.current.y,
-      }));
-      lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const dx = e.touches[0].clientX - lastPos.current.x;
+      const dy = e.touches[0].clientY - lastPos.current.y;
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      setOffset(prev => clamp(prev.x + dx, prev.y + dy, renderedW, renderedH));
     }
   };
-  const onTouchEnd = () => {
-    dragging.current = false;
-    pinchRef.current = null;
-  };
+  const onTouchEnd = () => { dragging.current = false; pinchRef.current = null; };
 
   // ── Export ─────────────────────────────────────────────────────────────────
   const handleConfirm = useCallback(() => {
     if (!natural) return;
     const img = new Image();
     img.onload = () => {
-      const ratio = OUTPUT_PX / PREVIEW_PX;
+      const ratio  = OUTPUT_PX / PREVIEW_PX;
       const canvas = document.createElement('canvas');
-      canvas.width = OUTPUT_PX;
-      canvas.height = OUTPUT_PX;
+      canvas.width = OUTPUT_PX; canvas.height = OUTPUT_PX;
       canvas.getContext('2d')!.drawImage(img, imgLeft * ratio, imgTop * ratio, renderedW * ratio, renderedH * ratio);
       canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
     };
