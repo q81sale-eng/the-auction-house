@@ -108,6 +108,9 @@ function bidStatus(bid: any, labels: any): { label: string; color: string } {
 const PREVIEW_PX = 256;
 const OUTPUT_PX  = 400;
 
+const getDist = (a: React.Touch, b: React.Touch) =>
+  Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+
 function AvatarCropModal({ src, onConfirm, onCancel }: {
   src: string;
   onConfirm: (blob: Blob) => void;
@@ -116,31 +119,68 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [scale,  setScale]  = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const dragging  = useRef(false);
-  const lastMouse = useRef({ x: 0, y: 0 });
 
-  // Derived display geometry (used for both preview CSS and canvas export)
-  const baseScale  = natural ? PREVIEW_PX / Math.min(natural.w, natural.h) : 1;
-  const renderedW  = natural ? natural.w * baseScale * scale : PREVIEW_PX;
-  const renderedH  = natural ? natural.h * baseScale * scale : PREVIEW_PX;
-  const imgLeft    = (PREVIEW_PX - renderedW) / 2 + offset.x;
-  const imgTop     = (PREVIEW_PX - renderedH) / 2 + offset.y;
+  const dragging   = useRef(false);
+  const lastMouse  = useRef({ x: 0, y: 0 });
+  const pinchRef   = useRef<{ dist: number; scale: number } | null>(null);
 
-  // ── drag ──────────────────────────────────────────────────────────────────
-  const startDrag = (x: number, y: number) => {
+  const baseScale = natural ? PREVIEW_PX / Math.min(natural.w, natural.h) : 1;
+  const renderedW = natural ? natural.w * baseScale * scale : PREVIEW_PX;
+  const renderedH = natural ? natural.h * baseScale * scale : PREVIEW_PX;
+  const imgLeft   = (PREVIEW_PX - renderedW) / 2 + offset.x;
+  const imgTop    = (PREVIEW_PX - renderedH) / 2 + offset.y;
+
+  // ── Mouse drag ─────────────────────────────────────────────────────────────
+  const onMouseDown = (e: React.MouseEvent) => {
     dragging.current = true;
-    lastMouse.current = { x, y };
+    lastMouse.current = { x: e.clientX, y: e.clientY };
   };
-  const moveDrag = (x: number, y: number) => {
+  const onMouseMove = (e: React.MouseEvent) => {
     if (!dragging.current) return;
-    const dx = x - lastMouse.current.x;
-    const dy = y - lastMouse.current.y;
-    lastMouse.current = { x, y };
-    setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    setOffset(prev => ({
+      x: prev.x + e.clientX - lastMouse.current.x,
+      y: prev.y + e.clientY - lastMouse.current.y,
+    }));
+    lastMouse.current = { x: e.clientX, y: e.clientY };
   };
-  const endDrag = () => { dragging.current = false; };
+  const onMouseUp = () => { dragging.current = false; };
 
-  // ── export ────────────────────────────────────────────────────────────────
+  // ── Scroll-wheel zoom (desktop) ────────────────────────────────────────────
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setScale(prev => Math.max(1, Math.min(5, prev - e.deltaY * 0.003)));
+  };
+
+  // ── Touch: drag (1 finger) + pinch-zoom (2 fingers) ───────────────────────
+  const onTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      pinchRef.current = { dist: getDist(e.touches[0], e.touches[1]), scale };
+    } else {
+      dragging.current = true;
+      lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (e.touches.length === 2 && pinchRef.current) {
+      const newDist  = getDist(e.touches[0], e.touches[1]);
+      const newScale = Math.max(1, Math.min(5, pinchRef.current.scale * (newDist / pinchRef.current.dist)));
+      setScale(newScale);
+    } else if (e.touches.length === 1 && dragging.current) {
+      setOffset(prev => ({
+        x: prev.x + e.touches[0].clientX - lastMouse.current.x,
+        y: prev.y + e.touches[0].clientY - lastMouse.current.y,
+      }));
+      lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+  const onTouchEnd = () => {
+    dragging.current = false;
+    pinchRef.current = null;
+  };
+
+  // ── Export ─────────────────────────────────────────────────────────────────
   const handleConfirm = useCallback(() => {
     if (!natural) return;
     const img = new Image();
@@ -149,8 +189,7 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
       const canvas = document.createElement('canvas');
       canvas.width = OUTPUT_PX;
       canvas.height = OUTPUT_PX;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, imgLeft * ratio, imgTop * ratio, renderedW * ratio, renderedH * ratio);
+      canvas.getContext('2d')!.drawImage(img, imgLeft * ratio, imgTop * ratio, renderedW * ratio, renderedH * ratio);
       canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
     };
     img.src = src;
@@ -167,14 +206,15 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
         {/* Circular crop frame */}
         <div
           className="rounded-full overflow-hidden border-2 border-gold-500/50 cursor-move select-none relative bg-obsidian-950"
-          style={{ width: PREVIEW_PX, height: PREVIEW_PX }}
-          onMouseDown={e => startDrag(e.clientX, e.clientY)}
-          onMouseMove={e => moveDrag(e.clientX, e.clientY)}
-          onMouseUp={endDrag}
-          onMouseLeave={endDrag}
-          onTouchStart={e => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
-          onTouchMove={e => { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); }}
-          onTouchEnd={endDrag}
+          style={{ width: PREVIEW_PX, height: PREVIEW_PX, touchAction: 'none' }}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+          onWheel={onWheel}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           <img
             src={src}
@@ -196,22 +236,9 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
           />
         </div>
 
-        {/* Zoom slider */}
-        <div className="w-full space-y-1">
-          <div className="flex justify-between text-obsidian-500 text-xs">
-            <span>−</span>
-            <span className="text-obsidian-400 uppercase tracking-wider">تكبير / تصغير</span>
-            <span>+</span>
-          </div>
-          <input
-            type="range" min="1" max="4" step="0.01"
-            value={scale}
-            onChange={e => setScale(Number(e.target.value))}
-            className="w-full accent-gold-500 cursor-pointer"
-          />
-        </div>
-
-        <p className="text-obsidian-500 text-xs -mt-2">اسحب الصورة لتعديل الموضع</p>
+        <p className="text-obsidian-500 text-xs text-center">
+          اسحب لتحريك · إصبعان للتكبير
+        </p>
 
         <div className="flex gap-3 w-full">
           <button onClick={handleConfirm} disabled={!natural} className="btn-gold flex-1 text-sm">حفظ</button>
