@@ -113,121 +113,154 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const naturalRef   = useRef<{ w: number; h: number } | null>(null);
-  const scaleRef     = useRef(1);
-  const offsetRef    = useRef({ x: 0, y: 0 });
-  const draggingRef  = useRef(false);
-  const lastPosRef   = useRef({ x: 0, y: 0 });
-  const pinchRef     = useRef<{ dist: number; scale: number; ox: number; oy: number } | null>(null);
-  const [, setTick] = useState(0); // force re-render
-  const redraw = () => setTick(n => n + 1);
+  // All state lives in refs — never goes through React render cycle during interaction
+  const canvasRef   = useRef<HTMLCanvasElement>(null);
+  const imgRef      = useRef<HTMLImageElement | null>(null);
+  const scaleRef    = useRef(1);
+  const offsetRef   = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const lastPosRef  = useRef({ x: 0, y: 0 });
+  const pinchRef    = useRef<{ dist: number; scale: number; ox: number; oy: number } | null>(null);
+  const [ready, setReady] = useState(false);
 
-  const getSizeAt = (s: number) => {
-    const n = naturalRef.current;
-    if (!n) return { rw: PREVIEW_PX, rh: PREVIEW_PX };
-    const bs = PREVIEW_PX / Math.min(n.w, n.h);
-    return { rw: n.w * bs * s, rh: n.h * bs * s };
+  // Rendered image size at a given scale
+  const getSize = (s: number) => {
+    const img = imgRef.current;
+    if (!img) return { rw: PREVIEW_PX, rh: PREVIEW_PX };
+    const bs = PREVIEW_PX / Math.min(img.naturalWidth, img.naturalHeight);
+    return { rw: img.naturalWidth * bs * s, rh: img.naturalHeight * bs * s };
   };
 
-  const clamp = (ox: number, oy: number, rw: number, rh: number) => ({
-    x: Math.max(-Math.max(0, (rw - PREVIEW_PX) / 2), Math.min(Math.max(0, (rw - PREVIEW_PX) / 2), ox)),
-    y: Math.max(-Math.max(0, (rh - PREVIEW_PX) / 2), Math.min(Math.max(0, (rh - PREVIEW_PX) / 2), oy)),
-  });
+  // Clamp offset so the image always fully covers the circle
+  const clampOff = (ox: number, oy: number, s: number) => {
+    const { rw, rh } = getSize(s);
+    const mx = Math.max(0, (rw - PREVIEW_PX) / 2);
+    const my = Math.max(0, (rh - PREVIEW_PX) / 2);
+    return { x: Math.max(-mx, Math.min(mx, ox)), y: Math.max(-my, Math.min(my, oy)) };
+  };
 
-  // ── Attach native (non-passive) touch listeners ───────────────────────────
+  // Draw current frame to canvas — pure pixel math, no CSS positioning
+  const paint = () => {
+    const canvas = canvasRef.current;
+    const img    = imgRef.current;
+    if (!canvas || !img) return;
+    const ctx = canvas.getContext('2d')!;
+    ctx.clearRect(0, 0, PREVIEW_PX, PREVIEW_PX);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(PREVIEW_PX / 2, PREVIEW_PX / 2, PREVIEW_PX / 2, 0, Math.PI * 2);
+    ctx.clip();
+    const { rw, rh } = getSize(scaleRef.current);
+    ctx.drawImage(
+      img,
+      (PREVIEW_PX - rw) / 2 + offsetRef.current.x,
+      (PREVIEW_PX - rh) / 2 + offsetRef.current.y,
+      rw, rh,
+    );
+    ctx.restore();
+  };
+
+  // Expose latest paint to stale event-handler closures
+  const paintRef = useRef(paint);
+  paintRef.current = paint;
+
+  // Load image once on mount
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    const img = new Image();
+    img.onload = () => { imgRef.current = img; scaleRef.current = 1; offsetRef.current = { x: 0, y: 0 }; setReady(true); };
+    img.src = src;
+  }, [src]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const dist = (a: Touch, b: Touch) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+  // First paint after image loads
+  useEffect(() => { if (ready) paintRef.current(); }, [ready]);
 
-    const onStart = (e: TouchEvent) => {
+  // Native event listeners (passive:false so we can call preventDefault)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const d2 = (a: Touch, b: Touch) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+
+    const onTouchStart = (e: TouchEvent) => {
       e.preventDefault();
       if (e.touches.length === 2) {
-        pinchRef.current = { dist: dist(e.touches[0], e.touches[1]), scale: scaleRef.current, ox: offsetRef.current.x, oy: offsetRef.current.y };
         draggingRef.current = false;
+        pinchRef.current = { dist: d2(e.touches[0], e.touches[1]), scale: scaleRef.current, ox: offsetRef.current.x, oy: offsetRef.current.y };
       } else {
+        pinchRef.current = null;
         draggingRef.current = true;
         lastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
 
-    const onMove = (e: TouchEvent) => {
+    const onTouchMove = (e: TouchEvent) => {
       e.preventDefault();
       if (e.touches.length === 2 && pinchRef.current) {
-        const newDist  = dist(e.touches[0], e.touches[1]);
-        const next     = Math.max(1, Math.min(5, pinchRef.current.scale * (newDist / pinchRef.current.dist)));
-        const factor   = next / pinchRef.current.scale;
-        const { rw, rh } = getSizeAt(next);
+        const nd    = d2(e.touches[0], e.touches[1]);
+        const next  = Math.max(1, Math.min(5, pinchRef.current.scale * (nd / pinchRef.current.dist)));
+        const f     = next / pinchRef.current.scale;
         scaleRef.current  = next;
-        offsetRef.current = clamp(pinchRef.current.ox * factor, pinchRef.current.oy * factor, rw, rh);
-        redraw();
+        offsetRef.current = clampOff(pinchRef.current.ox * f, pinchRef.current.oy * f, next);
+        paintRef.current();
       } else if (e.touches.length === 1 && draggingRef.current) {
         const dx = e.touches[0].clientX - lastPosRef.current.x;
         const dy = e.touches[0].clientY - lastPosRef.current.y;
         lastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        const { rw, rh } = getSizeAt(scaleRef.current);
-        const prev = offsetRef.current;
-        offsetRef.current = clamp(prev.x + dx, prev.y + dy, rw, rh);
-        redraw();
+        offsetRef.current  = clampOff(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
+        paintRef.current();
       }
     };
 
-    const onEnd = () => { draggingRef.current = false; pinchRef.current = null; };
+    const onTouchEnd = () => { draggingRef.current = false; pinchRef.current = null; };
 
-    el.addEventListener('touchstart', onStart, { passive: false });
-    el.addEventListener('touchmove',  onMove,  { passive: false });
-    el.addEventListener('touchend',   onEnd);
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const next = Math.max(1, Math.min(5, scaleRef.current - e.deltaY * 0.003));
+      const f    = next / scaleRef.current;
+      scaleRef.current  = next;
+      offsetRef.current = clampOff(offsetRef.current.x * f, offsetRef.current.y * f, next);
+      paintRef.current();
+    };
+
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    canvas.addEventListener('touchend',   onTouchEnd);
+    canvas.addEventListener('wheel',      onWheel,      { passive: false });
     return () => {
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchmove',  onMove);
-      el.removeEventListener('touchend',   onEnd);
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove',  onTouchMove);
+      canvas.removeEventListener('touchend',   onTouchEnd);
+      canvas.removeEventListener('wheel',      onWheel);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Mouse drag ────────────────────────────────────────────────────────────
+  // Mouse handlers
   const onMouseDown = (e: React.MouseEvent) => { draggingRef.current = true; lastPosRef.current = { x: e.clientX, y: e.clientY }; };
   const onMouseMove = (e: React.MouseEvent) => {
     if (!draggingRef.current) return;
     const dx = e.clientX - lastPosRef.current.x;
     const dy = e.clientY - lastPosRef.current.y;
     lastPosRef.current = { x: e.clientX, y: e.clientY };
-    const { rw, rh } = getSizeAt(scaleRef.current);
-    const prev = offsetRef.current;
-    offsetRef.current = clamp(prev.x + dx, prev.y + dy, rw, rh);
-    redraw();
+    offsetRef.current  = clampOff(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
+    paintRef.current();
   };
   const onMouseUp = () => { draggingRef.current = false; };
 
-  // ── Scroll-wheel zoom (desktop) ───────────────────────────────────────────
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const next   = Math.max(1, Math.min(5, scaleRef.current - e.deltaY * 0.003));
-    const factor = next / scaleRef.current;
-    const { rw, rh } = getSizeAt(next);
-    scaleRef.current  = next;
-    offsetRef.current = clamp(offsetRef.current.x * factor, offsetRef.current.y * factor, rw, rh);
-    redraw();
-  };
-
-  // ── Current geometry ──────────────────────────────────────────────────────
-  const { rw: renderedW, rh: renderedH } = getSizeAt(scaleRef.current);
-  const imgLeft = (PREVIEW_PX - renderedW) / 2 + offsetRef.current.x;
-  const imgTop  = (PREVIEW_PX - renderedH) / 2 + offsetRef.current.y;
-
-  // ── Export ────────────────────────────────────────────────────────────────
+  // Export: same math as paint(), scaled up to OUTPUT_PX
   const handleConfirm = () => {
-    if (!naturalRef.current) return;
-    const img = new Image();
-    img.onload = () => {
-      const ratio  = OUTPUT_PX / PREVIEW_PX;
-      const canvas = document.createElement('canvas');
-      canvas.width = OUTPUT_PX; canvas.height = OUTPUT_PX;
-      canvas.getContext('2d')!.drawImage(img, imgLeft * ratio, imgTop * ratio, renderedW * ratio, renderedH * ratio);
-      canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
-    };
-    img.src = src;
+    const img = imgRef.current;
+    if (!img) return;
+    const ratio  = OUTPUT_PX / PREVIEW_PX;
+    const canvas = document.createElement('canvas');
+    canvas.width = OUTPUT_PX; canvas.height = OUTPUT_PX;
+    const { rw, rh } = getSize(scaleRef.current);
+    canvas.getContext('2d')!.drawImage(
+      img,
+      ((PREVIEW_PX - rw) / 2 + offsetRef.current.x) * ratio,
+      ((PREVIEW_PX - rh) / 2 + offsetRef.current.y) * ratio,
+      rw * ratio, rh * ratio,
+    );
+    canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
   };
 
   return (
@@ -236,27 +269,23 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
       <div className="bg-obsidian-900 border border-obsidian-700 p-6 w-full max-w-xs flex flex-col items-center gap-5">
         <h3 className="font-serif text-white text-lg">تعديل الصورة الشخصية</h3>
 
-        <div
-          ref={containerRef}
-          className="rounded-full overflow-hidden border-2 border-gold-500/50 cursor-move select-none relative bg-obsidian-950"
-          style={{ width: PREVIEW_PX, height: PREVIEW_PX }}
+        {/* Canvas-based preview: pure pixel math, immune to RTL/CSS positioning drift */}
+        <canvas
+          ref={canvasRef}
+          width={PREVIEW_PX}
+          height={PREVIEW_PX}
+          className="rounded-full border-2 border-gold-500/50 cursor-move"
+          style={{ width: PREVIEW_PX, height: PREVIEW_PX, display: 'block' }}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
-          onWheel={onWheel}
-        >
-          <img
-            src={src} alt="" draggable={false}
-            onLoad={e => { const i = e.target as HTMLImageElement; naturalRef.current = { w: i.naturalWidth, h: i.naturalHeight }; redraw(); }}
-            style={{ position: 'absolute', left: imgLeft, top: imgTop, width: renderedW, height: renderedH, pointerEvents: 'none', userSelect: 'none' }}
-          />
-        </div>
+        />
 
         <p className="text-obsidian-500 text-xs text-center">اسحب لتحريك · إصبعان للتكبير</p>
 
         <div className="flex gap-3 w-full">
-          <button onClick={handleConfirm} disabled={!naturalRef.current} className="btn-gold flex-1 text-sm">حفظ</button>
+          <button onClick={handleConfirm} disabled={!ready} className="btn-gold flex-1 text-sm">حفظ</button>
           <button onClick={onCancel} className="btn-outline flex-1 text-sm">إلغاء</button>
         </div>
       </div>
