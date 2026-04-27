@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
@@ -38,14 +38,25 @@ async function getUserPurchases(userId: string) {
   return data ?? [];
 }
 
+async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `avatars/${userId}.${ext}`;
+  const { error } = await supabase.storage
+    .from('vault-watches')
+    .upload(path, file, { cacheControl: '3600', upsert: true });
+  if (error) throw new Error(error.message);
+  const { data: { publicUrl } } = supabase.storage.from('vault-watches').getPublicUrl(path);
+  await supabase.auth.updateUser({ data: { avatar: publicUrl } });
+  await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
+  return publicUrl;
+}
+
 async function updateProfileInDb(userId: string, fields: { name?: string; phone?: string; country?: string; bio?: string }) {
-  // Persist all fields to auth metadata (survives across sessions; bio lives here)
   const { error: metaErr } = await supabase.auth.updateUser({
     data: { name: fields.name, phone: fields.phone, country: fields.country, bio: fields.bio },
   });
   if (metaErr) throw new Error(metaErr.message);
 
-  // Sync columns that exist in the profiles table
   const { error } = await supabase
     .from('profiles')
     .update({ full_name: fields.name, phone: fields.phone, country: fields.country, bio: fields.bio })
@@ -116,6 +127,8 @@ export const ProfilePage: React.FC = () => {
   const [depositAmount, setDepositAmount]   = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const userId = user?.id as string;
 
@@ -189,6 +202,20 @@ export const ProfilePage: React.FC = () => {
     onError: () => setMessage({ type: 'error', text: t.deposits.failed }),
   });
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    setAvatarUploading(true);
+    try {
+      const url = await uploadAvatar(userId, file);
+      if (user) setUser({ ...user, avatar: url });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const tabList = [
     { id: 'profile'  as const, label: t.tabs.profile  },
     { id: 'bids'     as const, label: t.tabs.bids     },
@@ -209,8 +236,28 @@ export const ProfilePage: React.FC = () => {
 
         {/* Header */}
         <div className="flex items-center gap-6 mb-10">
-          <div className="w-20 h-20 bg-gold-500/20 border border-gold-500/30 flex items-center justify-center">
-            <span className="font-serif text-gold-500 text-3xl">{user?.name?.charAt(0)}</span>
+          <div className="relative group">
+            <div
+              className="w-20 h-20 bg-gold-500/20 border border-gold-500/30 overflow-hidden flex items-center justify-center cursor-pointer"
+              onClick={() => avatarInputRef.current?.click()}
+            >
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-serif text-gold-500 text-3xl">{user?.name?.charAt(0)}</span>
+              )}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {avatarUploading ? (
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
           </div>
           <div>
             <h1 className="font-serif text-3xl text-white">{user?.name}</h1>
