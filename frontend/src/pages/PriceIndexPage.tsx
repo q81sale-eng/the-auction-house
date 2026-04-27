@@ -59,7 +59,7 @@ export const PriceIndexPage: React.FC = () => {
 
   const qParam = searchParams.get('q') ?? '';
   const [inputValue, setInputValue] = useState(qParam);
-  const [sort, setSort] = useState<SortMode>('newest');
+  const [sort, setSort] = useState<SortMode>('highest_price');
 
   useEffect(() => { setInputValue(qParam); }, [qParam]);
 
