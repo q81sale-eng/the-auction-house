@@ -622,6 +622,7 @@ const ar: Strings = {
     search: 'بحث',
     clear: 'مسح',
     latest: 'أحدث المبيعات',
+    gallery: 'معرض الصور',
     sortNewest: 'الأحدث',
     sortHighest: 'الأعلى سعراً',
     resultsFor: 'نتائج البحث عن',

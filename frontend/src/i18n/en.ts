@@ -619,6 +619,7 @@ const en = {
     search: 'Search',
     clear: 'Clear',
     latest: 'Latest Sales',
+    gallery: 'Photo Gallery',
     sortNewest: 'Newest',
     sortHighest: 'Highest Price',
     resultsFor: 'Results for',

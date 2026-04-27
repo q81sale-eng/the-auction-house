@@ -30,6 +30,7 @@ import { AdminWatchRequests } from './pages/admin/AdminWatchRequests';
 import { AdminWatchReference } from './pages/admin/AdminWatchReference';
 import { AdminPriceIndex } from './pages/admin/AdminPriceIndex';
 import { PriceIndexPage } from './pages/PriceIndexPage';
+import { PriceIndexGalleryPage } from './pages/PriceIndexGalleryPage';
 import { WatchReferencePage } from './pages/WatchReferencePage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CatalogDetailPage } from './pages/CatalogDetailPage';
@@ -165,6 +166,7 @@ function App() {
             <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/authentication" element={<AuthenticationPage />} />
             <Route path="/price-index" element={<PriceIndexPage />} />
+            <Route path="/price-index/gallery" element={<PriceIndexGalleryPage />} />
             <Route path="/watches" element={<WatchReferencePage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/catalog/:slug" element={<CatalogDetailPage />} />
