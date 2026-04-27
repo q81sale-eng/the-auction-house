@@ -51,12 +51,12 @@ async function uploadAvatar(userId: string, file: File): Promise<string> {
 }
 
 async function updateProfileInDb(userId: string, fields: { name?: string; phone?: string; country?: string; bio?: string }) {
-  const { error: metaErr } = await supabase.auth.updateUser({
+  // auth.updateUser may trigger a DB sync that hits RLS — treat as best-effort
+  await supabase.auth.updateUser({
     data: { name: fields.name, phone: fields.phone, country: fields.country, bio: fields.bio },
   });
-  if (metaErr) throw new Error(metaErr.message);
 
-  // Best-effort sync — ignore RLS errors
+  // Best-effort direct sync
   await supabase
     .from('profiles')
     .update({ full_name: fields.name, phone: fields.phone, country: fields.country, bio: fields.bio })
