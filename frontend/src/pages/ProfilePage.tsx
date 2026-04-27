@@ -108,23 +108,24 @@ function bidStatus(bid: any, labels: any): { label: string; color: string } {
 const PREVIEW_PX = 256;
 const OUTPUT_PX  = 400;
 
+type Gesture =
+  | { type: 'none' }
+  | { type: 'pan';   lastX: number; lastY: number }
+  | { type: 'pinch'; d0: number; s0: number; ox0: number; oy0: number; fx: number; fy: number };
+
 function AvatarCropModal({ src, onConfirm, onCancel }: {
   src: string;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
-  // All state lives in refs — never goes through React render cycle during interaction
-  const canvasRef   = useRef<HTMLCanvasElement>(null);
-  const imgRef      = useRef<HTMLImageElement | null>(null);
-  const scaleRef    = useRef(1);
-  const offsetRef   = useRef({ x: 0, y: 0 });
-  const draggingRef = useRef(false);
-  const lastPosRef  = useRef({ x: 0, y: 0 });
-  // fx/fy = focal point in canvas pixels (where fingers are)
-  const pinchRef    = useRef<{ dist: number; scale: number; ox: number; oy: number; fx: number; fy: number } | null>(null);
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const imgRef     = useRef<HTMLImageElement | null>(null);
+  const scaleRef   = useRef(1);
+  const offsetRef  = useRef({ x: 0, y: 0 });
+  const gestureRef = useRef<Gesture>({ type: 'none' });
   const [ready, setReady] = useState(false);
 
-  // Rendered image size at a given scale
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   const getSize = (s: number) => {
     const img = imgRef.current;
     if (!img) return { rw: PREVIEW_PX, rh: PREVIEW_PX };
@@ -132,191 +133,185 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
     return { rw: img.naturalWidth * bs * s, rh: img.naturalHeight * bs * s };
   };
 
-  // Clamp offset so the image always fully covers the circle
-  const clampOff = (ox: number, oy: number, s: number) => {
+  const clamp = (ox: number, oy: number, s: number) => {
     const { rw, rh } = getSize(s);
-    const mx = Math.max(0, (rw - PREVIEW_PX) / 2);
-    const my = Math.max(0, (rh - PREVIEW_PX) / 2);
-    return { x: Math.max(-mx, Math.min(mx, ox)), y: Math.max(-my, Math.min(my, oy)) };
-  };
-
-  // Viewport → canvas-pixel coordinates
-  const toCanvas = (clientX: number, clientY: number) => {
-    const rect = canvasRef.current!.getBoundingClientRect();
     return {
-      x: (clientX - rect.left) * (PREVIEW_PX / rect.width),
-      y: (clientY - rect.top)  * (PREVIEW_PX / rect.height),
+      x: Math.max(-(rw - PREVIEW_PX) / 2, Math.min((rw - PREVIEW_PX) / 2, ox)),
+      y: Math.max(-(rh - PREVIEW_PX) / 2, Math.min((rh - PREVIEW_PX) / 2, oy)),
     };
   };
 
-  // Zoom around focal point (fx, fy) in canvas-pixel space
-  const zoomAt = (next: number, fx: number, fy: number) => {
-    const f = next / scaleRef.current;
-    // Pixel at (fx, fy) must stay at (fx, fy): ox' = f*ox + (1-f)*(fx - PX/2)
-    scaleRef.current  = next;
-    offsetRef.current = clampOff(
-      f * offsetRef.current.x + (1 - f) * (fx - PREVIEW_PX / 2),
-      f * offsetRef.current.y + (1 - f) * (fy - PREVIEW_PX / 2),
-      next,
-    );
+  // Convert a viewport (clientX/Y) to canvas-pixel coords
+  const toC = (clientX: number, clientY: number) => {
+    const r = canvasRef.current!.getBoundingClientRect();
+    return {
+      x: (clientX - r.left) * (PREVIEW_PX / r.width),
+      y: (clientY - r.top)  * (PREVIEW_PX / r.height),
+    };
   };
 
-  // Draw current frame to canvas — pure pixel math, no CSS positioning
+  // Touch distance
+  const dist = (a: Touch, b: Touch) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+
   const paint = () => {
-    const canvas = canvasRef.current;
-    const img    = imgRef.current;
-    if (!canvas || !img) return;
-    const ctx = canvas.getContext('2d')!;
+    const cv = canvasRef.current, img = imgRef.current;
+    if (!cv || !img) return;
+    const ctx = cv.getContext('2d')!;
     ctx.clearRect(0, 0, PREVIEW_PX, PREVIEW_PX);
     ctx.save();
     ctx.beginPath();
     ctx.arc(PREVIEW_PX / 2, PREVIEW_PX / 2, PREVIEW_PX / 2, 0, Math.PI * 2);
     ctx.clip();
     const { rw, rh } = getSize(scaleRef.current);
-    ctx.drawImage(
-      img,
+    ctx.drawImage(img,
       (PREVIEW_PX - rw) / 2 + offsetRef.current.x,
       (PREVIEW_PX - rh) / 2 + offsetRef.current.y,
-      rw, rh,
-    );
+      rw, rh);
     ctx.restore();
   };
 
-  // Expose latest paint to stale event-handler closures
   const paintRef = useRef(paint);
   paintRef.current = paint;
 
-  // Load image once on mount
+  // ── Load image ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const img = new Image();
-    img.onload = () => { imgRef.current = img; scaleRef.current = 1; offsetRef.current = { x: 0, y: 0 }; setReady(true); };
+    img.onload = () => {
+      imgRef.current = img;
+      scaleRef.current = 1;
+      offsetRef.current = { x: 0, y: 0 };
+      setReady(true);
+    };
     img.src = src;
   }, [src]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // First paint after image loads
   useEffect(() => { if (ready) paintRef.current(); }, [ready]);
 
-  // Native event listeners (passive:false so we can call preventDefault)
+  // ── Native touch + wheel listeners ────────────────────────────────────────────
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const d2 = (a: Touch, b: Touch) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    const cv = canvasRef.current;
+    if (!cv) return;
 
     const onTouchStart = (e: TouchEvent) => {
       e.preventDefault();
-      if (e.touches.length === 2) {
-        draggingRef.current = false;
-        // Record focal point (midpoint of two fingers) in canvas-pixel space
-        const rect = canvas.getBoundingClientRect();
-        const sx = PREVIEW_PX / rect.width;
-        const sy = PREVIEW_PX / rect.height;
-        const fx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * sx;
-        const fy = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  * sy;
-        pinchRef.current = { dist: d2(e.touches[0], e.touches[1]), scale: scaleRef.current, ox: offsetRef.current.x, oy: offsetRef.current.y, fx, fy };
+      if (e.touches.length >= 2) {
+        const t0 = e.touches[0], t1 = e.touches[1];
+        const mid = {
+          x: (toC(t0.clientX, t0.clientY).x + toC(t1.clientX, t1.clientY).x) / 2,
+          y: (toC(t0.clientX, t0.clientY).y + toC(t1.clientX, t1.clientY).y) / 2,
+        };
+        gestureRef.current = {
+          type: 'pinch',
+          d0: dist(t0, t1),
+          s0: scaleRef.current,
+          ox0: offsetRef.current.x,
+          oy0: offsetRef.current.y,
+          fx: mid.x,
+          fy: mid.y,
+        };
       } else {
-        pinchRef.current = null;
-        draggingRef.current = true;
-        lastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        const p = toC(e.touches[0].clientX, e.touches[0].clientY);
+        gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
       }
     };
 
     const onTouchMove = (e: TouchEvent) => {
       e.preventDefault();
-      if (e.touches.length === 2 && pinchRef.current) {
-        const nd   = d2(e.touches[0], e.touches[1]);
-        const next = Math.max(1, Math.min(5, pinchRef.current.scale * (nd / pinchRef.current.dist)));
-        const f    = next / pinchRef.current.scale;
-        // Current midpoint in canvas space
-        const rect = canvas.getBoundingClientRect();
-        const sx   = PREVIEW_PX / rect.width;
-        const sy   = PREVIEW_PX / rect.height;
-        const mx   = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * sx;
-        const my   = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  * sy;
-        // Midpoint movement (pan while pinching)
-        const dmx  = mx - pinchRef.current.fx;
-        const dmy  = my - pinchRef.current.fy;
+      const g = gestureRef.current;
+
+      if (e.touches.length >= 2 && g.type === 'pinch') {
+        const t0 = e.touches[0], t1 = e.touches[1];
+        const nd   = dist(t0, t1);
+        const next = Math.max(1, Math.min(5, g.s0 * (nd / g.d0)));
+        const f    = next / g.s0;
+        // Current midpoint in canvas-px
+        const mx = (toC(t0.clientX, t0.clientY).x + toC(t1.clientX, t1.clientY).x) / 2;
+        const my = (toC(t0.clientX, t0.clientY).y + toC(t1.clientX, t1.clientY).y) / 2;
+        // Zoom toward initial focal point + pan by midpoint delta
         scaleRef.current  = next;
-        offsetRef.current = clampOff(
-          f * pinchRef.current.ox + (1 - f) * (pinchRef.current.fx - PREVIEW_PX / 2) + dmx,
-          f * pinchRef.current.oy + (1 - f) * (pinchRef.current.fy - PREVIEW_PX / 2) + dmy,
+        offsetRef.current = clamp(
+          f * g.ox0 + (1 - f) * (g.fx - PREVIEW_PX / 2) + (mx - g.fx),
+          f * g.oy0 + (1 - f) * (g.fy - PREVIEW_PX / 2) + (my - g.fy),
           next,
         );
         paintRef.current();
-      } else if (e.touches.length === 1 && draggingRef.current) {
-        // Scale viewport deltas to canvas pixels
-        const rect = canvas.getBoundingClientRect();
-        const sx = PREVIEW_PX / rect.width;
-        const sy = PREVIEW_PX / rect.height;
-        const dx = (e.touches[0].clientX - lastPosRef.current.x) * sx;
-        const dy = (e.touches[0].clientY - lastPosRef.current.y) * sy;
-        lastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        offsetRef.current  = clampOff(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
+
+      } else if (e.touches.length === 1 && g.type === 'pan') {
+        const p  = toC(e.touches[0].clientX, e.touches[0].clientY);
+        const dx = p.x - g.lastX;
+        const dy = p.y - g.lastY;
+        gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
+        offsetRef.current  = clamp(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
         paintRef.current();
       }
     };
 
     const onTouchEnd = (e: TouchEvent) => {
-      pinchRef.current = null;
       if (e.touches.length === 1) {
-        // One finger still down — switch seamlessly to single-finger drag
-        draggingRef.current = true;
-        lastPosRef.current  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      } else {
-        draggingRef.current = false;
+        // Transition from pinch → pan with the remaining finger
+        const p = toC(e.touches[0].clientX, e.touches[0].clientY);
+        gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
+      } else if (e.touches.length === 0) {
+        gestureRef.current = { type: 'none' };
       }
     };
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const next = Math.max(1, Math.min(5, scaleRef.current - e.deltaY * 0.003));
-      const { x: fx, y: fy } = toCanvas(e.clientX, e.clientY);
-      zoomAt(next, fx, fy);
+      const f    = next / scaleRef.current;
+      const fp   = toC(e.clientX, e.clientY);
+      scaleRef.current  = next;
+      offsetRef.current = clamp(
+        f * offsetRef.current.x + (1 - f) * (fp.x - PREVIEW_PX / 2),
+        f * offsetRef.current.y + (1 - f) * (fp.y - PREVIEW_PX / 2),
+        next,
+      );
       paintRef.current();
     };
 
-    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-    canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
-    canvas.addEventListener('touchend',   onTouchEnd);
-    canvas.addEventListener('wheel',      onWheel,      { passive: false });
+    cv.addEventListener('touchstart', onTouchStart, { passive: false });
+    cv.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    cv.addEventListener('touchend',   onTouchEnd);
+    cv.addEventListener('wheel',      onWheel,      { passive: false });
     return () => {
-      canvas.removeEventListener('touchstart', onTouchStart);
-      canvas.removeEventListener('touchmove',  onTouchMove);
-      canvas.removeEventListener('touchend',   onTouchEnd);
-      canvas.removeEventListener('wheel',      onWheel);
+      cv.removeEventListener('touchstart', onTouchStart);
+      cv.removeEventListener('touchmove',  onTouchMove);
+      cv.removeEventListener('touchend',   onTouchEnd);
+      cv.removeEventListener('wheel',      onWheel);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mouse handlers
-  const onMouseDown = (e: React.MouseEvent) => { draggingRef.current = true; lastPosRef.current = { x: e.clientX, y: e.clientY }; };
+  // ── Mouse (desktop) ───────────────────────────────────────────────────────────
+  const onMouseDown = (e: React.MouseEvent) => {
+    const p = toC(e.clientX, e.clientY);
+    gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
+  };
   const onMouseMove = (e: React.MouseEvent) => {
-    if (!draggingRef.current) return;
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const sx = PREVIEW_PX / rect.width;
-    const sy = PREVIEW_PX / rect.height;
-    const dx = (e.clientX - lastPosRef.current.x) * sx;
-    const dy = (e.clientY - lastPosRef.current.y) * sy;
-    lastPosRef.current = { x: e.clientX, y: e.clientY };
-    offsetRef.current  = clampOff(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
+    const g = gestureRef.current;
+    if (g.type !== 'pan') return;
+    const p  = toC(e.clientX, e.clientY);
+    const dx = p.x - g.lastX;
+    const dy = p.y - g.lastY;
+    gestureRef.current = { type: 'pan', lastX: p.x, lastY: p.y };
+    offsetRef.current  = clamp(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
     paintRef.current();
   };
-  const onMouseUp = () => { draggingRef.current = false; };
+  const onMouseUp = () => { gestureRef.current = { type: 'none' }; };
 
-  // Export: same math as paint(), scaled up to OUTPUT_PX
+  // ── Export ────────────────────────────────────────────────────────────────────
   const handleConfirm = () => {
     const img = imgRef.current;
     if (!img) return;
-    const ratio  = OUTPUT_PX / PREVIEW_PX;
-    const canvas = document.createElement('canvas');
-    canvas.width = OUTPUT_PX; canvas.height = OUTPUT_PX;
+    const r   = OUTPUT_PX / PREVIEW_PX;
+    const cv  = document.createElement('canvas');
+    cv.width = OUTPUT_PX; cv.height = OUTPUT_PX;
     const { rw, rh } = getSize(scaleRef.current);
-    canvas.getContext('2d')!.drawImage(
-      img,
-      ((PREVIEW_PX - rw) / 2 + offsetRef.current.x) * ratio,
-      ((PREVIEW_PX - rh) / 2 + offsetRef.current.y) * ratio,
-      rw * ratio, rh * ratio,
-    );
-    canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
+    cv.getContext('2d')!.drawImage(img,
+      ((PREVIEW_PX - rw) / 2 + offsetRef.current.x) * r,
+      ((PREVIEW_PX - rh) / 2 + offsetRef.current.y) * r,
+      rw * r, rh * r);
+    cv.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
   };
 
   return (
@@ -325,12 +320,11 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
       <div className="bg-obsidian-900 border border-obsidian-700 p-6 w-full max-w-xs flex flex-col items-center gap-5">
         <h3 className="font-serif text-white text-lg">تعديل الصورة الشخصية</h3>
 
-        {/* Canvas-based preview: pure pixel math, immune to RTL/CSS positioning drift */}
         <canvas
           ref={canvasRef}
           width={PREVIEW_PX}
           height={PREVIEW_PX}
-          className="rounded-full border-2 border-gold-500/50 cursor-move"
+          className="rounded-full border-2 border-gold-500/50 cursor-move touch-none"
           style={{ width: PREVIEW_PX, height: PREVIEW_PX, display: 'block' }}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
@@ -338,7 +332,7 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
           onMouseLeave={onMouseUp}
         />
 
-        <p className="text-obsidian-500 text-xs text-center">اسحب لتحريك · إصبعان للتكبير</p>
+        <p className="text-obsidian-500 text-xs text-center">إصبع واحد للتحريك · إصبعان للتكبير</p>
 
         <div className="flex gap-3 w-full">
           <button onClick={handleConfirm} disabled={!ready} className="btn-gold flex-1 text-sm">حفظ</button>
