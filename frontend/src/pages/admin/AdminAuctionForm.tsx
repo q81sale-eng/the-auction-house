@@ -342,7 +342,7 @@ export const AdminAuctionForm: React.FC = () => {
                 // 'new' items use blob object URLs directly; 'existing' items use the stored URL
                 const src = img.type === 'new'
                   ? img.preview
-                  : (img.url.startsWith('http') ? img.url : `https://localhost:8000/storage/${img.url}`);
+                  : (img.url.startsWith('http') ? img.url : '/placeholder-watch.jpg');
                 return (
                   <div key={i} className="relative group aspect-square">
                     <div className={`w-full h-full overflow-hidden border ${i === 0 ? 'border-gold-500' : 'border-obsidian-700'}`}>

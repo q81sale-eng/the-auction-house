@@ -151,8 +151,6 @@ export const placeBid = async (auctionId: string, amount: number, userId?: strin
 
   let uid: string | undefined = userId || session?.user?.id;
 
-  console.log('[placeBid] userId:', userId, '| session uid:', session?.user?.id, '| uid:', uid);
-
   if (!uid) {
     const { data: { user } } = await supabase.auth.getUser();
     uid = user?.id;

@@ -156,7 +156,7 @@ export const AuctionDetailPage: React.FC = () => {
             <div className="bg-white lg:border lg:border-obsidian-200 overflow-hidden mb-2 lg:mb-4 p-4">
               {currentImage ? (
                 <img
-                  src={currentImage.path.startsWith('http') ? currentImage.path : `http://localhost:8000/storage/${currentImage.path}`}
+                  src={currentImage.path.startsWith('http') ? currentImage.path : '/placeholder-watch.jpg'}
                   alt={currentImage.alt_text}
                   className="w-full object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/d4af37?text=Watch'; }}
@@ -170,7 +170,7 @@ export const AuctionDetailPage: React.FC = () => {
                 {images.map((img: any, i: number) => (
                   <button key={i} onClick={() => setActiveImage(i)}
                     className={`w-16 h-16 bg-white border overflow-hidden transition-colors ${i === activeImage ? 'border-gold-500' : 'border-obsidian-700'}`}>
-                    <img src={img.path.startsWith('http') ? img.path : `http://localhost:8000/storage/${img.path}`} alt={img.alt_text} className="w-full h-full object-contain p-1" />
+                    <img src={img.path.startsWith('http') ? img.path : '/placeholder-watch.jpg'} alt={img.alt_text} className="w-full h-full object-contain p-1" />
                   </button>
                 ))}
               </div>
