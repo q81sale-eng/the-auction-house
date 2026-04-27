@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
@@ -105,110 +105,116 @@ function bidStatus(bid: any, labels: any): { label: string; color: string } {
 
 // ─── Avatar crop modal ────────────────────────────────────────────────────────
 
-const CROP_SIZE = 400;
+const PREVIEW_PX = 256;
+const OUTPUT_PX  = 400;
 
 function AvatarCropModal({ src, onConfirm, onCancel }: {
   src: string;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
-  const [scale, setScale] = useState(1);
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [scale,  setScale]  = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
-  const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
-  const previewRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  const dragging  = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
 
-  const PREVIEW = 240;
+  // Derived display geometry (used for both preview CSS and canvas export)
+  const baseScale  = natural ? PREVIEW_PX / Math.min(natural.w, natural.h) : 1;
+  const renderedW  = natural ? natural.w * baseScale * scale : PREVIEW_PX;
+  const renderedH  = natural ? natural.h * baseScale * scale : PREVIEW_PX;
+  const imgLeft    = (PREVIEW_PX - renderedW) / 2 + offset.x;
+  const imgTop     = (PREVIEW_PX - renderedH) / 2 + offset.y;
 
-  const draw = useCallback(() => {
-    const canvas = previewRef.current;
-    const img = imgRef.current;
-    if (!canvas || !img) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, PREVIEW, PREVIEW);
-    const dim = Math.min(img.naturalWidth, img.naturalHeight);
-    const s = (PREVIEW / dim) * scale;
-    const w = img.naturalWidth * s;
-    const h = img.naturalHeight * s;
-    const x = (PREVIEW - w) / 2 + offset.x;
-    const y = (PREVIEW - h) / 2 + offset.y;
-    ctx.drawImage(img, x, y, w, h);
-  }, [scale, offset]);
+  // ── drag ──────────────────────────────────────────────────────────────────
+  const startDrag = (x: number, y: number) => {
+    dragging.current = true;
+    lastMouse.current = { x, y };
+  };
+  const moveDrag = (x: number, y: number) => {
+    if (!dragging.current) return;
+    const dx = x - lastMouse.current.x;
+    const dy = y - lastMouse.current.y;
+    lastMouse.current = { x, y };
+    setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+  };
+  const endDrag = () => { dragging.current = false; };
 
-  useEffect(() => {
+  // ── export ────────────────────────────────────────────────────────────────
+  const handleConfirm = useCallback(() => {
+    if (!natural) return;
     const img = new Image();
-    img.onload = () => { imgRef.current = img; draw(); };
+    img.onload = () => {
+      const ratio = OUTPUT_PX / PREVIEW_PX;
+      const canvas = document.createElement('canvas');
+      canvas.width = OUTPUT_PX;
+      canvas.height = OUTPUT_PX;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, imgLeft * ratio, imgTop * ratio, renderedW * ratio, renderedH * ratio);
+      canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
+    };
     img.src = src;
-  }, [src]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => { draw(); }, [draw]);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    setDragging(true);
-    dragStart.current = { mx: e.clientX, my: e.clientY, ox: offset.x, oy: offset.y };
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!dragging || !dragStart.current) return;
-    setOffset({ x: dragStart.current.ox + e.clientX - dragStart.current.mx, y: dragStart.current.oy + e.clientY - dragStart.current.my });
-  };
-  const onMouseUp = () => setDragging(false);
-
-  const handleConfirm = () => {
-    const img = imgRef.current;
-    if (!img) return;
-    const out = document.createElement('canvas');
-    out.width = CROP_SIZE; out.height = CROP_SIZE;
-    const ctx = out.getContext('2d')!;
-    const ratio = CROP_SIZE / PREVIEW;
-    const dim = Math.min(img.naturalWidth, img.naturalHeight);
-    const s = (PREVIEW / dim) * scale;
-    const w = img.naturalWidth * s;
-    const h = img.naturalHeight * s;
-    const x = (PREVIEW - w) / 2 + offset.x;
-    const y = (PREVIEW - h) / 2 + offset.y;
-    ctx.drawImage(img, x * ratio, y * ratio, w * ratio, h * ratio);
-    out.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
-  };
+  }, [natural, imgLeft, imgTop, renderedW, renderedH, src, onConfirm]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+    >
       <div className="bg-obsidian-900 border border-obsidian-700 p-6 w-full max-w-xs flex flex-col items-center gap-5">
         <h3 className="font-serif text-white text-lg">تعديل الصورة الشخصية</h3>
 
-        {/* Preview canvas */}
-        <div className="relative rounded-full overflow-hidden border-2 border-gold-500/40" style={{ width: PREVIEW, height: PREVIEW }}>
-          <canvas
-            ref={previewRef}
-            width={PREVIEW}
-            height={PREVIEW}
-            className="cursor-move select-none"
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseUp}
+        {/* Circular crop frame */}
+        <div
+          className="rounded-full overflow-hidden border-2 border-gold-500/50 cursor-move select-none relative bg-obsidian-950"
+          style={{ width: PREVIEW_PX, height: PREVIEW_PX }}
+          onMouseDown={e => startDrag(e.clientX, e.clientY)}
+          onMouseMove={e => moveDrag(e.clientX, e.clientY)}
+          onMouseUp={endDrag}
+          onMouseLeave={endDrag}
+          onTouchStart={e => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
+          onTouchMove={e => { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); }}
+          onTouchEnd={endDrag}
+        >
+          <img
+            src={src}
+            alt=""
+            draggable={false}
+            onLoad={e => {
+              const img = e.target as HTMLImageElement;
+              setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+            }}
+            style={{
+              position: 'absolute',
+              left: imgLeft,
+              top: imgTop,
+              width: renderedW,
+              height: renderedH,
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
           />
         </div>
 
         {/* Zoom slider */}
-        <div className="w-full">
-          <div className="flex justify-between text-obsidian-500 text-xs mb-1">
-            <span>تصغير</span>
-            <span>تكبير</span>
+        <div className="w-full space-y-1">
+          <div className="flex justify-between text-obsidian-500 text-xs">
+            <span>−</span>
+            <span className="text-obsidian-400 uppercase tracking-wider">تكبير / تصغير</span>
+            <span>+</span>
           </div>
           <input
-            type="range" min="0.5" max="3" step="0.01"
+            type="range" min="1" max="4" step="0.01"
             value={scale}
             onChange={e => setScale(Number(e.target.value))}
-            className="w-full accent-gold-500"
+            className="w-full accent-gold-500 cursor-pointer"
           />
         </div>
 
-        <p className="text-obsidian-500 text-xs">اسحب الصورة لتعديل الموضع</p>
+        <p className="text-obsidian-500 text-xs -mt-2">اسحب الصورة لتعديل الموضع</p>
 
         <div className="flex gap-3 w-full">
-          <button onClick={handleConfirm} className="btn-gold flex-1 text-sm">حفظ</button>
+          <button onClick={handleConfirm} disabled={!natural} className="btn-gold flex-1 text-sm">حفظ</button>
           <button onClick={onCancel} className="btn-outline flex-1 text-sm">إلغاء</button>
         </div>
       </div>
