@@ -48,6 +48,8 @@ function PriceCard({ entry, conditionLabels, t }: { entry: PriceIndexEntry; cond
   );
 }
 
+type SortMode = 'newest' | 'highest_price';
+
 export const PriceIndexPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { tr, lang } = useT();
@@ -57,6 +59,7 @@ export const PriceIndexPage: React.FC = () => {
 
   const qParam = searchParams.get('q') ?? '';
   const [inputValue, setInputValue] = useState(qParam);
+  const [sort, setSort] = useState<SortMode>('newest');
 
   useEffect(() => { setInputValue(qParam); }, [qParam]);
 
@@ -68,8 +71,8 @@ export const PriceIndexPage: React.FC = () => {
   });
 
   const { data: latestEntries = [], isLoading: latestLoading } = useQuery({
-    queryKey: ['price-index', 'latest'],
-    queryFn: () => getLatestPriceIndex(12),
+    queryKey: ['price-index', 'latest', sort],
+    queryFn: () => getLatestPriceIndex(12, sort),
     enabled: !qParam,
     staleTime: 60_000,
   });
@@ -84,7 +87,13 @@ export const PriceIndexPage: React.FC = () => {
     setSearchParams({});
   };
 
-  const displayEntries = qParam ? searchResults : latestEntries;
+  const sortedSearch = [...searchResults].sort((a, b) =>
+    sort === 'highest_price'
+      ? Number(b.sale_price) - Number(a.sale_price)
+      : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  const displayEntries = qParam ? sortedSearch : latestEntries;
   const isLoading = qParam ? searchLoading : latestLoading;
 
   const prices = searchResults.map(r => Number(r.sale_price));
@@ -128,13 +137,32 @@ export const PriceIndexPage: React.FC = () => {
 
       {/* Results */}
       <section className="max-w-7xl mx-auto px-4 py-10" dir={isRtl ? 'rtl' : 'ltr'}>
-        {qParam ? (
-          <p className="text-obsidian-400 text-sm mb-6">
-            {t.resultsFor}: <span className="text-white font-medium">"{qParam}"</span>
-          </p>
-        ) : (
-          <p className="text-obsidian-500 text-xs uppercase tracking-wider mb-6">{t.latest ?? 'أحدث المبيعات'}</p>
-        )}
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+          {qParam ? (
+            <p className="text-obsidian-400 text-sm">
+              {t.resultsFor}: <span className="text-white font-medium">"{qParam}"</span>
+            </p>
+          ) : (
+            <p className="text-obsidian-500 text-xs uppercase tracking-wider">{t.latest}</p>
+          )}
+
+          {/* Sort toggle */}
+          <div className="flex items-center gap-1 border border-obsidian-700 p-0.5">
+            {(['newest', 'highest_price'] as SortMode[]).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setSort(mode)}
+                className={`px-3 py-1.5 text-xs transition-colors ${
+                  sort === mode
+                    ? 'bg-gold-500 text-obsidian-950 font-semibold'
+                    : 'text-obsidian-400 hover:text-white'
+                }`}
+              >
+                {mode === 'newest' ? t.sortNewest : t.sortHighest}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

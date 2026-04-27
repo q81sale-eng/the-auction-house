@@ -622,6 +622,8 @@ const ar: Strings = {
     search: 'بحث',
     clear: 'مسح',
     latest: 'أحدث المبيعات',
+    sortNewest: 'الأحدث',
+    sortHighest: 'الأعلى سعراً',
     resultsFor: 'نتائج البحث عن',
     noResults: 'لا توجد نتائج',
     noResultsHint: 'جرّب اسم علامة تجارية أو موديل أو رقم ريفرنس مختلف.',

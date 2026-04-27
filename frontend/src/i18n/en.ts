@@ -619,6 +619,8 @@ const en = {
     search: 'Search',
     clear: 'Clear',
     latest: 'Latest Sales',
+    sortNewest: 'Newest',
+    sortHighest: 'Highest Price',
     resultsFor: 'Results for',
     noResults: 'No results found',
     noResultsHint: 'Try a different brand name, model or reference number.',

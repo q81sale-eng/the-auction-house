@@ -24,11 +24,15 @@ export const uploadPriceIndexImage = async (file: File): Promise<string> => {
   return publicUrl;
 };
 
-export const getLatestPriceIndex = async (limit = 12): Promise<PriceIndexEntry[]> => {
+export const getLatestPriceIndex = async (
+  limit = 12,
+  sort: 'newest' | 'highest_price' = 'newest',
+): Promise<PriceIndexEntry[]> => {
+  const col   = sort === 'highest_price' ? 'sale_price' : 'created_at';
   const { data, error } = await supabase
     .from('price_index')
     .select('*')
-    .order('created_at', { ascending: false })
+    .order(col, { ascending: false })
     .limit(limit);
   if (error) throw new Error(error.message);
   return data ?? [];
