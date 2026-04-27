@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
@@ -108,101 +108,117 @@ function bidStatus(bid: any, labels: any): { label: string; color: string } {
 const PREVIEW_PX = 256;
 const OUTPUT_PX  = 400;
 
-const getDist = (a: React.Touch, b: React.Touch) =>
-  Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-
 function AvatarCropModal({ src, onConfirm, onCancel }: {
   src: string;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
-  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
-  const [scale,  setScale]  = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const naturalRef   = useRef<{ w: number; h: number } | null>(null);
+  const scaleRef     = useRef(1);
+  const offsetRef    = useRef({ x: 0, y: 0 });
+  const draggingRef  = useRef(false);
+  const lastPosRef   = useRef({ x: 0, y: 0 });
+  const pinchRef     = useRef<{ dist: number; scale: number; ox: number; oy: number } | null>(null);
+  const [, setTick] = useState(0); // force re-render
+  const redraw = () => setTick(n => n + 1);
 
-  const dragging = useRef(false);
-  const lastPos  = useRef({ x: 0, y: 0 });
-  const pinchRef = useRef<{ dist: number; scale: number; ox: number; oy: number } | null>(null);
+  const getSizeAt = (s: number) => {
+    const n = naturalRef.current;
+    if (!n) return { rw: PREVIEW_PX, rh: PREVIEW_PX };
+    const bs = PREVIEW_PX / Math.min(n.w, n.h);
+    return { rw: n.w * bs * s, rh: n.h * bs * s };
+  };
 
-  const baseScale = natural ? PREVIEW_PX / Math.min(natural.w, natural.h) : 1;
-
-  // Rendered size at a given scale
-  const sizeAt = (s: number) => ({
-    rw: natural ? natural.w * baseScale * s : PREVIEW_PX,
-    rh: natural ? natural.h * baseScale * s : PREVIEW_PX,
-  });
-
-  // Clamp offset so image always covers the circle
   const clamp = (ox: number, oy: number, rw: number, rh: number) => ({
     x: Math.max(-Math.max(0, (rw - PREVIEW_PX) / 2), Math.min(Math.max(0, (rw - PREVIEW_PX) / 2), ox)),
     y: Math.max(-Math.max(0, (rh - PREVIEW_PX) / 2), Math.min(Math.max(0, (rh - PREVIEW_PX) / 2), oy)),
   });
 
-  const { rw: renderedW, rh: renderedH } = sizeAt(scale);
-  const imgLeft = (PREVIEW_PX - renderedW) / 2 + offset.x;
-  const imgTop  = (PREVIEW_PX - renderedH) / 2 + offset.y;
+  // ── Attach native (non-passive) touch listeners ───────────────────────────
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  // ── Mouse drag ─────────────────────────────────────────────────────────────
-  const onMouseDown = (e: React.MouseEvent) => {
-    dragging.current = true;
-    lastPos.current = { x: e.clientX, y: e.clientY };
-  };
+    const dist = (a: Touch, b: Touch) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+
+    const onStart = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 2) {
+        pinchRef.current = { dist: dist(e.touches[0], e.touches[1]), scale: scaleRef.current, ox: offsetRef.current.x, oy: offsetRef.current.y };
+        draggingRef.current = false;
+      } else {
+        draggingRef.current = true;
+        lastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    };
+
+    const onMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 2 && pinchRef.current) {
+        const newDist  = dist(e.touches[0], e.touches[1]);
+        const next     = Math.max(1, Math.min(5, pinchRef.current.scale * (newDist / pinchRef.current.dist)));
+        const factor   = next / pinchRef.current.scale;
+        const { rw, rh } = getSizeAt(next);
+        scaleRef.current  = next;
+        offsetRef.current = clamp(pinchRef.current.ox * factor, pinchRef.current.oy * factor, rw, rh);
+        redraw();
+      } else if (e.touches.length === 1 && draggingRef.current) {
+        const dx = e.touches[0].clientX - lastPosRef.current.x;
+        const dy = e.touches[0].clientY - lastPosRef.current.y;
+        lastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        const { rw, rh } = getSizeAt(scaleRef.current);
+        const prev = offsetRef.current;
+        offsetRef.current = clamp(prev.x + dx, prev.y + dy, rw, rh);
+        redraw();
+      }
+    };
+
+    const onEnd = () => { draggingRef.current = false; pinchRef.current = null; };
+
+    el.addEventListener('touchstart', onStart, { passive: false });
+    el.addEventListener('touchmove',  onMove,  { passive: false });
+    el.addEventListener('touchend',   onEnd);
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove',  onMove);
+      el.removeEventListener('touchend',   onEnd);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Mouse drag ────────────────────────────────────────────────────────────
+  const onMouseDown = (e: React.MouseEvent) => { draggingRef.current = true; lastPosRef.current = { x: e.clientX, y: e.clientY }; };
   const onMouseMove = (e: React.MouseEvent) => {
-    if (!dragging.current) return;
-    const dx = e.clientX - lastPos.current.x;
-    const dy = e.clientY - lastPos.current.y;
-    lastPos.current = { x: e.clientX, y: e.clientY };
-    setOffset(prev => clamp(prev.x + dx, prev.y + dy, renderedW, renderedH));
+    if (!draggingRef.current) return;
+    const dx = e.clientX - lastPosRef.current.x;
+    const dy = e.clientY - lastPosRef.current.y;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
+    const { rw, rh } = getSizeAt(scaleRef.current);
+    const prev = offsetRef.current;
+    offsetRef.current = clamp(prev.x + dx, prev.y + dy, rw, rh);
+    redraw();
   };
-  const onMouseUp = () => { dragging.current = false; };
+  const onMouseUp = () => { draggingRef.current = false; };
 
-  // ── Scroll-wheel zoom ──────────────────────────────────────────────────────
+  // ── Scroll-wheel zoom (desktop) ───────────────────────────────────────────
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const next = Math.max(1, Math.min(5, scale - e.deltaY * 0.003));
-    const { rw, rh } = sizeAt(next);
-    const factor = next / scale;
-    setScale(next);
-    setOffset(prev => clamp(prev.x * factor, prev.y * factor, rw, rh));
+    const next   = Math.max(1, Math.min(5, scaleRef.current - e.deltaY * 0.003));
+    const factor = next / scaleRef.current;
+    const { rw, rh } = getSizeAt(next);
+    scaleRef.current  = next;
+    offsetRef.current = clamp(offsetRef.current.x * factor, offsetRef.current.y * factor, rw, rh);
+    redraw();
   };
 
-  // ── Touch: 1-finger drag + 2-finger pinch ──────────────────────────────────
-  const onTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    if (e.touches.length === 2) {
-      pinchRef.current = {
-        dist: getDist(e.touches[0], e.touches[1]),
-        scale,
-        ox: offset.x,
-        oy: offset.y,
-      };
-      dragging.current = false;
-    } else {
-      dragging.current = true;
-      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-  };
-  const onTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-    if (e.touches.length === 2 && pinchRef.current) {
-      const newDist  = getDist(e.touches[0], e.touches[1]);
-      const next     = Math.max(1, Math.min(5, pinchRef.current.scale * (newDist / pinchRef.current.dist)));
-      const factor   = next / pinchRef.current.scale;
-      const { rw, rh } = sizeAt(next);
-      setScale(next);
-      setOffset(clamp(pinchRef.current.ox * factor, pinchRef.current.oy * factor, rw, rh));
-    } else if (e.touches.length === 1 && dragging.current) {
-      const dx = e.touches[0].clientX - lastPos.current.x;
-      const dy = e.touches[0].clientY - lastPos.current.y;
-      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      setOffset(prev => clamp(prev.x + dx, prev.y + dy, renderedW, renderedH));
-    }
-  };
-  const onTouchEnd = () => { dragging.current = false; pinchRef.current = null; };
+  // ── Current geometry ──────────────────────────────────────────────────────
+  const { rw: renderedW, rh: renderedH } = getSizeAt(scaleRef.current);
+  const imgLeft = (PREVIEW_PX - renderedW) / 2 + offsetRef.current.x;
+  const imgTop  = (PREVIEW_PX - renderedH) / 2 + offsetRef.current.y;
 
-  // ── Export ─────────────────────────────────────────────────────────────────
-  const handleConfirm = useCallback(() => {
-    if (!natural) return;
+  // ── Export ────────────────────────────────────────────────────────────────
+  const handleConfirm = () => {
+    if (!naturalRef.current) return;
     const img = new Image();
     img.onload = () => {
       const ratio  = OUTPUT_PX / PREVIEW_PX;
@@ -212,55 +228,35 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
       canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
     };
     img.src = src;
-  }, [natural, imgLeft, imgTop, renderedW, renderedH, src, onConfirm]);
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
-      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
-    >
+    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
+         onClick={e => { if (e.target === e.currentTarget) onCancel(); }}>
       <div className="bg-obsidian-900 border border-obsidian-700 p-6 w-full max-w-xs flex flex-col items-center gap-5">
         <h3 className="font-serif text-white text-lg">تعديل الصورة الشخصية</h3>
 
-        {/* Circular crop frame */}
         <div
+          ref={containerRef}
           className="rounded-full overflow-hidden border-2 border-gold-500/50 cursor-move select-none relative bg-obsidian-950"
-          style={{ width: PREVIEW_PX, height: PREVIEW_PX, touchAction: 'none' }}
+          style={{ width: PREVIEW_PX, height: PREVIEW_PX }}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
           onWheel={onWheel}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
           <img
-            src={src}
-            alt=""
-            draggable={false}
-            onLoad={e => {
-              const img = e.target as HTMLImageElement;
-              setNatural({ w: img.naturalWidth, h: img.naturalHeight });
-            }}
-            style={{
-              position: 'absolute',
-              left: imgLeft,
-              top: imgTop,
-              width: renderedW,
-              height: renderedH,
-              pointerEvents: 'none',
-              userSelect: 'none',
-            }}
+            src={src} alt="" draggable={false}
+            onLoad={e => { const i = e.target as HTMLImageElement; naturalRef.current = { w: i.naturalWidth, h: i.naturalHeight }; redraw(); }}
+            style={{ position: 'absolute', left: imgLeft, top: imgTop, width: renderedW, height: renderedH, pointerEvents: 'none', userSelect: 'none' }}
           />
         </div>
 
-        <p className="text-obsidian-500 text-xs text-center">
-          اسحب لتحريك · إصبعان للتكبير
-        </p>
+        <p className="text-obsidian-500 text-xs text-center">اسحب لتحريك · إصبعان للتكبير</p>
 
         <div className="flex gap-3 w-full">
-          <button onClick={handleConfirm} disabled={!natural} className="btn-gold flex-1 text-sm">حفظ</button>
+          <button onClick={handleConfirm} disabled={!naturalRef.current} className="btn-gold flex-1 text-sm">حفظ</button>
           <button onClick={onCancel} className="btn-outline flex-1 text-sm">إلغاء</button>
         </div>
       </div>
