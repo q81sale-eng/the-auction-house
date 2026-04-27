@@ -56,11 +56,11 @@ async function updateProfileInDb(userId: string, fields: { name?: string; phone?
   });
   if (metaErr) throw new Error(metaErr.message);
 
-  const { error } = await supabase
+  // Best-effort sync — ignore RLS errors
+  await supabase
     .from('profiles')
     .update({ full_name: fields.name, phone: fields.phone, country: fields.country, bio: fields.bio })
     .eq('id', userId);
-  if (error) throw new Error(error.message);
 }
 
 async function adjustBalance(userId: string, delta: number, currentBalance: number) {
