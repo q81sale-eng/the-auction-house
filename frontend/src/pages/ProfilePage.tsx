@@ -120,7 +120,8 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
   const offsetRef   = useRef({ x: 0, y: 0 });
   const draggingRef = useRef(false);
   const lastPosRef  = useRef({ x: 0, y: 0 });
-  const pinchRef    = useRef<{ dist: number; scale: number; ox: number; oy: number } | null>(null);
+  // fx/fy = focal point in canvas pixels (where fingers are)
+  const pinchRef    = useRef<{ dist: number; scale: number; ox: number; oy: number; fx: number; fy: number } | null>(null);
   const [ready, setReady] = useState(false);
 
   // Rendered image size at a given scale
@@ -137,6 +138,27 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
     const mx = Math.max(0, (rw - PREVIEW_PX) / 2);
     const my = Math.max(0, (rh - PREVIEW_PX) / 2);
     return { x: Math.max(-mx, Math.min(mx, ox)), y: Math.max(-my, Math.min(my, oy)) };
+  };
+
+  // Viewport → canvas-pixel coordinates
+  const toCanvas = (clientX: number, clientY: number) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left) * (PREVIEW_PX / rect.width),
+      y: (clientY - rect.top)  * (PREVIEW_PX / rect.height),
+    };
+  };
+
+  // Zoom around focal point (fx, fy) in canvas-pixel space
+  const zoomAt = (next: number, fx: number, fy: number) => {
+    const f = next / scaleRef.current;
+    // Pixel at (fx, fy) must stay at (fx, fy): ox' = f*ox + (1-f)*(fx - PX/2)
+    scaleRef.current  = next;
+    offsetRef.current = clampOff(
+      f * offsetRef.current.x + (1 - f) * (fx - PREVIEW_PX / 2),
+      f * offsetRef.current.y + (1 - f) * (fy - PREVIEW_PX / 2),
+      next,
+    );
   };
 
   // Draw current frame to canvas — pure pixel math, no CSS positioning
@@ -185,7 +207,13 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
       e.preventDefault();
       if (e.touches.length === 2) {
         draggingRef.current = false;
-        pinchRef.current = { dist: d2(e.touches[0], e.touches[1]), scale: scaleRef.current, ox: offsetRef.current.x, oy: offsetRef.current.y };
+        // Record focal point (midpoint of two fingers) in canvas-pixel space
+        const rect = canvas.getBoundingClientRect();
+        const sx = PREVIEW_PX / rect.width;
+        const sy = PREVIEW_PX / rect.height;
+        const fx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * sx;
+        const fy = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  * sy;
+        pinchRef.current = { dist: d2(e.touches[0], e.touches[1]), scale: scaleRef.current, ox: offsetRef.current.x, oy: offsetRef.current.y, fx, fy };
       } else {
         pinchRef.current = null;
         draggingRef.current = true;
@@ -196,15 +224,24 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
     const onTouchMove = (e: TouchEvent) => {
       e.preventDefault();
       if (e.touches.length === 2 && pinchRef.current) {
-        const nd    = d2(e.touches[0], e.touches[1]);
-        const next  = Math.max(1, Math.min(5, pinchRef.current.scale * (nd / pinchRef.current.dist)));
-        const f     = next / pinchRef.current.scale;
+        const nd   = d2(e.touches[0], e.touches[1]);
+        const next = Math.max(1, Math.min(5, pinchRef.current.scale * (nd / pinchRef.current.dist)));
+        const f    = next / pinchRef.current.scale;
+        // Zoom toward the recorded focal point; re-apply from saved ox/oy to avoid drift
         scaleRef.current  = next;
-        offsetRef.current = clampOff(pinchRef.current.ox * f, pinchRef.current.oy * f, next);
+        offsetRef.current = clampOff(
+          f * pinchRef.current.ox + (1 - f) * (pinchRef.current.fx - PREVIEW_PX / 2),
+          f * pinchRef.current.oy + (1 - f) * (pinchRef.current.fy - PREVIEW_PX / 2),
+          next,
+        );
         paintRef.current();
       } else if (e.touches.length === 1 && draggingRef.current) {
-        const dx = e.touches[0].clientX - lastPosRef.current.x;
-        const dy = e.touches[0].clientY - lastPosRef.current.y;
+        // Scale viewport deltas to canvas pixels
+        const rect = canvas.getBoundingClientRect();
+        const sx = PREVIEW_PX / rect.width;
+        const sy = PREVIEW_PX / rect.height;
+        const dx = (e.touches[0].clientX - lastPosRef.current.x) * sx;
+        const dy = (e.touches[0].clientY - lastPosRef.current.y) * sy;
         lastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         offsetRef.current  = clampOff(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
         paintRef.current();
@@ -216,9 +253,8 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const next = Math.max(1, Math.min(5, scaleRef.current - e.deltaY * 0.003));
-      const f    = next / scaleRef.current;
-      scaleRef.current  = next;
-      offsetRef.current = clampOff(offsetRef.current.x * f, offsetRef.current.y * f, next);
+      const { x: fx, y: fy } = toCanvas(e.clientX, e.clientY);
+      zoomAt(next, fx, fy);
       paintRef.current();
     };
 
@@ -238,8 +274,11 @@ function AvatarCropModal({ src, onConfirm, onCancel }: {
   const onMouseDown = (e: React.MouseEvent) => { draggingRef.current = true; lastPosRef.current = { x: e.clientX, y: e.clientY }; };
   const onMouseMove = (e: React.MouseEvent) => {
     if (!draggingRef.current) return;
-    const dx = e.clientX - lastPosRef.current.x;
-    const dy = e.clientY - lastPosRef.current.y;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const sx = PREVIEW_PX / rect.width;
+    const sy = PREVIEW_PX / rect.height;
+    const dx = (e.clientX - lastPosRef.current.x) * sx;
+    const dy = (e.clientY - lastPosRef.current.y) * sy;
     lastPosRef.current = { x: e.clientX, y: e.clientY };
     offsetRef.current  = clampOff(offsetRef.current.x + dx, offsetRef.current.y + dy, scaleRef.current);
     paintRef.current();
