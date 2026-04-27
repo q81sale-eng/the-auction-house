@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
@@ -47,7 +47,6 @@ async function uploadAvatar(userId: string, file: File): Promise<string> {
   if (error) throw new Error(error.message);
   const { data: { publicUrl } } = supabase.storage.from('vault-watches').getPublicUrl(path);
   await supabase.auth.updateUser({ data: { avatar: publicUrl } });
-  await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
   return publicUrl;
 }
 
@@ -104,6 +103,119 @@ function bidStatus(bid: any, labels: any): { label: string; color: string } {
   return { label: labels.active, color: 'text-obsidian-400' };
 }
 
+// ─── Avatar crop modal ────────────────────────────────────────────────────────
+
+const CROP_SIZE = 400;
+
+function AvatarCropModal({ src, onConfirm, onCancel }: {
+  src: string;
+  onConfirm: (blob: Blob) => void;
+  onCancel: () => void;
+}) {
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
+  const previewRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  const PREVIEW = 240;
+
+  const draw = useCallback(() => {
+    const canvas = previewRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, PREVIEW, PREVIEW);
+    const dim = Math.min(img.naturalWidth, img.naturalHeight);
+    const s = (PREVIEW / dim) * scale;
+    const w = img.naturalWidth * s;
+    const h = img.naturalHeight * s;
+    const x = (PREVIEW - w) / 2 + offset.x;
+    const y = (PREVIEW - h) / 2 + offset.y;
+    ctx.drawImage(img, x, y, w, h);
+  }, [scale, offset]);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => { imgRef.current = img; draw(); };
+    img.src = src;
+  }, [src]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { draw(); }, [draw]);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    setDragging(true);
+    dragStart.current = { mx: e.clientX, my: e.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!dragging || !dragStart.current) return;
+    setOffset({ x: dragStart.current.ox + e.clientX - dragStart.current.mx, y: dragStart.current.oy + e.clientY - dragStart.current.my });
+  };
+  const onMouseUp = () => setDragging(false);
+
+  const handleConfirm = () => {
+    const img = imgRef.current;
+    if (!img) return;
+    const out = document.createElement('canvas');
+    out.width = CROP_SIZE; out.height = CROP_SIZE;
+    const ctx = out.getContext('2d')!;
+    const ratio = CROP_SIZE / PREVIEW;
+    const dim = Math.min(img.naturalWidth, img.naturalHeight);
+    const s = (PREVIEW / dim) * scale;
+    const w = img.naturalWidth * s;
+    const h = img.naturalHeight * s;
+    const x = (PREVIEW - w) / 2 + offset.x;
+    const y = (PREVIEW - h) / 2 + offset.y;
+    ctx.drawImage(img, x * ratio, y * ratio, w * ratio, h * ratio);
+    out.toBlob(b => { if (b) onConfirm(b); }, 'image/jpeg', 0.92);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      <div className="bg-obsidian-900 border border-obsidian-700 p-6 w-full max-w-xs flex flex-col items-center gap-5">
+        <h3 className="font-serif text-white text-lg">تعديل الصورة الشخصية</h3>
+
+        {/* Preview canvas */}
+        <div className="relative rounded-full overflow-hidden border-2 border-gold-500/40" style={{ width: PREVIEW, height: PREVIEW }}>
+          <canvas
+            ref={previewRef}
+            width={PREVIEW}
+            height={PREVIEW}
+            className="cursor-move select-none"
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+          />
+        </div>
+
+        {/* Zoom slider */}
+        <div className="w-full">
+          <div className="flex justify-between text-obsidian-500 text-xs mb-1">
+            <span>تصغير</span>
+            <span>تكبير</span>
+          </div>
+          <input
+            type="range" min="0.5" max="3" step="0.01"
+            value={scale}
+            onChange={e => setScale(Number(e.target.value))}
+            className="w-full accent-gold-500"
+          />
+        </div>
+
+        <p className="text-obsidian-500 text-xs">اسحب الصورة لتعديل الموضع</p>
+
+        <div className="flex gap-3 w-full">
+          <button onClick={handleConfirm} className="btn-gold flex-1 text-sm">حفظ</button>
+          <button onClick={onCancel} className="btn-outline flex-1 text-sm">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const ProfilePage: React.FC = () => {
@@ -128,6 +240,7 @@ export const ProfilePage: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const userId = user?.id as string;
@@ -202,11 +315,21 @@ export const ProfilePage: React.FC = () => {
     onError: () => setMessage({ type: 'error', text: t.deposits.failed }),
   });
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !userId) return;
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    if (avatarInputRef.current) avatarInputRef.current.value = '';
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    setCropSrc(null);
+    if (!userId) return;
     setAvatarUploading(true);
     try {
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
       const url = await uploadAvatar(userId, file);
       if (user) setUser({ ...user, avatar: url });
     } catch (err: any) {
@@ -555,6 +678,14 @@ export const ProfilePage: React.FC = () => {
         )}
 
       </div>
+
+      {cropSrc && (
+        <AvatarCropModal
+          src={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={() => { setCropSrc(null); }}
+        />
+      )}
     </Layout>
   );
 };

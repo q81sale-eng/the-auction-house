@@ -118,6 +118,7 @@ function App() {
             phone: m.phone,
             country: m.country,
             bio: m.bio,
+            avatar: m.avatar || undefined,
           },
           session.access_token,
           session.refresh_token,
