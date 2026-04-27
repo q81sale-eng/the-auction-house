@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { applyWatermark } from '../utils/watermark';
+import { sendPushNotification } from '../lib/onesignal';
 
 const PER_PAGE = 20;
 
@@ -71,6 +72,16 @@ export const createAuction = async (payload: Record<string, any>) => {
     console.error('[createAuction] Supabase error:', error);
     const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e;
   }
+
+  // Push notification — best-effort
+  sendPushNotification({
+    titleAr: '🔔 مزاد جديد',
+    titleEn: '🔔 New Auction',
+    bodyAr:  data.title || 'تم إضافة مزاد جديد',
+    bodyEn:  data.title || 'A new auction has been added',
+    url:     `${window.location.origin}/auctions/${data.slug}`,
+  }).catch(() => {});
+
   return data;
 };
 
@@ -155,6 +166,16 @@ export const createListing = async (payload: Record<string, any>) => {
     .select()
     .single();
   if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+
+  // Push notification — best-effort
+  sendPushNotification({
+    titleAr: '🔔 قطعة جديدة في السوق',
+    titleEn: '🔔 New Listing',
+    bodyAr:  data.title || 'تم إضافة قطعة جديدة للبيع',
+    bodyEn:  data.title || 'A new watch is available',
+    url:     `${window.location.origin}/marketplace/${data.slug}`,
+  }).catch(() => {});
+
   return data;
 };
 

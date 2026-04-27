@@ -6,6 +6,7 @@ import { formatCurrency } from '../../utils/format';
 import { useT } from '../../i18n/useLanguage';
 import { useCurrencyStore, CURRENCIES, CURRENCY_SYMBOLS, convertFromGBP, type Currency } from '../../store/currencyStore';
 import { WatchRequestModal } from '../WatchRequestModal';
+import { NotificationBell } from '../ui/NotificationBell';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout: logoutStore, setUser } = useAuthStore();
@@ -100,6 +101,7 @@ export const Navbar: React.FC = () => {
 
           {/* Auth area — only on lg+ */}
           <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <NotificationBell />
             {/* Currency selector */}
             <select
               value={currency}
@@ -215,6 +217,7 @@ export const Navbar: React.FC = () => {
             {/* Language, currency, auth */}
             <div className="border-t border-obsidian-800 px-2 pt-4 pb-6 space-y-4">
               <div className="flex items-center gap-3">
+                <NotificationBell />
                 <button
                   onClick={toggle}
                   className="flex items-center border border-obsidian-700 hover:border-gold-500/50 transition-colors"

@@ -44,6 +44,7 @@ import { AuthenticationPage } from './pages/AuthenticationPage';
 import { ScrollToTop } from './components/ui/ScrollToTop';
 import { useAuthStore } from './store/authStore';
 import { fetchProfile } from './api/auth';
+import { initOneSignal } from './lib/onesignal';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -95,6 +96,8 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 function App() {
   const setAuth = useAuthStore(s => s.setAuth);
   const logout  = useAuthStore(s => s.logout);
+
+  useEffect(() => { initOneSignal().catch(() => {}); }, []);
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
