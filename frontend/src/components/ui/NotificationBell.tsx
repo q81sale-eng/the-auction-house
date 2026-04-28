@@ -19,14 +19,13 @@ export const NotificationBell: React.FC = () => {
 
   const handleSubscribe = async () => {
     setLoading(true);
-    const timeout = new Promise<void>(resolve => setTimeout(resolve, 8000));
     try {
-      await Promise.race([requestPermission(), timeout]);
-      const newPerm = getPermission();
-      setPerm(newPerm);
-      await new Promise(r => setTimeout(r, 1500));
-      const sub = await isSubscribed();
-      setOpted(sub || newPerm === 'granted');
+      const result = typeof Notification !== 'undefined'
+        ? await Notification.requestPermission()
+        : 'denied';
+      setPerm(result);
+      setOpted(result === 'granted');
+      if (result === 'granted') requestPermission().catch(() => {});
     } catch {
       // ignore
     } finally {
