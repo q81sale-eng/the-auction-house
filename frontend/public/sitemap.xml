@@ -3,99 +3,99 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
   <url>
-    <loc>https://theauctionhouse.com/</loc>
+    <loc>https://www.pavewatch.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/auctions</loc>
+    <loc>https://www.pavewatch.com/auctions</loc>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/auctions"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/auctions"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/auctions"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/auctions"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/marketplace</loc>
+    <loc>https://www.pavewatch.com/marketplace</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/marketplace"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/marketplace"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/marketplace"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/marketplace"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/price-index</loc>
+    <loc>https://www.pavewatch.com/price-index</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/price-index"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/price-index"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/price-index"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/price-index"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/catalog</loc>
+    <loc>https://www.pavewatch.com/catalog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/catalog"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/catalog"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/catalog"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/catalog"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/pave</loc>
+    <loc>https://www.pavewatch.com/pave</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/pave"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/pave"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/pave"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/pave"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/pave/regent</loc>
+    <loc>https://www.pavewatch.com/pave/regent</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/pave/regent"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/pave/regent"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/pave/regent"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/pave/regent"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/pave/artisana</loc>
+    <loc>https://www.pavewatch.com/pave/artisana</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/pave/artisana"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/pave/artisana"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/pave/artisana"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/pave/artisana"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/about</loc>
+    <loc>https://www.pavewatch.com/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/about"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/about"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/about"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/about"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/contact</loc>
+    <loc>https://www.pavewatch.com/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/contact"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/contact"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/contact"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/contact"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/how-it-works</loc>
+    <loc>https://www.pavewatch.com/how-it-works</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/how-it-works"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/how-it-works"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/how-it-works"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/how-it-works"/>
   </url>
 
   <url>
-    <loc>https://theauctionhouse.com/authentication</loc>
+    <loc>https://www.pavewatch.com/authentication</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://theauctionhouse.com/authentication"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://theauctionhouse.com/authentication"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.pavewatch.com/authentication"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://www.pavewatch.com/authentication"/>
   </url>
 
 </urlset>

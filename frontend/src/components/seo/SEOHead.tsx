@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useT } from '../../i18n/useLanguage';
 
 const SITE_NAME = 'The Auction House';
-const SITE_URL  = 'https://theauctionhouse.com';
+const SITE_URL  = 'https://www.pavewatch.com';
 const OG_IMAGE  = '/og-image.jpg';
 
 interface SEOHeadProps {

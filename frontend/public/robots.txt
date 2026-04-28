@@ -6,4 +6,4 @@ Disallow: /vault
 Disallow: /login
 Disallow: /register
 
-Sitemap: https://theauctionhouse.com/sitemap.xml
+Sitemap: https://www.pavewatch.com/sitemap.xml
