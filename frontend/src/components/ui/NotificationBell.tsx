@@ -19,10 +19,15 @@ export const NotificationBell: React.FC = () => {
 
   const handleSubscribe = async () => {
     setLoading(true);
+    const timeout = new Promise<void>(resolve => setTimeout(resolve, 8000));
     try {
-      await requestPermission();
+      await Promise.race([requestPermission(), timeout]);
       setPerm(getPermission());
+      // Give OneSignal a moment to register the subscription
+      await new Promise(r => setTimeout(r, 1500));
       setOpted(await isSubscribed());
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
       setOpen(false);
