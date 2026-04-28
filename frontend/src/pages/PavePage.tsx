@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { useT } from '../i18n/useLanguage';
+import { SEOHead } from '../components/seo/SEOHead';
 
 export const PavePage: React.FC = () => {
   const { tr } = useT();
@@ -18,6 +19,13 @@ export const PavePage: React.FC = () => {
 
   return (
     <Layout>
+      <SEOHead
+        titleEn="PAVÉ Watch Collection | Regent & Artisana | The Auction House"
+        titleAr="مجموعة ساعات بافيه | ريجنت وأرتيزانا | The Auction House"
+        descEn="Discover the PAVÉ watch collection — Regent and Artisana. Luxury timepieces crafted with precision and elegance."
+        descAr="اكتشف مجموعة ساعات بافيه — ريجنت وأرتيزانا. ساعات فاخرة مصنوعة بدقة وأناقة."
+        path="/pave"
+      />
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="min-h-screen flex flex-col items-center justify-center bg-obsidian-950 relative overflow-hidden px-4">
         {/* Decorative corner lines */}

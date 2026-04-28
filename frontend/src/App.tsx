@@ -1,6 +1,7 @@
 import React, { useEffect, Component } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { supabase } from './lib/supabase';
 import { HomePage } from './pages/HomePage';
@@ -154,6 +155,7 @@ function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
+    <HelmetProvider>
     <LanguageProvider>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
@@ -211,6 +213,7 @@ function App() {
         </BrowserRouter>
       </QueryClientProvider>
     </LanguageProvider>
+    </HelmetProvider>
   );
 }
 

@@ -1,3 +1,9 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /vault
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://theauctionhouse.com/sitemap.xml

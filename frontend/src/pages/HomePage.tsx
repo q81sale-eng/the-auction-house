@@ -6,6 +6,7 @@ import { AuctionCard } from '../components/auction/AuctionCard';
 import { Layout } from '../components/layout/Layout';
 import { PromoSlider } from '../components/ui/PromoSlider';
 import { useT } from '../i18n/useLanguage';
+import { SEOHead } from '../components/seo/SEOHead';
 
 export const HomePage: React.FC = () => {
   const { tr } = useT();
@@ -16,8 +17,24 @@ export const HomePage: React.FC = () => {
 
   const statsValues = ['+500', '+2M د.ك', '100%'];
 
+  const orgSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'The Auction House',
+    url: 'https://theauctionhouse.com',
+    description: 'Kuwait\'s premier luxury watch auction platform',
+  };
+
   return (
     <Layout>
+      <SEOHead
+        titleEn="The Auction House | Luxury Watch Auctions & Marketplace Kuwait"
+        titleAr="The Auction House | مزادات ساعات فاخرة وسوق الساعات في الكويت"
+        descEn="Discover and bid on rare luxury timepieces — Rolex, Patek Philippe, Audemars Piguet and more. Kuwait's premier watch auction platform."
+        descAr="اكتشف وشارك في مزادات ساعات فاخرة نادرة — رولكس وباتيك فيليب وأودمار بيغيه والمزيد. منصة المزادات الأولى في الكويت."
+        path="/"
+        jsonLd={orgSchema}
+      />
       {/* Promo Slider */}
       <PromoSlider />
 

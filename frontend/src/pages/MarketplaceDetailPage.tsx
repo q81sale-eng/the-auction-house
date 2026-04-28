@@ -8,6 +8,7 @@ import { formatCurrency } from '../utils/format';
 import { useCurrencyStore, convertFromGBP } from '../store/currencyStore';
 import { useT } from '../i18n/useLanguage';
 import { WhatsAppShare } from '../components/ui/WhatsAppShare';
+import { SEOHead } from '../components/seo/SEOHead';
 
 export const MarketplaceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -83,8 +84,34 @@ export const MarketplaceDetailPage: React.FC = () => {
     [ws.condition,       listing.watch?.condition ? conditionLabel[listing.watch.condition] : null],
   ].filter(([, v]) => v) as [string, string][];
 
+  const listingSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: listing.title,
+    description: listing.description || listing.title,
+    image: listing.images?.[0] || listing.primary_image,
+    brand: { '@type': 'Brand', name: listing.brand },
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'GBP',
+      price: listing.price,
+      availability: 'https://schema.org/InStock',
+      url: `https://theauctionhouse.com/marketplace/${listing.slug}`,
+    },
+  };
+
   return (
     <Layout>
+      <SEOHead
+        titleEn={`${listing.title} | For Sale | The Auction House`}
+        titleAr={`${listing.title} | للبيع | The Auction House`}
+        descEn={`${listing.title} for sale. ${listing.brand ? `Brand: ${listing.brand}.` : ''} Authenticated luxury watch on The Auction House marketplace.`}
+        descAr={`${listing.title} للبيع. ${listing.brand ? `الماركة: ${listing.brand}.` : ''} ساعة فاخرة موثقة في سوق The Auction House.`}
+        path={`/marketplace/${listing.slug}`}
+        image={listing.images?.[0] || listing.primary_image}
+        ogType="product"
+        jsonLd={listingSchema}
+      />
       <Breadcrumb items={[
         { label: t.title, href: '/marketplace' },
         { label: listing.title },

@@ -5,6 +5,7 @@ import { ListingCard } from '../components/marketplace/ListingCard';
 import { Layout } from '../components/layout/Layout';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useT } from '../i18n/useLanguage';
+import { SEOHead } from '../components/seo/SEOHead';
 
 const BRANDS = ['Rolex', 'Patek Philippe', 'Audemars Piguet', 'A. Lange & Söhne', 'F.P. Journe', 'Vacheron Constantin', 'Jaeger-LeCoultre', 'Richard Mille', 'Omega'];
 const DEFAULT_FILTERS = { brand: '', condition: '', min_price: '', max_price: '', search: '', sort: 'latest' };
@@ -41,6 +42,13 @@ export const MarketplacePage: React.FC = () => {
 
   return (
     <Layout>
+      <SEOHead
+        titleEn="Luxury Watch Marketplace | Buy & Sell | The Auction House"
+        titleAr="سوق الساعات الفاخرة | بيع وشراء | The Auction House"
+        descEn="Browse authenticated luxury watches for sale. Rolex, Patek Philippe, AP, Richard Mille and more — private seller listings."
+        descAr="تصفح ساعات فاخرة موثقة للبيع. رولكس وباتيك فيليب وأودمار بيغيه وريتشارد ميل والمزيد."
+        path="/marketplace"
+      />
       <Breadcrumb items={[{ label: tr.nav.home, href: '/' }, { label: tr.nav.marketplace }]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="mb-10">

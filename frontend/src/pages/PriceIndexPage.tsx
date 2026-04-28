@@ -5,6 +5,7 @@ import { Layout } from '../components/layout/Layout';
 import { searchPriceIndex, getLatestPriceIndex, type PriceIndexEntry } from '../api/priceIndex';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useT } from '../i18n/useLanguage';
+import { SEOHead } from '../components/seo/SEOHead';
 
 const fmt = (v: number) => formatCurrency(v, 'KWD');
 
@@ -106,6 +107,13 @@ export const PriceIndexPage: React.FC = () => {
 
   return (
     <Layout>
+      <SEOHead
+        titleEn="Luxury Watch Price Index | Market Values | The Auction House"
+        titleAr="مؤشر أسعار الساعات الفاخرة | القيم السوقية | The Auction House"
+        descEn="Track real-time market prices for Rolex, Patek Philippe, AP and more. Kuwait's most accurate luxury watch price index."
+        descAr="تابع أسعار السوق الفورية لرولكس وباتيك فيليب وأودمار بيغيه والمزيد. أدق مؤشر لأسعار الساعات الفاخرة في الكويت."
+        path="/price-index"
+      />
       {/* Hero / Search */}
       <section className="bg-obsidian-950 border-b border-obsidian-800 py-16 md:py-24">
         <div className="max-w-2xl mx-auto px-4 text-center" dir={isRtl ? 'rtl' : 'ltr'}>

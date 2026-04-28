@@ -5,6 +5,7 @@ import { AuctionCard } from '../components/auction/AuctionCard';
 import { Layout } from '../components/layout/Layout';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useT } from '../i18n/useLanguage';
+import { SEOHead } from '../components/seo/SEOHead';
 
 const BRANDS = ['Rolex', 'Patek Philippe', 'Audemars Piguet', 'A. Lange & Söhne', 'F.P. Journe', 'Vacheron Constantin', 'Jaeger-LeCoultre'];
 
@@ -136,6 +137,13 @@ export const AuctionsPage: React.FC = () => {
 
   return (
     <Layout>
+      <SEOHead
+        titleEn="Live Watch Auctions | The Auction House Kuwait"
+        titleAr="مزادات الساعات المباشرة | The Auction House الكويت"
+        descEn="Bid on live and upcoming luxury watch auctions. Rolex, Patek Philippe, AP and more — authenticated and verified."
+        descAr="شارك في مزادات ساعات فاخرة مباشرة وقادمة. رولكس وباتيك فيليب وأودمار بيغيه والمزيد — موثقة ومعتمدة."
+        path="/auctions"
+      />
       <Breadcrumb items={[{ label: tr.nav.home, href: '/' }, { label: tr.nav.auctions }]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-10">

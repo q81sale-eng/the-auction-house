@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useT } from '../i18n/useLanguage';
+import { SEOHead } from '../components/seo/SEOHead';
 
 const services = [
   { icon: '⟡', text: 'مزادات متخصصة للساعات الفاخرة' },
@@ -16,6 +17,13 @@ export const AboutPage: React.FC = () => {
   const { lang } = useT();
   return (
     <Layout>
+      <SEOHead
+        titleEn="About Us | The Auction House Kuwait"
+        titleAr="من نحن | The Auction House الكويت"
+        descEn="Learn about The Auction House — Kuwait's premier destination for authenticated luxury watch auctions and marketplace."
+        descAr="تعرف على The Auction House — الوجهة الأولى في الكويت لمزادات وبيع الساعات الفاخرة الموثقة."
+        path="/about"
+      />
       <Breadcrumb items={[
         { label: lang === 'ar' ? 'الرئيسية' : 'Home', href: '/' },
         { label: lang === 'ar' ? 'من نحن' : 'About Us' },

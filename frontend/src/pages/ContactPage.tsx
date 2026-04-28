@@ -2,6 +2,7 @@ import React from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { useT } from '../i18n/useLanguage';
+import { SEOHead } from '../components/seo/SEOHead';
 
 const contacts = [
   {
@@ -72,6 +73,13 @@ export const ContactPage: React.FC = () => {
 
   return (
     <Layout>
+      <SEOHead
+        titleEn="Contact Us | The Auction House Kuwait"
+        titleAr="تواصل معنا | The Auction House الكويت"
+        descEn="Get in touch with The Auction House. Questions about auctions, listings, or authentication? We're here to help."
+        descAr="تواصل مع The Auction House. أسئلة عن المزادات أو القطع أو التوثيق؟ نحن هنا للمساعدة."
+        path="/contact"
+      />
       <Breadcrumb items={[
         { label: lang === 'ar' ? 'الرئيسية' : 'Home', href: '/' },
         { label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us' },

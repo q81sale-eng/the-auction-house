@@ -10,6 +10,7 @@ import { formatCurrency, formatDateTime } from '../utils/format';
 import { useCurrencyStore, convertFromGBP, CURRENCY_SYMBOLS } from '../store/currencyStore';
 import { useT } from '../i18n/useLanguage';
 import { WhatsAppShare } from '../components/ui/WhatsAppShare';
+import { SEOHead } from '../components/seo/SEOHead';
 
 export const AuctionDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -143,8 +144,34 @@ export const AuctionDetailPage: React.FC = () => {
     [ws.boxPapers,    boxPapers],
   ].filter(([, v]) => v) as [string, string][];
 
+  const auctionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: auction.title,
+    description: auction.description || auction.title,
+    image: auction.images?.[0] || auction.primary_image,
+    brand: { '@type': 'Brand', name: auction.brand },
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'GBP',
+      price: auction.current_bid || auction.starting_price,
+      availability: auction.status === 'live' ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
+      url: `https://theauctionhouse.com/auctions/${auction.slug}`,
+    },
+  };
+
   return (
     <Layout>
+      <SEOHead
+        titleEn={`${auction.title} | Auction | The Auction House`}
+        titleAr={`${auction.title} | مزاد | The Auction House`}
+        descEn={`Bid on ${auction.title}. ${auction.brand ? `Brand: ${auction.brand}.` : ''} Starting at ${auction.starting_price} GBP. Authenticated luxury watch auction.`}
+        descAr={`شارك في مزاد ${auction.title}. ${auction.brand ? `الماركة: ${auction.brand}.` : ''} ساعة فاخرة موثقة.`}
+        path={`/auctions/${auction.slug}`}
+        image={auction.images?.[0] || auction.primary_image}
+        ogType="product"
+        jsonLd={auctionSchema}
+      />
       <Breadcrumb items={[
         { label: tr.nav.auctions, href: '/auctions' },
         { label: auction.title },
