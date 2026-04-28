@@ -22,10 +22,11 @@ export const NotificationBell: React.FC = () => {
     const timeout = new Promise<void>(resolve => setTimeout(resolve, 8000));
     try {
       await Promise.race([requestPermission(), timeout]);
-      setPerm(getPermission());
-      // Give OneSignal a moment to register the subscription
+      const newPerm = getPermission();
+      setPerm(newPerm);
       await new Promise(r => setTimeout(r, 1500));
-      setOpted(await isSubscribed());
+      const sub = await isSubscribed();
+      setOpted(sub || newPerm === 'granted');
     } catch {
       // ignore
     } finally {
@@ -35,7 +36,7 @@ export const NotificationBell: React.FC = () => {
   };
 
   const denied  = perm === 'denied';
-  const enabled = perm === 'granted' && opted;
+  const enabled = perm === 'granted' || opted;
 
   return (
     <div className="relative">
