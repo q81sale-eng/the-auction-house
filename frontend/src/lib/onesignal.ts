@@ -10,6 +10,7 @@ export const initOneSignal = async () => {
   initialised = true;
   await OneSignal.init({
     appId: APP_ID,
+    safari_web_id: 'web.onesignal.auto.092506a7-b452-4a06-a822-c1d343884087',
     allowLocalhostAsSecureOrigin: true,
   });
 };
