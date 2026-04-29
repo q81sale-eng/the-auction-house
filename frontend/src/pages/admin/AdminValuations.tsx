@@ -18,6 +18,7 @@ export const AdminValuations: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: createValuation,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'valuations'] }); setShowCreate(false); setForm(blankForm); },
+    onError: (err: any) => alert(err?.response?.data?.message || err.message || 'Save failed'),
   });
 
   const handleCreate = (e: React.FormEvent) => {

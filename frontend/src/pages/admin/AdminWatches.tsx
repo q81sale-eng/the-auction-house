@@ -22,6 +22,7 @@ export const AdminWatches: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: deleteWatch,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'watches'] }),
+    onError: (err: any) => alert(err?.response?.data?.message || err.message || 'Delete failed'),
   });
 
   const handleCreate = (e: React.FormEvent) => {

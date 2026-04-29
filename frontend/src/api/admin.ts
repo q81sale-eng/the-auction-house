@@ -280,15 +280,62 @@ export const getAdminBids = async (params?: { page?: number; auction_id?: string
   return paginate(data, count, page);
 };
 
-// ─── Legacy exports (keep watch functions for AdminWatches compatibility) ─────
+// ─── Watches ──────────────────────────────────────────────────────────────────
 
-const emptyPage = { data: [] as any[], total: 0, last_page: 1, current_page: 1 };
-export const getAdminWatches    = (_p?: any) => Promise.resolve(emptyPage);
-export const createWatch        = (_d: any) => Promise.resolve({});
-export const updateWatch        = (_id: any, _d: any) => Promise.resolve({});
-export const deleteWatch        = (_id: any) => Promise.resolve({});
-export const getAdminValuations = (_p?: any) => Promise.resolve(emptyPage);
-export const createValuation    = (_d: any) => Promise.resolve({});
+export const getAdminWatches = async (params?: { page?: number; per_page?: number }) => {
+  const perPage = params?.per_page ?? PER_PAGE;
+  const page    = params?.page ?? 1;
+  const from    = (page - 1) * perPage;
+  const to      = from + perPage - 1;
+  const { data, count } = await supabase
+    .from('watches')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+  return paginate(data, count, page);
+};
+
+export const createWatch = async (payload: Record<string, any>) => {
+  const { data, error } = await supabase.from('watches').insert(payload).select().single();
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+  return data;
+};
+
+export const updateWatch = async (id: string, payload: Record<string, any>) => {
+  const { data, error } = await supabase.from('watches').update(payload).eq('id', id).select().single();
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+  return data;
+};
+
+export const deleteWatch = async (id: string) => {
+  const { error } = await supabase.from('watches').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+// ─── Valuations ───────────────────────────────────────────────────────────────
+
+export const getAdminValuations = async (params?: { page?: number }) => {
+  const page = params?.page ?? 1;
+  const from = (page - 1) * PER_PAGE;
+  const to   = from + PER_PAGE - 1;
+  const { data, count } = await supabase
+    .from('valuations')
+    .select('*, watch:watches(brand,model,reference_number), admin:profiles(name)', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+  return paginate(data, count, page);
+};
+
+export const createValuation = async (payload: Record<string, any>) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from('valuations')
+    .insert({ ...payload, appraised_by: user?.id ?? null })
+    .select()
+    .single();
+  if (error) { const e = new Error(error.message); (e as any).response = { data: { message: error.message } }; throw e; }
+  return data;
+};
 
 // ─── Catalog ──────────────────────────────────────────────────────────────────
 
