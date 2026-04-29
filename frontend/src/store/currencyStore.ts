@@ -31,6 +31,8 @@ interface CurrencyState {
   setCurrency: (c: Currency) => void;
 }
 
+export const CURRENCIES: Currency[] = ['GBP', 'USD', 'KWD', 'SAR', 'AED', 'QAR', 'BHD', 'OMR'];
+
 export const useCurrencyStore = create<CurrencyState>()(
   persist(
     (set) => ({ currency: 'KWD', setCurrency: (currency) => set({ currency }) }),
@@ -50,5 +52,3 @@ export const convertFromGBP = (amount: number, to: Currency): number =>
 
 export const convertToGBP = (amount: number, from: Currency): number =>
   amount / RATES[from];
-
-export const CURRENCIES: Currency[] = ['GBP', 'USD', 'KWD', 'SAR', 'AED', 'QAR', 'BHD', 'OMR'];
