@@ -64,6 +64,15 @@ export const PriceIndexPage: React.FC = () => {
 
   useEffect(() => { setInputValue(qParam); }, [qParam]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const v = inputValue.trim();
+      if (v) setSearchParams({ q: v });
+      else if (qParam) setSearchParams({});
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const { data: searchResults = [], isLoading: searchLoading } = useQuery({
     queryKey: ['price-index', 'search', qParam],
     queryFn: () => searchPriceIndex(qParam),

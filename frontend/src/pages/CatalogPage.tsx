@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getCatalog, getCatalogBrands } from '../api/catalog';
@@ -16,6 +16,11 @@ export const CatalogPage: React.FC = () => {
   const [brand, setBrand] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => { setSearch(searchInput); if (searchInput) setBrand(''); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const { data: brands = [] } = useQuery({
     queryKey: ['catalog-brands'],
