@@ -145,11 +145,11 @@ export const VaultPage: React.FC = () => {
       <Breadcrumb items={[{ label: tr.nav.home, href: '/' }, { label: tr.nav.vault }]} />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-10">
-          <div>
+          <button onClick={() => setShowAdd(true)} className="btn-gold">{t.addWatch}</button>
+          <div className="text-end">
             <p className="section-subtitle">{t.eyebrow}</p>
             <h1 className="section-title">{t.title}</h1>
           </div>
-          <button onClick={() => setShowAdd(true)} className="btn-gold">{t.addWatch}</button>
         </div>
 
         {/* Summary Cards — active watches only */}
