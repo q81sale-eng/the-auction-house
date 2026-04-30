@@ -60,40 +60,33 @@ export const PriceIndexPage: React.FC = () => {
 
   const qParam = searchParams.get('q') ?? '';
   const [inputValue, setInputValue] = useState(qParam);
+  const [query, setQuery] = useState(qParam);
   const [sort, setSort] = useState<SortMode>('highest_price');
 
-  useEffect(() => { setInputValue(qParam); }, [qParam]);
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const v = inputValue.trim();
-      if (v) setSearchParams({ q: v });
-      else if (qParam) setSearchParams({});
-    }, 300);
+    const timer = setTimeout(() => setQuery(inputValue.trim()), 300);
     return () => clearTimeout(timer);
-  }, [inputValue]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [inputValue]);
 
   const { data: searchResults = [], isLoading: searchLoading } = useQuery({
-    queryKey: ['price-index', 'search', qParam],
-    queryFn: () => searchPriceIndex(qParam),
-    enabled: !!qParam,
+    queryKey: ['price-index', 'search', query],
+    queryFn: () => searchPriceIndex(query),
+    enabled: !!query,
     staleTime: 30_000,
   });
 
   const { data: latestEntries = [], isLoading: latestLoading } = useQuery({
     queryKey: ['price-index', 'latest', sort],
     queryFn: () => getLatestPriceIndex(12, sort),
-    enabled: !qParam,
+    enabled: !query,
     staleTime: 60_000,
   });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputValue.trim()) setSearchParams({ q: inputValue.trim() });
-  };
+  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); };
 
   const handleClear = () => {
     setInputValue('');
+    setQuery('');
     setSearchParams({});
   };
 
@@ -103,11 +96,11 @@ export const PriceIndexPage: React.FC = () => {
       : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
-  const displayEntries = qParam ? sortedSearch : latestEntries;
-  const isLoading = qParam ? searchLoading : latestLoading;
+  const displayEntries = query ? sortedSearch : latestEntries;
+  const isLoading = query ? searchLoading : latestLoading;
 
   const prices = searchResults.map(r => Number(r.sale_price));
-  const stats = qParam && prices.length > 0 ? {
+  const stats = query && prices.length > 0 ? {
     count: prices.length,
     avg: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
     high: Math.max(...prices),
@@ -142,7 +135,7 @@ export const PriceIndexPage: React.FC = () => {
           </form>
 
           <div className="mt-4 flex items-center justify-center gap-4">
-            {qParam && (
+            {query && (
               <button
                 onClick={handleClear}
                 className="text-obsidian-500 hover:text-obsidian-300 text-xs transition-colors"
@@ -166,9 +159,9 @@ export const PriceIndexPage: React.FC = () => {
       {/* Results */}
       <section className="max-w-7xl mx-auto px-4 py-10" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-          {qParam ? (
+          {query ? (
             <p className="text-obsidian-400 text-sm">
-              {t.resultsFor}: <span className="text-white font-medium">"{qParam}"</span>
+              {t.resultsFor}: <span className="text-white font-medium">"{query}"</span>
             </p>
           ) : (
             <p className="text-obsidian-500 text-xs uppercase tracking-wider">{t.latest}</p>
@@ -199,7 +192,7 @@ export const PriceIndexPage: React.FC = () => {
             ))}
           </div>
         ) : displayEntries.length === 0 ? (
-          qParam ? (
+          query ? (
             <div className="text-center py-20">
               <p className="font-serif text-white text-xl mb-2">{t.noResults}</p>
               <p className="text-obsidian-500 text-sm">{t.noResultsHint}</p>
